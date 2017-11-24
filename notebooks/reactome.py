@@ -3,10 +3,13 @@ from collections import defaultdict
 from neo4j.v1 import GraphDatabase, basic_auth
 from ipywidgets import FloatProgress
 
+import xmltodict
+import pandas as pd
+
 
 def ensembl_to_uniprot(ensembl_ids, species, show_progress_bar=False):
 
-    results = {}
+    results = defaultdict(list)
     try:
 
         driver = GraphDatabase.driver("bolt://localhost:7687", auth=basic_auth("neo4j", "neo4j"))
@@ -38,10 +41,10 @@ def ensembl_to_uniprot(ensembl_ids, species, show_progress_bar=False):
         i = 0
         for record in query_res:
             gene_id = record['gene_id']
-            item = {'protein_id': record['protein_id'], 'url': record['URL']}
-            results[gene_id].append(item)
+            protein_id = record['protein_id']
+            results[gene_id].append(protein_id)
             if show_progress_bar: f.value += 1
-        f.value = len(ensembl_ids)
+        if show_progress_bar: f.value = len(ensembl_ids)-1
 
     except Exception as e:
         print e
@@ -49,17 +52,18 @@ def ensembl_to_uniprot(ensembl_ids, species, show_progress_bar=False):
     finally:
         session.close()
 
-    return results
+    return dict(results)
 
 def uniprot_to_reaction(uniprot_ids, species, show_progress_bar=False):
 
-    results = {}
+    results = defaultdict(list)
     try:
 
         driver = GraphDatabase.driver("bolt://localhost:7687", auth=basic_auth("neo4j", "neo4j"))
         session = driver.session()
-        query = """
 
+        # note that using hasComponent|hasMember|hasCandidate below will retrieve all the sub-complexes too
+        query = """
         MATCH (rle:ReactionLikeEvent)-[:input|output|catalystActivity|physicalEntity
               |regulatedBy|regulator|hasComponent|hasMember|hasCandidate*]->(pe:PhysicalEntity),
               (pe)-[:referenceEntity]->(re:ReferenceEntity)-[:referenceDatabase]->(rd:ReferenceDatabase)
@@ -90,9 +94,263 @@ def uniprot_to_reaction(uniprot_ids, species, show_progress_bar=False):
             item = {'reaction_id': record['reaction_id'], 'reaction_name': record['reaction_name']}
             results[protein_id].append(item)
             if show_progress_bar: f.value += 1
-        f.value = len(uniprot_ids)
+        if show_progress_bar: f.value = len(uniprot_ids)-1
+
+    finally:
+        session.close()
+
+    return dict(results)
+
+def compound_to_reaction(compound_ids, species, show_progress_bar=False):
+
+    results = defaultdict(list)
+    try:
+
+        driver = GraphDatabase.driver("bolt://localhost:7687", auth=basic_auth("neo4j", "neo4j"))
+        session = driver.session()
+        query = """
+        MATCH (rle:ReactionLikeEvent)-[:input|output|catalystActivity|physicalEntity
+              |regulatedBy|regulator|hasComponent
+              |hasMember|hasCandidate*]->(pe:PhysicalEntity),
+              (pe:PhysicalEntity)-[:crossReference]->(di:DatabaseIdentifier)
+        WHERE
+            di.identifier IN {compound_ids} AND
+            di.databaseName = 'COMPOUND' AND
+            rle.speciesName = {species}
+        RETURN DISTINCT
+            di.displayName AS compound_id,
+            di.databaseName AS compound_db,
+            rle.stId AS reaction_id,
+        	rle.displayName AS reaction_name
+        """
+        params = {
+            'compound_ids': compound_ids,
+            'species': species
+        }
+        query_res = session.run(query, params)
+
+        if show_progress_bar:
+            f = FloatProgress(min=0, max=len(compound_ids))
+            display(f)
+
+        i = 0
+        for record in query_res:
+            key = record['compound_id'].split(':') # e.g. 'COMPOUND:C00025'
+            compound_id = key[1]
+            item = {'reaction_id': record['reaction_id'], 'reaction_name': record['reaction_name']}
+            results[compound_id].append(item)
+            if show_progress_bar: f.value += 1
+        if show_progress_bar: f.value = len(compound_ids)-1
+
+    finally:
+        session.close()
+
+    return dict(results)
+
+
+# get all the entities involved in a reaction
+def get_reaction_entities(reaction_ids, species):
+
+    results = defaultdict(list)
+    try:
+
+        driver = GraphDatabase.driver("bolt://localhost:7687", auth=basic_auth("neo4j", "neo4j"))
+        session = driver.session()
+        query = """
+        MATCH (rle:ReactionLikeEvent)-[:input|output|catalystActivity|physicalEntity
+              |regulatedBy|regulator|hasComponent
+              |hasMember|hasCandidate*]->(dbo:DatabaseObject)
+        WHERE
+            rle.stId IN {reaction_ids} AND
+            rle.speciesName = {species}
+        RETURN
+            rle.stId AS reaction_id,
+            dbo.stId AS entity_id,
+            dbo.schemaClass AS schema_class
+        """
+        params = {
+            'reaction_ids': reaction_ids,
+            'species': species
+        }
+        query_res = session.run(query, params)
+        for record in query_res:
+            reaction_id = record['reaction_id']
+            entity_id = record['entity_id']
+            schema_class = record['schema_class']
+            item = (schema_class, entity_id)
+            results[reaction_id].append(item)
 
     finally:
         session.close()
 
     return results
+
+def reaction_to_metabolite_pathway(reaction_ids, species, show_progress_bar=False, last_pathway=True):
+
+    results = defaultdict(list)
+    try:
+
+        driver = GraphDatabase.driver("bolt://localhost:7687", auth=basic_auth("neo4j", "neo4j"))
+        session = driver.session()
+
+        if last_pathway: # retrieve only the leaf nodes in the pathway hierarchy
+            query = """
+            MATCH (tp:TopLevelPathway)-[:hasEvent*]->
+                  (p:Pathway)-[:hasEvent*]->(rle:ReactionLikeEvent)
+            WHERE
+            	tp.displayName = 'Metabolism' AND
+                tp.speciesName = {species} AND
+            	rle.stId IN {reaction_ids} AND
+                (p)-[:hasEvent]->(rle)
+            RETURN
+                rle.stId AS reaction_id,
+                p.stId AS pathway_id,
+                p.displayName AS pathway_name
+            """
+        else: # retrieve all nodes maps reactions to all levels in the pathway hierarchy (except the top-level)
+            query = """
+            MATCH (tp:TopLevelPathway)-[:hasEvent*]->
+                  (p:Pathway)-[:hasEvent*]->(rle:ReactionLikeEvent)
+            WHERE
+            	tp.displayName = 'Metabolism' AND
+                tp.speciesName = {species} AND
+            	rle.stId IN {reaction_ids}
+            RETURN
+                rle.stId AS reaction_id,
+                p.stId AS pathway_id,
+                p.displayName AS pathway_name
+            """
+        params = {
+            'reaction_ids': reaction_ids,
+            'species': species
+        }
+        query_res = session.run(query, params)
+
+        if show_progress_bar:
+            f = FloatProgress(min=0, max=len(reaction_ids))
+            display(f)
+
+        i = 0
+        for record in query_res:
+            reaction_id = record['reaction_id']
+            item = {'pathway_id': record['pathway_id'], 'pathway_name': record['pathway_name']}
+            results[reaction_id].append(item)
+            if show_progress_bar: f.value += 1
+        if show_progress_bar: f.value = len(reaction_ids)-1
+
+    finally:
+        session.close()
+
+    return dict(results)
+
+def get_reaction_ids(mapping):
+    all_reactions = []
+    for key in mapping:
+        rs = mapping[key]
+        rids = [r['reaction_id'] for r in rs]
+        all_reactions.extend(rids)
+    return all_reactions
+
+def get_reactions_from_mapping(mapping):
+    reaction_names = {}
+    reaction_members = defaultdict(list)
+    for key in mapping:
+        for reaction in mapping[key]:
+            r_id = reaction['reaction_id']
+            r_name = reaction['reaction_name']
+            reaction_names[r_id] = r_name
+            reaction_members[r_id].append(key)
+    assert reaction_names.keys() == reaction_members.keys()
+    return reaction_names, dict(reaction_members)
+
+def get_protein_to_gene(mapping):
+    protein_to_gene = defaultdict(list)
+    for gene_id in mapping:
+        for protein_id in mapping[gene_id]:
+            protein_to_gene[protein_id].append(gene_id)
+    return dict(protein_to_gene)
+
+def produce_kegg_dict(kegg_location, param):
+
+    with open(kegg_location) as kegg_cmpd_file:
+        cmpd_dict = xmltodict.parse(kegg_cmpd_file.read())
+
+    kegg_dict = {}
+    for compound in cmpd_dict['compounds']['compound']:
+        kegg_dict[compound[param]] = compound['formula']
+
+    return kegg_dict
+
+# https://stackoverflow.com/questions/38987/how-to-merge-two-dictionaries-in-a-single-expression
+def merge_two_dicts(x, y):
+    z = x.copy()   # start with x's keys and values
+    z.update(y)    # modifies z with y's keys and values & returns None
+    return z
+
+def get_coverage(observed_count, total_count):
+    try:
+        return observed_count / float(total_count)
+    except ZeroDivisionError:
+        return 0
+
+def get_reaction_df(transcript_mapping, protein_mapping, compound_mapping, pathway_mapping, species):
+
+    r_name_1, r_members_1 = get_reactions_from_mapping(protein_mapping)
+    r_name_2, r_members_2 = get_reactions_from_mapping(compound_mapping)
+    reaction_names = merge_two_dicts(r_name_1, r_name_2)
+    protein_to_gene = get_protein_to_gene(transcript_mapping)
+
+    reaction_ids = set(r_members_1.keys() + r_members_2.keys())
+    reaction_entities = get_reaction_entities(list(reaction_ids), species)
+    rows = []
+    for reaction_id in reaction_ids:
+
+        observed_protein_count = 0
+        observed_compound_count = 0
+        protein_str = ''
+        compound_str = ''
+
+        if reaction_id in r_members_1:
+            proteins = r_members_1[reaction_id]
+            observed_protein_count = len(proteins)
+            for prot in proteins:
+                if prot in protein_to_gene:
+                    protein_str += '%s (%s):' % (prot, ':'.join(protein_to_gene[prot]))
+                else:
+                    protein_str += '%s:' % prot
+            protein_str = protein_str.rstrip(':') # remove last :
+
+        if reaction_id in r_members_2:
+            compounds = r_members_2[reaction_id]
+            observed_compound_count = len(compounds)
+            compound_str = ':'.join(compounds)
+
+        entities = reaction_entities[reaction_id]
+        all_compound_count = len([x for x in entities if x[0] == 'SimpleEntity'])
+        all_protein_count = len([x for x in entities if x[0] == 'EntityWithAccessionedSequence'])
+
+        reaction_name = reaction_names[reaction_id]
+        protein_coverage = get_coverage(observed_protein_count, all_protein_count)
+        compound_coverage = get_coverage(observed_compound_count, all_compound_count)
+        all_coverage = get_coverage(observed_protein_count+observed_compound_count,
+                                    all_protein_count+all_compound_count)
+
+        if reaction_id in pathway_mapping:
+            pathway_id_str = ':'.join([x['pathway_id'] for x in pathway_mapping[reaction_id]])
+            pathway_name_str = ':'.join([x['pathway_name'] for x in pathway_mapping[reaction_id]])
+            protein_coverage_str = '%.2f' % protein_coverage
+            compound_coverage_str = '%.2f' % compound_coverage
+            all_coverage_str = '%.2f' % all_coverage
+            row = (reaction_id, reaction_name,
+                   protein_coverage_str, compound_coverage_str, all_coverage_str,
+                   protein_str, observed_protein_count, all_protein_count,
+                   compound_str, observed_compound_count, all_compound_count,
+                   pathway_id_str, pathway_name_str)
+            rows.append(row)
+
+    df = pd.DataFrame(rows, columns=['reaction_id', 'reaction_name',
+                                     'protein_coverage', 'compound_coverage', 'all_coverage',
+                                     'protein', 'observed_protein_count', 'all_protein_count',
+                                     'compound', 'observed_compound_count', 'all_compound_count',
+                                     'pathway_ids', 'pathway_names'])
+    return df

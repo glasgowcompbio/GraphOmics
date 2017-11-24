@@ -1,0 +1,122 @@
+MATCH (p:Pathway{stId:"R-HSA-983169"})-[:hasEvent*]->(rle:ReactionLikeEvent),
+      (rle)-[:input|output|catalystActivity|physicalEntity|regulatedBy|regulator|hasComponent|hasMember|hasCandidate*]->(pe:PhysicalEntity),
+      (pe)-[:referenceEntity]->(re:ReferenceEntity)-[:referenceDatabase]->(rd:ReferenceDatabase)
+RETURN DISTINCT re.identifier AS Identifier, rd.displayName AS Database
+
+MATCH (rle:ReactionLikeEvent)-[:input|output|catalystActivity|physicalEntity
+      |regulatedBy|regulator|hasComponent
+      |hasMember|hasCandidate*]->(pe:PhysicalEntity)
+WHERE rle.stId = 'R-MMU-70599'
+RETURN pe
+
+MATCH (pe:PhysicalEntity)-[:crossReference]->(di:DatabaseIdentifier)
+WHERE
+    di.databaseName = 'COMPOUND' AND
+    di.identifier = 'C00038'
+RETURN DISTINCT pe, di.displayName LIMIT 10
+
+MATCH (pe:PhysicalEntity)-[:referenceEntity]->(re:ReferenceEntity),
+      (re)-[:crossReference]->(di:DatabaseIdentifier)
+WHERE
+    di.databaseName = 'COMPOUND' AND
+RETURN re LIMIT 100
+
+MATCH (p:Pathway)-[:hasEvent*]->(rle:ReactionLikeEvent),
+      (rle)-[:input|output|catalystActivity|physicalEntity|regulatedBy|regulator|hasComponent|hasMember|hasCandidate*]->(pe:PhysicalEntity),
+      (pe:PhysicalEntity)-[:crossReference]->(di:DatabaseIdentifier)
+WHERE
+  di.databaseName = 'COMPOUND' AND
+  di.identifier = 'C00038'
+RETURN DISTINCT p, pe, di.displayName LIMIT 10
+
+--------------------------------------------------------------------------------
+
+Map between
+Transcript to protein IDs
+Compound to reaction IDs
+The list of compounds and enzymes under each reaction and pathways
+
+Gene Queries
+============
+
+ENSEMBL gene id to Protein
+
+MATCH
+    (rg:ReferenceGeneProduct)-[:referenceGene]->(rs:ReferenceSequence)-[:species]->(s:Species)
+WHERE
+    rs.identifier = 'ENSMUSG00000000303' AND
+    s.displayName = 'Mus musculus'
+RETURN rg.identifier
+
+Protein Queries
+================
+
+UniProt to Pathways
+
+MATCH (p:Pathway)-[:hasEvent*]->(rle:ReactionLikeEvent),
+      (rle)-[:input|output|catalystActivity|physicalEntity|regulatedBy|regulator|hasComponent
+      |hasMember|hasCandidate*]->(pe:PhysicalEntity),
+      (pe)-[:referenceEntity]->(re:ReferenceEntity)-[:referenceDatabase]->(rd:ReferenceDatabase)
+WHERE
+      re.identifier = 'P11021' AND
+      rd.displayName = 'UniProt'
+RETURN DISTINCT p.schemaClass, p.displayName, re.identifier AS Identifier, rd.displayName AS Database
+ORDER BY p.schemaClass
+
+UniProt to Reactions
+
+MATCH (rle:ReactionLikeEvent)-[:input|output|catalystActivity|physicalEntity|regulatedBy|regulator|hasComponent
+      |hasMember|hasCandidate*]->(pe:PhysicalEntity),
+      (pe)-[:referenceEntity]->(re:ReferenceEntity)-[:referenceDatabase]->(rd:ReferenceDatabase)
+WHERE
+      re.identifier = 'P11021' AND
+      rd.displayName = 'UniProt' AND
+      rle.speciesName = 'Homo sapiens'
+RETURN DISTINCT rle.stId, rle.displayName, re.identifier AS Identifier, rd.displayName AS Database
+ORDER BY rle.displayName
+
+Compound Queries
+=================
+
+Compounds to pathways
+
+MATCH (p:Pathway)-[:hasEvent*]->(rle:ReactionLikeEvent),
+      (rle)-[:input|output|catalystActivity|physicalEntity|regulatedBy|regulator|hasComponent
+      |hasMember|hasCandidate*]->(pe:PhysicalEntity),
+      (pe:PhysicalEntity)-[:crossReference]->(di:DatabaseIdentifier)
+WHERE
+      p.speciesName = 'Homo sapiens' AND
+      di.databaseName = 'COMPOUND' AND
+      di.identifier = 'C00064'
+RETURN DISTINCT p.schemaClass, p.displayName, di.displayName, di.databaseName
+ORDER BY p.schemaClass, p.displayName
+
+Compounds to reactions
+
+MATCH (rle:ReactionLikeEvent)-[:input|output|catalystActivity|physicalEntity
+      |regulatedBy|regulator|hasComponent
+      |hasMember|hasCandidate*]->(pe:PhysicalEntity),
+      (pe:PhysicalEntity)-[:crossReference]->(di:DatabaseIdentifier)
+WHERE
+      rle.speciesName = 'Homo sapiens' AND
+      di.databaseName = 'COMPOUND' AND
+      di.identifier = 'C00064'
+RETURN DISTINCT rle.displayName, rle.stId, di.displayName, di.databaseName
+ORDER BY rle.displayName
+
+Reaction Queries
+================
+
+Retrieve everything linked to a reaction
+
+MATCH (rle:ReactionLikeEvent)-[rel:input|output|catalystActivity|physicalEntity
+              |regulatedBy|regulator|hasComponent
+              |hasMember|hasCandidate*]->(dbo:DatabaseObject)
+        WHERE
+            rle.stId = 'R-MMU-70599'
+        RETURN
+            rle, dbo
+
+Pathway Queries
+===============
+
