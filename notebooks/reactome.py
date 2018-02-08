@@ -5,6 +5,8 @@ from ipywidgets import FloatProgress
 
 import xmltodict
 import pandas as pd
+from bioservices.kegg import KEGG
+
 
 ################################################################################
 ### Gene-related functions                                                   ###
@@ -241,7 +243,7 @@ def get_reaction_entities(reaction_ids, species):
 
 def reaction_to_metabolite_pathway(reaction_ids, species,
                                    show_progress_bar=False,
-                                   last_pathway=True):
+                                   leaf=True):
 
     results = defaultdict(list)
     try:
@@ -250,7 +252,7 @@ def reaction_to_metabolite_pathway(reaction_ids, species,
                                       auth=basic_auth("neo4j", "neo4j"))
         session = driver.session()
 
-        if last_pathway:
+        if leaf:
             # retrieve only the leaf nodes in the pathway hierarchy
             query = """
             MATCH (tp:TopLevelPathway)-[:hasEvent*]->
@@ -309,8 +311,82 @@ def reaction_to_metabolite_pathway(reaction_ids, species,
     return dict(results)
 
 ################################################################################
-### Pathway-related functions                                               ###
+### Pathway-related functions                                                ###
 ################################################################################
+
+
+# def get_metabolite_pathways(reaction_ids, species,
+#                             show_progress_bar=False,
+#                             leaf=True):
+
+def retrieve_kegg_formula(reactome_compound_name):
+    k = KEGG()
+    compound_name = reactome_compound_name.replace('COMPOUND', 'cpd')
+    res = k.get(compound_name).split('\n')
+    for line in res:
+        if line.startswith('FORMULA'):
+            formula = line.split()[1]  # get the second token
+            return formula
+    return None
+
+
+def get_all_pathways_formulae(species):
+
+    results = defaultdict(set)
+    pathway_id_to_name = {}
+    try:
+
+        driver = GraphDatabase.driver("bolt://localhost:7687",
+                                      auth=basic_auth("neo4j", "neo4j"))
+        session = driver.session()
+
+        # TODO: retrieve only the leaf nodes in the pathway hierarchy
+        query = """
+        MATCH (tp:TopLevelPathway)-[:hasEvent*]->
+              (p:Pathway)-[:hasEvent*]->(rle:ReactionLikeEvent),
+              (rle)-[:input|output|catalystActivity|physicalEntity|regulatedBy|regulator|hasComponent
+              |hasMember|hasCandidate*]->(pe:PhysicalEntity),
+              (pe:PhysicalEntity)-[:crossReference]->(di:DatabaseIdentifier)<-[:crossReference]-(rm:ReferenceMolecule)
+        WHERE
+              tp.displayName = 'Metabolism' AND
+              tp.speciesName = {species} AND
+              di.databaseName = 'COMPOUND' AND
+              (p)-[:hasEvent]->(rle)              
+        RETURN DISTINCT
+            p.schemaClass,
+            p.displayName AS pathway_name,
+            p.stId AS pathway_id,
+            di.displayName as compound_name,
+            rm.formula AS formula,
+            di.url
+        """
+        params = {
+            'species': species
+        }
+        query_res = session.run(query, params)
+
+        i = 0
+        retrieved = {}
+        for record in query_res:
+            pathway_id = record['pathway_id']
+            pathway_name = record['pathway_name']
+            pathway_id_to_name[pathway_id] = pathway_name
+            compound_name = record['compound_name']
+            formula = record['formula']
+            if formula is None:
+                if compound_name not in retrieved:
+                    formula = retrieve_kegg_formula(compound_name)
+                    print 'Missing formula for %s, retrieved %s from kegg' % (compound_name, formula)
+                    retrieved[compound_name] = formula
+                else:
+                    formula = retrieved[compound_name]
+            assert formula is not None, 'Formula is missing for %s' % compound_name
+            results[pathway_id].add(formula)
+
+    finally:
+        session.close()
+
+    return dict(results), pathway_id_to_name
 
 ################################################################################
 ### Analysis functions                                                       ###
