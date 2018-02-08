@@ -57,7 +57,7 @@ def ensembl_to_uniprot(ensembl_ids, species, show_progress_bar=False):
             f.value = len(ensembl_ids) - 1
 
     except Exception as e:
-        print e
+        print(e)
 
     finally:
         session.close()
@@ -351,7 +351,7 @@ def get_all_pathways_formulae(species):
               tp.displayName = 'Metabolism' AND
               tp.speciesName = {species} AND
               di.databaseName = 'COMPOUND' AND
-              (p)-[:hasEvent]->(rle)              
+              (p)-[:hasEvent]->(rle)
         RETURN DISTINCT
             p.schemaClass,
             p.displayName AS pathway_name,
@@ -376,7 +376,7 @@ def get_all_pathways_formulae(species):
             if formula is None:
                 if compound_name not in retrieved:
                     formula = retrieve_kegg_formula(compound_name)
-                    print 'Missing formula for %s, retrieved %s from kegg' % (compound_name, formula)
+                    print('Missing formula for %s, retrieved %s from kegg' % (compound_name, formula))
                     retrieved[compound_name] = formula
                 else:
                     formula = retrieved[compound_name]
@@ -445,7 +445,7 @@ def get_reaction_df(transcript_mapping, protein_mapping, compound_mapping,
     reaction_names = merge_two_dicts(r_name_1, r_name_2)
     protein_to_gene = get_protein_to_gene(transcript_mapping)
 
-    reaction_ids = set(r_members_1.keys() + r_members_2.keys())
+    reaction_ids = set(list(r_members_1.keys()) + list(r_members_2.keys()))
     reaction_entities = get_reaction_entities(list(reaction_ids), species)
     rows = []
     for reaction_id in reaction_ids:
