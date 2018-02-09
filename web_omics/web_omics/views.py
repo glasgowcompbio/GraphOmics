@@ -1,7 +1,7 @@
 from django.shortcuts import render
+from django.template.loader import render_to_string
 
-# Create your views here.
-from django.http import HttpResponse
 
-def index(request):
-    return HttpResponse("Hello, world.")
+def home(request):
+    context_dict = {}
+    return render(request,'webOmics/index.html',context_dict)

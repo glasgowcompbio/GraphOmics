@@ -38,6 +38,7 @@ class Common(Configuration):
         'debug_toolbar',
 
         'web_omics.users',
+        'linker'
     ]
 
     MIDDLEWARE = [
@@ -56,7 +57,7 @@ class Common(Configuration):
     TEMPLATES = [
         {
             'BACKEND': 'django.template.backends.django.DjangoTemplates',
-            'DIRS': [],
+            'DIRS': [os.path.join(BASE_DIR, 'templates')],
             'APP_DIRS': True,
             'OPTIONS': {
                 'context_processors': [
@@ -109,8 +110,13 @@ class Common(Configuration):
     # Static files (CSS, JavaScript, Images)
     # https://docs.djangoproject.com/en/2.0/howto/static-files/
     STATIC_URL = '/static/'
-    STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+    STATIC_PATH = os.path.join(BASE_DIR,'static')
+    STATIC_ROOT = os.path.join(BASE_DIR,'assets')
     STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+
+    STATICFILES_DIRS = (
+        STATIC_PATH,
+    )
 
     AUTH_USER_MODEL = 'users.User'
 
