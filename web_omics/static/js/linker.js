@@ -161,7 +161,8 @@ $(document).ready(function() {
       "options": {
         "visible": true,
         "pk": "storagePK"
-      }
+        },
+        "relationship": {"with": "storagePathway", "using": "storagePK"}    
     },
     {
       "tableName": "storagePathway",
