@@ -1,0 +1,97 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}WebOmics{% endblock %}
+
+{% block head_block %}
+    <link rel="stylesheet"  href="https://cdn.datatables.net/1.10.13/css/jquery.dataTables.min.css" />
+    <link ref="stylesheet" href="https://cdn.datatables.net/select/1.2.1/css/select.dataTables.min.css" />
+{% endblock %}
+
+{% block body_block %}
+
+    <div class="row">
+      <div class="col-md-12">
+        <h2>Data Integration Results</h2>
+        <p>
+            This page shows the results of data integration across the different
+            omics data provided using the Reactome database.
+            Clicking a record (table row) adds a constraint across the other tables.
+            Clicking a constraining record (highlighted in blue) removes that constraint.
+            Multiple constraints across table can be used.
+            Note that the constraints are across all the tables.
+        </p>
+        <p>
+            <input type="text" />
+            <input type="button" value="Search">
+        </p>
+        <hr>
+      </div>
+    </div>
+    <div class="row">
+      <div class="col-md-2">
+        <h5>Transcripts</h5>
+        <table id="transcripts_table" class="table hover compact pod-table">
+        </table>
+      </div>
+
+      <div class="col-md-2">
+        <h5>Proteins</h5>
+        <table id="proteins_table" class="table hover compact pod-table">
+      </table>
+      </div>
+
+      <div class="col-md-2">
+        <h5>Compounds</h5>
+        <table id="compounds_table" class="table hover compact pod-table">
+        </table>
+      </div>
+
+      <div class="col-md-2">
+        <h5>Reactions</h5>
+        <table id="reactions_table" class="table hover compact pod-table">
+        </table>
+      </div>
+
+      <div class="col-md-4">
+        <h5>Pathways</h5>
+        <table id="pathways_table" class="table hover compact pod-table">
+        </table>
+      </div>
+
+    </div>
+
+{% endblock %}
+
+{% block js_block %}
+
+    <script type='text/javascript' src="https://cdn.datatables.net/1.10.13/js/jquery.dataTables.min.js"></script>
+    <script type='text/javascript' src="https://cdn.datatables.net/select/1.2.1/js/dataTables.select.min.js"></script>
+    <script type='text/javascript' src='{% static "js/firdi.js" %}'></script>
+    <script type='text/javascript' src='{% static "js/alasql.js" %}'></script>
+    <script type='text/javascript'>
+        var transcripts = JSON.parse('{{ transcripts_json|safe }}');
+        var proteins = JSON.parse('{{ proteins_json|safe }}');
+        var transcript_proteins = JSON.parse('{{ transcript_proteins_json|safe }}');
+        var reactions = JSON.parse('{{ reactions_json|safe }}');
+        var protein_reactions = JSON.parse('{{ protein_reactions_json|safe }}');
+
+        var compounds = [
+          {"compound_pk": 1, "compound": "compound1"},
+          {"compound_pk": 2, "compound": "compound2"},
+          {"compound_pk": 3, "compound": "compound3"},
+          {"compound_pk": 4, "compound": "compound4"}
+        ];
+
+        var pathways = [
+          {"pathway_pk": 1, "pathway": "pathway1"},
+          {"pathway_pk": 2, "pathway": "pathway2"},
+          {"pathway_pk": 3, "pathway": "pathway3"},
+          {"pathway_pk": 4, "pathway": "pathway4"}
+        ];
+
+    </script>
+    <script type='text/javascript' src='{% static "js/linker.js" %}'></script>
+
+
+{% endblock %}
