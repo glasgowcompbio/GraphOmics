@@ -71,14 +71,21 @@ const FiRDI = (function() {
       this.constraintTableConstraintKeyNames = this.getConstraintTablesConstraintKeyName(tablesInfo);
 
       this.sqlQuery = this.makeSQLquery(tablesInfo);
-
       this.compiledSQLQuery = alasql.compile(this.sqlQuery);
       return this;
     },
     initialiseAlasqlTables: function(tablesInfo) {
       tablesInfo.forEach(function(t) {
         // Create table
-        alasql("CREATE TABLE " + t['tableName']);
+        let sql = "CREATE TABLE " + t['tableName'];
+        console.log(sql);
+        alasql(sql);
+        // Create index
+        if (t['options']['pk'] !== undefined) {
+            sql = "CREATE UNIQUE INDEX tmp ON " + t['tableName'] + "(" + t['options']['pk'] + ")";
+            console.log(sql);
+            alasql(sql);
+        }
         // Add data
         alasql.tables[t['tableName']].data = t['tableData'];
       });
@@ -171,6 +178,11 @@ const FiRDI = (function() {
     queryDatabase: function(constraints) {
       const constraintTableNames = this.constraintTableConstraintKeyNames.map(t => t['tableName']);
       const unpackedConstraints = constraintTableNames.map(n => constraints[n]);
+      console.log(this.sqlQuery);
+      console.log("unpackedConstraints.length = " + unpackedConstraints.length);
+      for (let c of unpackedConstraints) {
+          console.log(c);
+      }
       return this.compiledSQLQuery(unpackedConstraints);
     }
   };
@@ -363,6 +375,7 @@ const FiRDI = (function() {
     },
     updateTables: function() {
       if (this.stackManager.stack.length > 0) {
+        console.log('\n---------- updateTables() ----------\n');
         let dataForTables = this.constraintsManager.makeEmptyConstraint(this.tablesInfo);
         const queryResult = this.sqlManager.queryDatabase(this.constraintsManager.constraints);
         const focus = this.stackManager.peek();

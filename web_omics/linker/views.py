@@ -11,7 +11,7 @@ import collections
 
 from linker.reactome import ensembl_to_uniprot, uniprot_to_reaction
 
-RelationOut = collections.namedtuple('RelationOut', 'keys values json')
+Relation = collections.namedtuple('Relation', 'keys values mapping_list')
 
 
 class LinkerView(FormView):
@@ -31,17 +31,17 @@ class LinkerView(FormView):
         # maps transcript -> proteins using Reactome
         ensembl_ids = [x for x in iter(transcripts_str.splitlines())]
         transcript_mapping = ensembl_to_uniprot(ensembl_ids, species)
-        transcript_2_proteins = _relation_to_json(transcript_mapping,
-                                                  'transcript_pk',
-                                                  'protein_pk')
+        transcript_2_proteins = _make_relations(transcript_mapping,
+                                                'transcript_pk',
+                                                'protein_pk')
 
         # maps proteins -> reactions using Reactome
         protein_mapping = uniprot_to_reaction(transcript_2_proteins.values,
                                               species)
-        protein_2_reactions = _relation_to_json(protein_mapping,
-                                                 'protein_pk',
-                                                 'reaction_pk',
-                                                 value_key='reaction_id')
+        protein_2_reactions = _make_relations(protein_mapping,
+                                              'protein_pk',
+                                              'reaction_pk',
+                                              value_key='reaction_id')
 
         # generate json dumps for the individual tables
         transcripts_json = _pk_to_json("transcript_pk", "ensembl_id",
@@ -51,12 +51,27 @@ class LinkerView(FormView):
         reactions_json = _pk_to_json("reaction_pk", "reaction_id",
                                      protein_2_reactions.values)
 
+        # filter relations to improve performance ?
+        print("Before %d" % len(transcript_2_proteins.mapping_list))
+        transcript_2_proteins = filter_relations_in(
+            transcript_2_proteins,
+            'protein_pk',
+            set(protein_2_reactions.keys))
+        print("After %d" % len(transcript_2_proteins.mapping_list))
+
+        # dump relations to json
+        transcript_2_proteins_json = json.dumps(
+            transcript_2_proteins.mapping_list)
+        protein_2_reactions_json = json.dumps(
+            protein_2_reactions.mapping_list
+        )
+
         context = {
             "transcripts_json": transcripts_json,
             "proteins_json": proteins_json,
             "reactions_json": reactions_json,
-            "transcript_proteins_json": transcript_2_proteins.json,
-            "protein_reactions_json": protein_2_reactions.json
+            "transcript_proteins_json": transcript_2_proteins_json,
+            "protein_reactions_json": protein_2_reactions_json
         }
 
         return render(self.request, self.success_url, context)
@@ -64,14 +79,14 @@ class LinkerView(FormView):
 
 def _pk_to_json(pk_label, display_label, data):
     output = []
-    for item in data:
+    for item in sorted(data):
         row = {pk_label: item, display_label: item}
         output.append(row)
     output_json = json.dumps(output)
     return output_json
 
 
-def _relation_to_json(mapping_dict, pk_label_1, pk_label_2, value_key=None):
+def _make_relations(mapping_dict, pk_label_1, pk_label_2, value_key=None):
     id_values = []
     mapping_list = []
 
@@ -97,8 +112,19 @@ def _relation_to_json(mapping_dict, pk_label_1, pk_label_2, value_key=None):
             row = {pk_label_1: key, pk_label_2: actual_value}
             mapping_list.append(row)
 
-    unique_keys = set(mapping_dict.keys())
+    unique_keys = list(set(mapping_dict.keys()))
     unique_values = list(set(id_values))
-    mapping_json = json.dumps(mapping_list)
 
-    return RelationOut(keys=unique_keys, values=unique_values, json=mapping_json)
+    return Relation(keys=unique_keys, values=unique_values,
+                    mapping_list=mapping_list)
+
+
+def filter_relations_in(relation, pk_label, keep):
+
+    filtered_list = []
+    for row in relation.mapping_list:
+        if row[pk_label] in keep:
+            filtered_list.append(row)
+    filtered_relation = Relation(
+        keys=relation.keys, values=relation.values, mapping_list=filtered_list)
+    return filtered_relation
