@@ -43,14 +43,6 @@ class LinkerView(FormView):
                                               'reaction_pk',
                                               value_key='reaction_id')
 
-        # generate json dumps for the individual tables
-        transcripts_json = _pk_to_json("transcript_pk", "ensembl_id",
-                                       transcript_2_proteins.keys)
-        proteins_json = _pk_to_json("protein_pk", "uniprot_id",
-                                    transcript_2_proteins.values)
-        reactions_json = _pk_to_json("reaction_pk", "reaction_id",
-                                     protein_2_reactions.values)
-
         # filter relations to improve performance ?
         print("Before %d" % len(transcript_2_proteins.mapping_list))
         transcript_2_proteins = filter_relations_in(
@@ -58,6 +50,15 @@ class LinkerView(FormView):
             'protein_pk',
             set(protein_2_reactions.keys))
         print("After %d" % len(transcript_2_proteins.mapping_list))
+
+
+        # generate json dumps for the individual tables
+        transcripts_json = _pk_to_json("transcript_pk", "ensembl_id",
+                                       transcript_2_proteins.keys)
+        proteins_json = _pk_to_json("protein_pk", "uniprot_id",
+                                    transcript_2_proteins.values)
+        reactions_json = _pk_to_json("reaction_pk", "reaction_id",
+                                     protein_2_reactions.values)
 
         # dump relations to json
         transcript_2_proteins_json = json.dumps(
