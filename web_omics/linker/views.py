@@ -3,16 +3,25 @@ from django.shortcuts import render
 # Create your views here.
 from django.http import HttpResponse
 import json
+import re
 
 from django.views.generic.edit import FormView
 from linker.forms import LinkerForm
 
 import collections
 
-from linker.reactome import ensembl_to_uniprot, uniprot_to_reaction
+from linker.reactome import ensembl_to_uniprot, uniprot_to_reaction, get_ensembl_metadata, get_uniprot_metadata
 
 Relation = collections.namedtuple('Relation', 'keys values mapping_list')
 
+
+def clean_label(w):
+    results = []
+    for tok in w.split(' '):
+        if 'name' not in tok.lower():
+            filtered = re.sub(r'[^\w\s]','', tok)
+            results.append(filtered.strip())
+    return ' '.join(results)
 
 class LinkerView(FormView):
     template_name = 'linker/linker.html'
@@ -36,7 +45,7 @@ class LinkerView(FormView):
                                                 'protein_pk')
 
         # maps proteins -> reactions using Reactome
-        protein_mapping = uniprot_to_reaction(transcript_2_proteins.values,
+        protein_mapping, protein_descriptions = uniprot_to_reaction(transcript_2_proteins.values,
                                               species)
         protein_2_reactions = _make_relations(protein_mapping,
                                               'protein_pk',
@@ -44,21 +53,48 @@ class LinkerView(FormView):
                                               value_key='reaction_id')
 
         # filter relations to improve performance ?
-        print("Before %d" % len(transcript_2_proteins.mapping_list))
-        transcript_2_proteins = filter_relations_in(
-            transcript_2_proteins,
-            'protein_pk',
-            set(protein_2_reactions.keys))
-        print("After %d" % len(transcript_2_proteins.mapping_list))
+        # print("Before %d" % len(transcript_2_proteins.mapping_list))
+        # transcript_2_proteins = filter_relations_in(
+        #     transcript_2_proteins,
+        #     'protein_pk',
+        #     set(protein_2_reactions.keys))
+        # print("After %d" % len(transcript_2_proteins.mapping_list))
 
 
         # generate json dumps for the individual tables
-        transcripts_json = _pk_to_json("transcript_pk", "ensembl_id",
-                                       transcript_2_proteins.keys)
+        ensembl_ids = transcript_2_proteins.keys
+        # metadata_map = get_ensembl_metadata(ensembl_ids)
+        metadata_map = None
+
+        transcripts_json = _pk_to_json("transcript_pk", "label",
+                                       ensembl_ids,
+                                       metadata_map)
+
+        uniprot_ids = transcript_2_proteins.values
+        # metadata_map = get_uniprot_metadata(uniprot_ids)
+        metadata_map = None
+
+        # get from reactome -- messy!!
+        # metadata_map = {}
+        # for protein_id in protein_descriptions:
+        #     metadata_map[protein_id] = {'display_name': protein_id}
+        #     if protein_id in protein_descriptions and protein_descriptions[protein_id] is not None:
+        #         desc = protein_descriptions[protein_id]
+        #         tokens = desc.split(':')
+        #         for i in range(len(tokens)):
+        #             w = tokens[i]
+        #             if w.startswith('recommendedName'):
+        #                 next_w = clean_label(tokens[i+1])
+        #                 metadata_map[protein_id] = {'display_name': next_w}
+        #                 print(protein_id, '--', next_w)
+
         proteins_json = _pk_to_json("protein_pk", "uniprot_id",
-                                    transcript_2_proteins.values)
+                                    uniprot_ids,
+                                    metadata_map)
+
         reactions_json = _pk_to_json("reaction_pk", "reaction_id",
-                                     protein_2_reactions.values)
+                                     protein_2_reactions.values,
+                                     None)
 
         # dump relations to json
         transcript_2_proteins_json = json.dumps(
@@ -78,10 +114,14 @@ class LinkerView(FormView):
         return render(self.request, self.success_url, context)
 
 
-def _pk_to_json(pk_label, display_label, data):
+def _pk_to_json(pk_label, display_label, data, metadata_map):
     output = []
     for item in sorted(data):
-        row = {pk_label: item, display_label: item}
+        if metadata_map is not None and item in metadata_map and metadata_map[item] is not None:
+            label = metadata_map[item]['display_name']
+        else:
+            label = item
+        row = {pk_label: item, display_label: label}
         output.append(row)
     output_json = json.dumps(output)
     return output_json

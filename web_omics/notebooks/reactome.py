@@ -6,7 +6,7 @@ from ipywidgets import FloatProgress
 import xmltodict
 import pandas as pd
 from bioservices.kegg import KEGG
-
+from bioservices import Ensembl
 
 ################################################################################
 ### Gene-related functions                                                   ###
@@ -63,6 +63,27 @@ def ensembl_to_uniprot(ensembl_ids, species, show_progress_bar=False):
         session.close()
 
     return dict(results)
+
+
+def get_ensembl_metadata(ensembl_ids):
+
+    ens = Ensembl()
+    def batch(iterable, n=1):
+        l = len(iterable)
+        for ndx in range(0, l, n):
+            yield iterable[ndx:min(ndx + n, l)]
+
+    # seems like if we try to post > 1000 ids each time, it will be rejected
+    BATCH_SIZE = 1000
+    ensembl_lookup = {}
+    for x in batch(ensembl_ids, BATCH_SIZE):
+        batch_ids = [i for i in x]
+        print(len(batch_ids))
+        lookup = ens.post_lookup_by_id(identifiers=batch_ids)
+        ensembl_lookup.update(lookup)
+
+    return ensembl_lookup
+    
 
 ################################################################################
 ### Protein-related functions                                                ###

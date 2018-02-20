@@ -35,7 +35,7 @@ class Common(Configuration):
         'django.contrib.staticfiles',
 
         'django_extensions',
-        'debug_toolbar',
+        # 'debug_toolbar',
 
         'web_omics.users',
         'linker'
@@ -134,7 +134,7 @@ class Development(Common):
     ]
 
     MIDDLEWARE = Common.MIDDLEWARE + [
-        'debug_toolbar.middleware.DebugToolbarMiddleware'
+        # 'debug_toolbar.middleware.DebugToolbarMiddleware'
     ]
 
 
