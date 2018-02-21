@@ -10,7 +10,9 @@ from linker.forms import LinkerForm
 
 import collections
 
-from linker.reactome import ensembl_to_uniprot, uniprot_to_reaction, get_ensembl_metadata, get_uniprot_metadata
+from linker.reactome import ensembl_to_uniprot, uniprot_to_reaction
+from linker.reactome import get_ensembl_metadata, get_uniprot_metadata
+from linker.reactome import compound_to_reaction, reaction_to_metabolite_pathway
 
 Relation = collections.namedtuple('Relation', 'keys values mapping_list')
 
@@ -19,9 +21,10 @@ def clean_label(w):
     results = []
     for tok in w.split(' '):
         if 'name' not in tok.lower():
-            filtered = re.sub(r'[^\w\s]','', tok)
+            filtered = re.sub(r'[^\w\s]', '', tok)
             results.append(filtered.strip())
     return ' '.join(results)
+
 
 class LinkerView(FormView):
     template_name = 'linker/linker.html'
@@ -45,28 +48,46 @@ class LinkerView(FormView):
                                                 'protein_pk')
 
         # maps proteins -> reactions using Reactome
-        protein_mapping, protein_descriptions = uniprot_to_reaction(transcript_2_proteins.values,
-                                              species)
+        protein_ids = transcript_2_proteins.values
+        protein_mapping = uniprot_to_reaction(protein_ids,
+                                                                    species)
         protein_2_reactions = _make_relations(protein_mapping,
                                               'protein_pk',
                                               'reaction_pk',
                                               value_key='reaction_id')
 
+        # maps compounds -> reactions using Reactome
+        compound_ids = [x for x in iter(compounds_str.splitlines())]
+        compound_mapping = compound_to_reaction(compound_ids, species)
+        compound_2_reactions = _make_relations(compound_mapping,
+                                               'compound_pk',
+                                               'reaction_pk',
+                                               value_key='reaction_id')
+
+        # maps reactions -> pathways using Reactome
+        # reaction_ids = protein_2_reactions.values + compound_2_reactions.values
+        reaction_ids = protein_2_reactions.values
+        reaction_mapping, name_lookup = reaction_to_metabolite_pathway(reaction_ids, species,
+                                                          leaf=True)
+        reaction_2_pathways = _make_relations(reaction_mapping,
+                                              'reaction_pk',
+                                              'pathway_pk',
+                                              value_key='pathway_id')
+
         # filter relations to improve performance ?
-        # print("Before %d" % len(transcript_2_proteins.mapping_list))
+        # print('Before %d' % len(transcript_2_proteins.mapping_list))
         # transcript_2_proteins = filter_relations_in(
         #     transcript_2_proteins,
         #     'protein_pk',
         #     set(protein_2_reactions.keys))
-        # print("After %d" % len(transcript_2_proteins.mapping_list))
-
+        # print('After %d' % len(transcript_2_proteins.mapping_list))
 
         # generate json dumps for the individual tables
         ensembl_ids = transcript_2_proteins.keys
         # metadata_map = get_ensembl_metadata(ensembl_ids)
         metadata_map = None
 
-        transcripts_json = _pk_to_json("transcript_pk", "label",
+        transcripts_json = _pk_to_json('transcript_pk', 'label',
                                        ensembl_ids,
                                        metadata_map)
 
@@ -88,27 +109,55 @@ class LinkerView(FormView):
         #                 metadata_map[protein_id] = {'display_name': next_w}
         #                 print(protein_id, '--', next_w)
 
-        proteins_json = _pk_to_json("protein_pk", "uniprot_id",
+        proteins_json = _pk_to_json('protein_pk', 'uniprot_id',
                                     uniprot_ids,
                                     metadata_map)
 
-        reactions_json = _pk_to_json("reaction_pk", "reaction_id",
-                                     protein_2_reactions.values,
+        compounds_json = _pk_to_json('compound_pk', 'kegg_id',
+                                     compound_ids,
                                      None)
+
+        metadata_map = {}
+        for name in name_lookup:
+            tok = name_lookup[name]
+            filtered = re.sub(r'[^\w\s]', '', tok)
+            metadata_map[name] = {'display_name': filtered}
+
+        reactions_json = _pk_to_json('reaction_pk', 'reaction_id',
+                                     reaction_ids,
+                                     metadata_map)
+
+        pathway_ids = reaction_2_pathways.values
+        pathways_json = _pk_to_json('pathway_pk', 'pathway_id',
+                                   pathway_ids,
+                                   metadata_map)
 
         # dump relations to json
         transcript_2_proteins_json = json.dumps(
             transcript_2_proteins.mapping_list)
+
         protein_2_reactions_json = json.dumps(
             protein_2_reactions.mapping_list
         )
 
+        compound_2_reactions_json = json.dumps(
+            compound_2_reactions.mapping_list
+        )
+
+        reaction_2_pathways_json = json.dumps(
+            reaction_2_pathways.mapping_list
+        )
+
         context = {
-            "transcripts_json": transcripts_json,
-            "proteins_json": proteins_json,
-            "reactions_json": reactions_json,
-            "transcript_proteins_json": transcript_2_proteins_json,
-            "protein_reactions_json": protein_2_reactions_json
+            'transcripts_json': transcripts_json,
+            'proteins_json': proteins_json,
+            'compounds_json': compounds_json,
+            'reactions_json': reactions_json,
+            'pathways_json': pathways_json,
+            'transcript_proteins_json': transcript_2_proteins_json,
+            'protein_reactions_json': protein_2_reactions_json,
+            'compound_reactions_json': compound_2_reactions_json,
+            'reaction_pathways_json': reaction_2_pathways_json
         }
 
         return render(self.request, self.success_url, context)
@@ -147,7 +196,7 @@ def _make_relations(mapping_dict, pk_label_1, pk_label_2, value_key=None):
             if is_string:  # value_list is a list of string
                 actual_value = value
             else:  # value_list is a list of dicts
-                assert value_key is not None, "value_key is missing"
+                assert value_key is not None, 'value_key is missing'
                 actual_value = value[value_key]
             id_values.append(actual_value)
             row = {pk_label_1: key, pk_label_2: actual_value}

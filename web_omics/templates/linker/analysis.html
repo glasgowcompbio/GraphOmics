@@ -75,21 +75,10 @@
         var transcript_proteins = JSON.parse('{{ transcript_proteins_json|safe }}');
         var reactions = JSON.parse('{{ reactions_json|safe }}');
         var protein_reactions = JSON.parse('{{ protein_reactions_json|safe }}');
-
-        var compounds = [
-          {"compound_pk": 1, "compound": "compound1"},
-          {"compound_pk": 2, "compound": "compound2"},
-          {"compound_pk": 3, "compound": "compound3"},
-          {"compound_pk": 4, "compound": "compound4"}
-        ];
-
-        var pathways = [
-          {"pathway_pk": 1, "pathway": "pathway1"},
-          {"pathway_pk": 2, "pathway": "pathway2"},
-          {"pathway_pk": 3, "pathway": "pathway3"},
-          {"pathway_pk": 4, "pathway": "pathway4"}
-        ];
-
+        var compounds = JSON.parse('{{ compounds_json|safe }}');
+        var compound_reactions = JSON.parse('{{ compound_reactions_json|safe }}');
+        var pathways = JSON.parse('{{ pathways_json|safe }}');
+        var reaction_pathways = JSON.parse('{{ reaction_pathways_json|safe }}');
     </script>
     <script type='text/javascript' src='{% static "js/linker.js" %}'></script>
 

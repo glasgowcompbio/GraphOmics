@@ -136,7 +136,6 @@ def uniprot_to_reaction(uniprot_ids, species, show_progress_bar=False):
             display(f)
 
         results = defaultdict(list)
-        descriptions = {}
         i = 0
         for record in query_res:
             protein_id = record['protein_id']
@@ -145,8 +144,6 @@ def uniprot_to_reaction(uniprot_ids, species, show_progress_bar=False):
                 'reaction_name': record['reaction_name']
             }
             results[protein_id].append(item)
-            if record['description'] is not None:
-                descriptions[protein_id] = record['description'][0]
 
             if show_progress_bar:
                 f.value += 1
@@ -156,7 +153,7 @@ def uniprot_to_reaction(uniprot_ids, species, show_progress_bar=False):
     finally:
         session.close()
 
-    return dict(results), descriptions
+    return dict(results)
 
 
 def get_uniprot_metadata(uniprot_ids):
@@ -184,9 +181,6 @@ def get_uniprot_metadata(uniprot_ids):
                         tag = x.find('fullname')
                     label = tag.contents[0]
                     uniprot_lookup[protein_id] = {'display_name': label}
-
-        # prevent timeout
-        time.sleep(2)
 
     return protein_metadata
 
@@ -310,6 +304,7 @@ def reaction_to_metabolite_pathway(reaction_ids, species,
                                    show_progress_bar=False,
                                    leaf=True):
 
+    name_lookup = {}
     results = defaultdict(list)
     try:
 
@@ -329,6 +324,7 @@ def reaction_to_metabolite_pathway(reaction_ids, species,
                 (p)-[:hasEvent]->(rle)
             RETURN
                 rle.stId AS reaction_id,
+        	    rle.displayName AS reaction_name,
                 p.stId AS pathway_id,
                 p.displayName AS pathway_name
             """
@@ -344,6 +340,7 @@ def reaction_to_metabolite_pathway(reaction_ids, species,
             	rle.stId IN {reaction_ids}
             RETURN
                 rle.stId AS reaction_id,
+        	    rle.displayName AS reaction_name,
                 p.stId AS pathway_id,
                 p.displayName AS pathway_name
             """
@@ -360,11 +357,16 @@ def reaction_to_metabolite_pathway(reaction_ids, species,
         i = 0
         for record in query_res:
             reaction_id = record['reaction_id']
+            reaction_name = record['reaction_name']
+            pathway_id = record['pathway_id']
+            pathway_name = record['pathway_name']
             item = {
-                'pathway_id': record['pathway_id'],
-                'pathway_name': record['pathway_name']
+                'pathway_id': reaction_id,
+                'pathway_name': reaction_name
             }
             results[reaction_id].append(item)
+            name_lookup[reaction_id] = reaction_name
+            name_lookup[pathway_id] = pathway_name
             if show_progress_bar:
                 f.value += 1
         if show_progress_bar:
@@ -373,7 +375,7 @@ def reaction_to_metabolite_pathway(reaction_ids, species,
     finally:
         session.close()
 
-    return dict(results)
+    return dict(results), name_lookup
 
 ################################################################################
 ### Pathway-related functions                                                ###
