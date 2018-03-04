@@ -2,9 +2,9 @@ $(document).ready(function() {
 
   const defaultDataTablesSettings = {
     "dom": "rtp",
-    "pageLength": 100,
-    "scrollY": "400px",
-    "scrollCollapse": true,
+    "pageLength": 20,
+    // "scrollY": "400px",
+    // "scrollCollapse": true,
   };
 
   const tables = [ // the ordering in this list is important! do not change it.
@@ -73,7 +73,7 @@ $(document).ready(function() {
         "visible": true,
         "pk": "reaction_pk"
       },
-      "relationship": {"with": "reaction_pathways", "using": "reaction_pk"}    
+      "relationship": {"with": "reaction_pathways", "using": "reaction_pk"}
     },
 
     {

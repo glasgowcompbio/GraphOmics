@@ -333,6 +333,7 @@ const FiRDI = (function() {
         "paging": true // used with deferRender for speed. Paginiation is used explicitly in code elsewhere: it must be left on!
       };
 
+
       // set defaults across all tables
       this.defaultDataTablesSettings = Object.assign(minDataTablesSettings, defaultDataTablesSettings || {});
       $.extend(true, $.fn.dataTable.defaults, this.defaultDataTablesSettings);
@@ -343,9 +344,11 @@ const FiRDI = (function() {
       this.stackManager = stackManager.init();
 
       this.tableFieldNames = this.getFieldNames();
+
       this.dataTablesIds = tablesInfo.filter(isTableVisible).reduce((apis, t) => {apis[t['tableName']] = "#" + t['tableName']; return apis}, {});
 
       this.initTableClicks();
+      this.resetTables(); // this will remove entries that cannot be joined across ALL the tables
 
       return this;
     },
@@ -398,6 +401,7 @@ const FiRDI = (function() {
     },
     updateTables: function() {
       if (this.stackManager.stack.length > 0) {
+        // debugger;
         console.log('\n---------- updateTables() ----------\n');
         let dataForTables = this.constraintsManager.makeEmptyConstraint(this.tablesInfo);
         const queryResult = this.sqlManager.queryDatabase(this.tablesInfo, this.constraintsManager.constraints);
@@ -412,6 +416,7 @@ const FiRDI = (function() {
       }
     },
     addSelectionStyle: function(tableName) {
+        console.log(tableName);
       const tableAPI = $(this.dataTablesIds[tableName]).DataTable(),
         idNum = this.constraintsManager.constraints[tableName];
 
@@ -449,7 +454,10 @@ const FiRDI = (function() {
       tableAPI.rows.add(dataForTables[tableName]);
 
       tableAPI.draw();
-      const newRowIndex = tableAPI.row('#' + rowID).index();
+      let newRowIndex = tableAPI.row('#' + rowID).index();
+      if (newRowIndex === undefined) {
+          newRowIndex = 0;
+      }
       const thePage = Math.floor(newRowIndex / tableAPI.page.info()['length']);
       tableAPI.page(thePage).draw('page');
     },
@@ -460,6 +468,7 @@ const FiRDI = (function() {
     },
     trClickHandler: function(e, dt, type, cell, originalEvent) {
       // Calls the appropriate constraint function depending on the state of the bound table
+      // debugger;
       e.preventDefault();
       const tableName = e.currentTarget.id;
       const tableAPI = $(this.dataTablesIds[tableName]).DataTable()
