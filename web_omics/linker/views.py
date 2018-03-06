@@ -15,7 +15,8 @@ from linker.reactome import get_ensembl_metadata, get_uniprot_metadata
 from linker.reactome import compound_to_reaction, reaction_to_metabolite_pathway
 
 Relation = collections.namedtuple('Relation', 'keys values mapping_list')
-
+DUMMY_KEY = 'DUMMY'
+DUMMY_VALUE = "---"
 
 def clean_label(w):
     results = []
@@ -44,14 +45,16 @@ class LinkerView(FormView):
         ensembl_ids = [x for x in iter(transcripts_str.splitlines())]
         transcript_mapping = ensembl_to_uniprot(ensembl_ids, species)
         transcript_2_proteins = _make_relations(transcript_mapping,
+                                                ensembl_ids,
                                                 'transcript_pk',
                                                 'protein_pk')
 
         # maps proteins -> reactions using Reactome
         protein_ids = transcript_2_proteins.values
         protein_mapping = uniprot_to_reaction(protein_ids,
-                                                                    species)
+                                              species)
         protein_2_reactions = _make_relations(protein_mapping,
+                                              protein_ids,
                                               'protein_pk',
                                               'reaction_pk',
                                               value_key='reaction_id')
@@ -60,6 +63,7 @@ class LinkerView(FormView):
         compound_ids = [x for x in iter(compounds_str.splitlines())]
         compound_mapping = compound_to_reaction(compound_ids, species)
         compound_2_reactions = _make_relations(compound_mapping,
+                                               compound_ids,
                                                'compound_pk',
                                                'reaction_pk',
                                                value_key='reaction_id')
@@ -68,8 +72,9 @@ class LinkerView(FormView):
         # reaction_ids = protein_2_reactions.values + compound_2_reactions.values
         reaction_ids = protein_2_reactions.values
         reaction_mapping, name_lookup = reaction_to_metabolite_pathway(reaction_ids, species,
-                                                          leaf=True)
+                                                                       leaf=True)
         reaction_2_pathways = _make_relations(reaction_mapping,
+                                              reaction_ids,
                                               'reaction_pk',
                                               'pathway_pk',
                                               value_key='pathway_id')
@@ -129,8 +134,8 @@ class LinkerView(FormView):
 
         pathway_ids = reaction_2_pathways.values
         pathways_json = _pk_to_json('pathway_pk', 'pathway_id',
-                                   pathway_ids,
-                                   metadata_map)
+                                    pathway_ids,
+                                    metadata_map)
 
         # dump relations to json
         transcript_2_proteins_json = json.dumps(
@@ -172,11 +177,12 @@ def _pk_to_json(pk_label, display_label, data, metadata_map):
             label = item
         row = {pk_label: item, display_label: label}
         output.append(row)
+    output.append({pk_label: DUMMY_KEY, display_label: DUMMY_VALUE}) # add dummy entry
     output_json = json.dumps(output)
     return output_json
 
 
-def _make_relations(mapping_dict, pk_label_1, pk_label_2, value_key=None):
+def _make_relations(mapping_dict, all_keys, pk_label_1, pk_label_2, value_key=None):
     id_values = []
     mapping_list = []
 
@@ -202,10 +208,16 @@ def _make_relations(mapping_dict, pk_label_1, pk_label_2, value_key=None):
             row = {pk_label_1: key, pk_label_2: actual_value}
             mapping_list.append(row)
 
-    unique_keys = list(set(mapping_dict.keys()))
-    unique_values = list(set(id_values))
+    unique_keys = set(mapping_dict.keys())
+    unique_values = set(id_values)
 
-    return Relation(keys=unique_keys, values=unique_values,
+    # insert dummy entries
+    for key in all_keys:
+        if key not in unique_keys:
+            row = {pk_label_1: key, pk_label_2: DUMMY_KEY}
+            mapping_list.append(row)
+
+    return Relation(keys=list(unique_keys), values=list(unique_values),
                     mapping_list=mapping_list)
 
 
