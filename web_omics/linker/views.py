@@ -15,7 +15,7 @@ from linker.reactome import get_ensembl_metadata, get_uniprot_metadata
 from linker.reactome import compound_to_reaction, reaction_to_metabolite_pathway
 
 Relation = collections.namedtuple('Relation', 'keys values mapping_list')
-DUMMY_KEY = 'DUMMY'
+DUMMY_KEY = '0'
 DUMMY_VALUE = "---"
 
 def clean_label(w):
@@ -216,6 +216,8 @@ def _make_relations(mapping_dict, all_keys, pk_label_1, pk_label_2, value_key=No
         if key not in unique_keys:
             row = {pk_label_1: key, pk_label_2: DUMMY_KEY}
             mapping_list.append(row)
+    row = {pk_label_1: DUMMY_KEY, pk_label_2: DUMMY_KEY}
+    mapping_list.append(row)
 
     return Relation(keys=list(unique_keys), values=list(unique_values),
                     mapping_list=mapping_list)

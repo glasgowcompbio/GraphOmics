@@ -348,7 +348,6 @@ const FiRDI = (function() {
       this.dataTablesIds = tablesInfo.filter(isTableVisible).reduce((apis, t) => {apis[t['tableName']] = "#" + t['tableName']; return apis}, {});
 
       this.initTableClicks();
-      this.resetTables(); // this will remove entries that cannot be joined across ALL the tables
 
       return this;
     },
@@ -455,9 +454,6 @@ const FiRDI = (function() {
 
       tableAPI.draw();
       let newRowIndex = tableAPI.row('#' + rowID).index();
-      if (newRowIndex === undefined) {
-          newRowIndex = 0;
-      }
       const thePage = Math.floor(newRowIndex / tableAPI.page.info()['length']);
       tableAPI.page(thePage).draw('page');
     },
