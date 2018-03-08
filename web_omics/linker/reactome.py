@@ -17,6 +17,7 @@ from bioservices import UniProt
 
 def ensembl_to_uniprot(ensembl_ids, species, show_progress_bar=False):
 
+    id_to_names = {}
     results = defaultdict(list)
     try:
 
@@ -64,13 +65,14 @@ def ensembl_to_uniprot(ensembl_ids, species, show_progress_bar=False):
     finally:
         session.close()
 
-    return dict(results)
+    return dict(results), id_to_names
 
 
 def batch(iterable, n=1):
     l = len(iterable)
     for ndx in range(0, l, n):
         yield iterable[ndx:min(ndx + n, l)]
+
 
 def get_ensembl_metadata(ensembl_ids):
 
@@ -98,6 +100,7 @@ def get_ensembl_metadata(ensembl_ids):
 
 def uniprot_to_reaction(uniprot_ids, species, show_progress_bar=False):
 
+    id_to_names = {}
     results = defaultdict(list)
     try:
 
@@ -153,7 +156,7 @@ def uniprot_to_reaction(uniprot_ids, species, show_progress_bar=False):
     finally:
         session.close()
 
-    return dict(results)
+    return dict(results), id_to_names
 
 
 def get_uniprot_metadata(uniprot_ids):
@@ -192,6 +195,7 @@ def get_uniprot_metadata(uniprot_ids):
 
 def compound_to_reaction(compound_ids, species, show_progress_bar=False):
 
+    id_to_names = {}
     results = defaultdict(list)
     try:
 
@@ -241,7 +245,7 @@ def compound_to_reaction(compound_ids, species, show_progress_bar=False):
     finally:
         session.close()
 
-    return dict(results)
+    return dict(results), id_to_names
 
 
 def produce_kegg_dict(kegg_location, param):
@@ -304,7 +308,7 @@ def reaction_to_metabolite_pathway(reaction_ids, species,
                                    show_progress_bar=False,
                                    leaf=True):
 
-    name_lookup = {}
+    id_to_names = {}
     results = defaultdict(list)
     try:
 
@@ -365,8 +369,8 @@ def reaction_to_metabolite_pathway(reaction_ids, species,
                 'pathway_name': reaction_name
             }
             results[reaction_id].append(item)
-            name_lookup[reaction_id] = reaction_name
-            name_lookup[pathway_id] = pathway_name
+            id_to_names[reaction_id] = reaction_name
+            id_to_names[pathway_id] = pathway_name
             if show_progress_bar:
                 f.value += 1
         if show_progress_bar:
@@ -375,7 +379,7 @@ def reaction_to_metabolite_pathway(reaction_ids, species,
     finally:
         session.close()
 
-    return dict(results), name_lookup
+    return dict(results), id_to_names
 
 ################################################################################
 ### Pathway-related functions                                                ###
@@ -443,7 +447,8 @@ def get_all_pathways_formulae(species):
             if formula is None:
                 if compound_name not in retrieved:
                     formula = retrieve_kegg_formula(compound_name)
-                    print('Missing formula for %s, retrieved %s from kegg' % (compound_name, formula))
+                    print('Missing formula for %s, retrieved %s from kegg' %
+                          (compound_name, formula))
                     retrieved[compound_name] = formula
                 else:
                     formula = retrieved[compound_name]
