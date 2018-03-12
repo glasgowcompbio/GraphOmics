@@ -111,13 +111,27 @@ const FiRDI = (function() {
         .join(", ");
     },
     assembleInnerJoinStatementFromRelationship: function(relationship) {
-      let innerJoinStatement;
-      if (relationship['with']) {
-        innerJoinStatement = "INNER JOIN " + relationship['with'] + " ON " + relationship['tableName'] + "." + relationship['using'] + " = " + relationship['with'] + "." + relationship['using'];
-      } else {
-        innerJoinStatement = "";
+      // debugger;
+      function parseRelationship(r) {
+          if (r['with']) {
+              return "INNER JOIN " + r['with'] + " ON " + r['tableName'] + "." + r['using'] + " = " + r['with'] + "." + r['using'] + " ";
+          } else {
+              return "";
+          }
       }
 
+      let rs = undefined;
+      if (relationship.constructor == Array) {
+          rs = relationship; // an array of multiple relationships
+      } else {
+          rs = [relationship] // create an array of just one relationship
+      }
+
+      // process each relationship to make the final statement
+      let innerJoinStatement = "";
+      rs.forEach(function (r, i) {
+          innerJoinStatement += parseRelationship(r);
+      });
       return innerJoinStatement;
     },
     makeSelectClause: function(tablesInfo) {
@@ -136,8 +150,19 @@ const FiRDI = (function() {
       return tablesInfo[0]['tableName'];
     },
     getRelationship: function(tableInfo) {
+      // debugger;
+      function parseRelationship(r) {
+          let parsed = {'tableName': tableInfo['tableName'], 'with': r['with'], 'using': r['using']};
+          return parsed;
+      }
       if (tableInfo['relationship']) {
-        return {'tableName': tableInfo['tableName'], 'with': tableInfo['relationship']['with'], 'using': tableInfo['relationship']['using']};
+          if (tableInfo['relationship'].constructor == Array) {
+              // relationship is a list of dicts
+              return tableInfo['relationship'].map(r => parseRelationship(r));
+          } else {
+              // relationship is a single dict
+              return {'tableName': tableInfo['tableName'], 'with': tableInfo['relationship']['with'], 'using': tableInfo['relationship']['using']}
+          }
       } else {
         return {'tableName': tableInfo['tableName']};
       };
@@ -202,6 +227,7 @@ const FiRDI = (function() {
           console.log('%d. skip %s (%s)', i, sc, uc);
       });
 
+      // debugger;
       const sqlQuery = this.makeSQLquery(tablesInfo, skipConstraints);
       console.log(sqlQuery);
       const compiledSQLQuery = alasql.compile(sqlQuery);

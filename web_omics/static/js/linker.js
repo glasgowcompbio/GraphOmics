@@ -47,25 +47,6 @@ $(document).ready(function() {
       "relationship": {"with": "reactions_table", "using": "reaction_pk"}
     },
 
-    // {
-    //   "tableName": "compounds_table",
-    //   "tableData": compounds,
-    //   "options": {
-    //     "visible": true,
-    //     "pk": "compound_pk"
-    //   },
-    //   "relationship": {"with": "compound_reactions", "using": "compound_pk"}
-    // },
-
-    // {
-    //   "tableName": "compound_reactions",
-    //   "tableData": compound_reactions,
-    //   "options": {
-    //     "visible": false
-    //   },
-    //   "relationship": {"with": "reactions_table", "using": "reaction_pk"}
-    // },
-
     {
       "tableName": "reactions_table",
       "tableData": reactions,
@@ -73,7 +54,28 @@ $(document).ready(function() {
         "visible": true,
         "pk": "reaction_pk"
       },
-      "relationship": {"with": "reaction_pathways", "using": "reaction_pk"}
+      "relationship": [
+          {"with": "compound_reactions", "using": "reaction_pk"},
+          {"with": "reaction_pathways", "using": "reaction_pk"}
+      ]
+    },
+
+    {
+      "tableName": "compounds_table",
+      "tableData": compounds,
+      "options": {
+        "visible": true,
+        "pk": "compound_pk"
+      }
+    },
+
+    {
+      "tableName": "compound_reactions",
+      "tableData": compound_reactions,
+      "options": {
+        "visible": false
+      },
+      "relationship": {"with": "compounds_table", "using": "compound_pk"}
     },
 
     {
@@ -102,7 +104,7 @@ $(document).ready(function() {
   const columnsToHidePerTable = [
     {"tableName": "transcripts_table", "columnNames": ["transcript_pk"]},
     {"tableName": "proteins_table", "columnNames": ["protein_pk"]},
-    // {"tableName": "compounds_table", "columnNames": ["compound_pk"]},
+    {"tableName": "compounds_table", "columnNames": ["compound_pk"]},
     {"tableName": "reactions_table", "columnNames": ["reaction_pk"]},
     {"tableName": "pathways_table", "columnNames": ["pathway_pk"]}
   ];
