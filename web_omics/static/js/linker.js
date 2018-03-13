@@ -5,6 +5,7 @@ $(document).ready(function() {
     "pageLength": 20,
     // "scrollY": "400px",
     // "scrollCollapse": true,
+    "searching": true
   };
 
   const tables = [ // the ordering in this list is important! do not change it.
@@ -114,4 +115,11 @@ $(document).ready(function() {
       .columns(tableInfo['columnNames'].map(columnName => columnName + ":name")) // append ":name" to each columnName for the selector
       .visible(false);
   });
+
+  // enable global search box
+  $('#global_filter').on('keyup click', function () {
+      let val = $('#global_filter').val();
+      $.fn.dataTable.tables( { api: true } ).search(val).draw();
+  });
+
 });
