@@ -66,7 +66,7 @@ def get_uniprot_metadata_online(uniprot_ids):
     return protein_metadata
 
 
-def get_uniprot_metadata_reactome(uniprot_ids)
+def get_uniprot_metadata_reactome(uniprot_ids):
     protein_descriptions = {}  # TODO: get the description of each protein from reactome
     metadata_map = {}
     for protein_id in protein_descriptions:
@@ -87,6 +87,20 @@ def get_uniprot_metadata_reactome(uniprot_ids)
 ### Compound-related functions                                               ###
 ################################################################################
 
+def get_compound_metadata_online(kegg_ids):
+
+    s = KEGG()
+    metadata_map = {}
+    for i in range(len(kegg_ids)):
+        if i % 10 == 0:
+            print("Retrieving %d/%d KEGG records" % (i, len(kegg_ids)))
+        kegg_id = kegg_ids[i]
+        res = s.get(kegg_id)
+        d = s.parse(res)
+        first_name = d['NAME'][0]
+        first_name = first_name.replace(';', '') # strip last ';' character
+        metadata_map[kegg_id] = {'display_name': first_name}
+    return metadata_map
 
 ################################################################################
 ### Reaction-related functions                                               ###

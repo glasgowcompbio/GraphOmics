@@ -1,11 +1,16 @@
 $(document).ready(function() {
 
   const defaultDataTablesSettings = {
-    "dom": "rtp",
-    "pageLength": 20,
+    "dom": "prt",
+    "pageLength": 10,
     // "scrollY": "400px",
     // "scrollCollapse": true,
-    "searching": true
+    "searching": true,
+    // see https://datatables.net/plug-ins/dataRender/ellipsis
+    "columnDefs": [ {
+      targets: 1,
+      render: $.fn.dataTable.render.ellipsis(30, false)
+    } ]
   };
 
   const tables = [ // the ordering in this list is important! do not change it.
@@ -98,6 +103,9 @@ $(document).ready(function() {
     }
 
   ];
+
+  // https://stackoverflow.com/questions/24383805/datatables-change-number-of-pagination-buttons
+  // $.fn.DataTable.ext.pager.numbers_length = 3;
 
   FiRDI.init(tables, defaultDataTablesSettings);
 

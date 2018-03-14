@@ -11,7 +11,7 @@ from linker.forms import LinkerForm
 import collections
 
 from linker.reactome import ensembl_to_uniprot, uniprot_to_reaction
-from linker.reactome import get_ensembl_metadata, get_uniprot_metadata
+from linker.metadata import get_ensembl_metadata_online, get_uniprot_metadata_online, get_compound_metadata_online
 from linker.reactome import compound_to_reaction, reaction_to_metabolite_pathway
 
 Relation = collections.namedtuple('Relation', 'keys values mapping_list')
@@ -54,7 +54,7 @@ class LinkerView(FormView):
                                                         value_key='reaction_id')
 
         uniprot_ids = transcript_2_proteins.values
-        # metadata_map = get_uniprot_metadata(uniprot_ids)
+        # metadata_map = get_uniprot_metadata_online(uniprot_ids)
         proteins_json = _pk_to_json('protein_pk', 'uniprot_id', uniprot_ids)
 
         ### maps compounds -> reactions using Reactome ###
@@ -66,7 +66,8 @@ class LinkerView(FormView):
                                                          'reaction_pk',
                                                          value_key='reaction_id')
 
-        compounds_json = _pk_to_json('compound_pk', 'kegg_id', compound_ids)
+        metadata_map = get_compound_metadata_online(compound_ids)
+        compounds_json = _pk_to_json('compound_pk', 'kegg_id', compound_ids, metadata_map)
 
         ### maps reactions -> pathways using Reactome ###
 

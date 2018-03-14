@@ -7,8 +7,6 @@ from ipywidgets import FloatProgress
 import xmltodict
 import pandas as pd
 from bioservices.kegg import KEGG
-from bioservices import Ensembl
-from bioservices import UniProt
 
 ################################################################################
 ### Gene-related functions                                                   ###
@@ -66,31 +64,6 @@ def ensembl_to_uniprot(ensembl_ids, species, show_progress_bar=False):
         session.close()
 
     return dict(results), id_to_names
-
-
-def batch(iterable, n=1):
-    l = len(iterable)
-    for ndx in range(0, l, n):
-        yield iterable[ndx:min(ndx + n, l)]
-
-
-def get_ensembl_metadata(ensembl_ids):
-
-    ensembl_ids = list(set(ensembl_ids))
-    print('get_ensembl_metadata', len(ensembl_ids))
-
-    BATCH_SIZE = 1000
-    ens = Ensembl()
-    ensembl_lookup = {}
-    cumulative_total = 0
-    for x in batch(ensembl_ids, BATCH_SIZE):
-        batch_ids = [i for i in x]
-        cumulative_total += len(batch_ids)
-        print(cumulative_total, '/', len(ensembl_ids))
-        lookup = ens.post_lookup_by_id(identifiers=batch_ids)
-        ensembl_lookup.update(lookup)
-
-    return ensembl_lookup
 
 
 ################################################################################
@@ -157,35 +130,6 @@ def uniprot_to_reaction(uniprot_ids, species, show_progress_bar=False):
         session.close()
 
     return dict(results), id_to_names
-
-
-def get_uniprot_metadata(uniprot_ids):
-
-    uniprot_ids = list(set(uniprot_ids))
-    print('get_uniprot_metadata', len(uniprot_ids))
-
-    BATCH_SIZE = 200
-    uniprot = UniProt()
-    uniprot_lookup = {}
-
-    cumulative_total = 0
-    for x in batch(uniprot_ids, BATCH_SIZE):
-        batch_ids = [i for i in x]
-        cumulative_total += len(batch_ids)
-        print(cumulative_total, '/', len(uniprot_ids))
-
-        res = uniprot.retrieve(batch_ids)
-        for r in res:
-            for key in r['accession']:
-                protein_id = key.contents[0]
-                for x in r['recommendedname']:
-                    tag = x.find('shortname')
-                    if tag is None:
-                        tag = x.find('fullname')
-                    label = tag.contents[0]
-                    uniprot_lookup[protein_id] = {'display_name': label}
-
-    return protein_metadata
 
 
 ################################################################################

@@ -477,11 +477,16 @@ const FiRDI = (function() {
 
       tableAPI.clear();
       tableAPI.rows.add(dataForTables[tableName]);
-
       tableAPI.draw();
+
+      // go back to the previous page
       let newRowIndex = tableAPI.row('#' + rowID).index();
       const thePage = Math.floor(newRowIndex / tableAPI.page.info()['length']);
       tableAPI.page(thePage).draw('page');
+
+      // always go to the first page instead
+      // tableAPI.page(0).draw('page');
+
     },
     resetTables: function() {
       let dataForTables = this.constraintsManager.makeEmptyConstraint(this.tablesInfo);

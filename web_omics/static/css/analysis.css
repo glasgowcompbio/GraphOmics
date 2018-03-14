@@ -1,0 +1,50 @@
+.dataTables_wrapper {
+    position: relative;
+    clear: both;
+    *zoom: 1;
+    zoom: 1;
+    border: 1px dotted;
+    border-color: black;
+    padding: 5px;
+    font-size: 12px;
+}
+.dataTables_wrapper .dataTables_paginate {
+    float: right;
+    text-align: right;
+    padding-top: 0.25em;
+    height: 60px;
+}
+.dataTables_wrapper .dataTables_paginate .paginate_button {
+    box-sizing: border-box;
+    display: inline-block;
+    min-width: 1.5em;
+    padding: 1px;
+    margin-left: 2px;
+    text-align: center;
+    text-decoration: none !important;
+    cursor: pointer;
+    *cursor: hand;
+    color: #4b9ad5 !important;
+    border: 1px solid;
+    border-radius: 2px;
+    font-size: 12px;
+}
+.dataTables_wrapper .dataTables_paginate .paginate_button.current, .dataTables_wrapper .dataTables_paginate .paginate_button.current:hover {
+    color: #fff !important;
+    border: 1px solid #979797;
+    background-color: white;
+    background: #4b9ad5;
+    font-size: 12px;
+}
+.dataTables_wrapper .dataTables_paginate .paginate_button.disabled, .dataTables_wrapper .dataTables_paginate .paginate_button.disabled:hover, .dataTables_wrapper .dataTables_paginate .paginate_button.disabled:active {
+    cursor: default;
+    color: #4b9ad5 !important;
+    border: 1px solid;
+    background: transparent;
+    box-shadow: none;
+    font-size: 12px;
+}
+.padding-0{
+    padding-right: 1px;
+    padding-left: 1px;
+}

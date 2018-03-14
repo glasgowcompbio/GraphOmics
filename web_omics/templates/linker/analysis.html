@@ -4,60 +4,61 @@
 {% block title %}WebOmics{% endblock %}
 
 {% block head_block %}
-    <link rel="stylesheet"  href="https://cdn.datatables.net/1.10.13/css/jquery.dataTables.min.css">
-    <link ref="stylesheet" href="https://cdn.datatables.net/select/1.2.1/css/select.dataTables.min.css">
+    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/v/dt/dt-1.10.16/sc-1.4.4/sl-1.2.5/datatables.min.css"/>
+    <link rel="stylesheet" type="text/css" href='{% static "css/analysis.css" %}'/>
 {% endblock %}
 
 {% block body_block %}
 
     <div class="row">
       <div class="col-md-12">
-        <h2>Data Integration Results</h2>
+        <h5>Data Integration Results</h5>
         <p>
-            This page shows the results of data integration across the different
-            omics data provided using the Reactome database.
-            Clicking a record (table row) adds a constraint across the other tables.
-            Clicking a constraining record (highlighted in blue) removes that constraint.
-            Multiple constraints across table can be used.
-            Note that the constraints are across all the tables.
-        </p>
-        <p>
-            <input type="text" id="global_filter"/>
+            <input type="text" style="width: 600px;" id="global_filter"/>
             <input type="button" value="Search">
         </p>
         <hr>
       </div>
     </div>
     <div class="row">
-      <div class="col-md-2">
+      <div class="col-md-2 padding-0">
         <h6>Genes</h6>
         <table id="transcripts_table" class="table hover compact pod-table">
         </table>
       </div>
 
-      <div class="col-md-2">
+      <div class="col-md-2 padding-0">
         <h6>Proteins</h6>
         <table id="proteins_table" class="table hover compact pod-table">
       </table>
       </div>
 
-      <div class="col-md-2">
+      <div class="col-md-2 padding-0">
         <h6>Compounds</h6>
         <table id="compounds_table" class="table hover compact pod-table">
         </table>
       </div>
 
-      <div class="col-md-3">
+      <div class="col-md-3 padding-0">
         <h6>Reactions</h6>
         <table id="reactions_table" class="table hover compact pod-table">
         </table>
       </div>
 
-      <div class="col-md-3">
+      <div class="col-md-3 padding-0">
         <h6>Pathways</h6>
         <table id="pathways_table" class="table hover compact pod-table">
         </table>
       </div>
+
+      <!-- p>
+          This page shows the results of data integration across the different
+          omics data provided using the Reactome database.
+          Clicking a record (table row) adds a constraint across the other tables.
+          Clicking a constraining record (highlighted in blue) removes that constraint.
+          Multiple constraints across table can be used.
+          Note that the constraints are across all the tables.
+      </p -->
 
     </div>
 
@@ -65,8 +66,8 @@
 
 {% block js_block %}
 
-    <script src="https://cdn.datatables.net/1.10.13/js/jquery.dataTables.min.js"></script>
-    <script src="https://cdn.datatables.net/select/1.2.1/js/dataTables.select.min.js"></script>
+    <script type="text/javascript" src="https://cdn.datatables.net/v/dt/dt-1.10.16/sc-1.4.4/sl-1.2.5/datatables.min.js"></script>
+    <script type="text/javascript" src="https://cdn.datatables.net/plug-ins/1.10.16/dataRender/ellipsis.js"></script>
     <script type='text/javascript' src='{% static "js/firdi.js" %}'></script>
     <script type='text/javascript' src='{% static "js/alasql.js" %}'></script>
     <script type='text/javascript'>
