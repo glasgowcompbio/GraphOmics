@@ -42,7 +42,7 @@ class LinkerView(FormView):
 
         ensembl_ids = transcript_2_proteins.keys
         # metadata_map = get_ensembl_metadata(ensembl_ids)
-        transcripts_json = _pk_to_json('transcript_pk', 'label', ensembl_ids)
+        transcripts_json = _pk_to_json('transcript_pk', 'ensembl_id', ensembl_ids)
 
         ### maps proteins -> reactions using Reactome ###
 

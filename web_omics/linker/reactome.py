@@ -2,7 +2,6 @@ from collections import defaultdict
 import time
 
 from neo4j.v1 import GraphDatabase, basic_auth
-from ipywidgets import FloatProgress
 
 import xmltodict
 import pandas as pd
@@ -13,7 +12,7 @@ from bioservices.kegg import KEGG
 ################################################################################
 
 
-def ensembl_to_uniprot(ensembl_ids, species, show_progress_bar=False):
+def ensembl_to_uniprot(ensembl_ids, species):
 
     id_to_names = {}
     results = defaultdict(list)
@@ -42,20 +41,11 @@ def ensembl_to_uniprot(ensembl_ids, species, show_progress_bar=False):
         }
         query_res = session.run(query, params)
 
-        if show_progress_bar:
-            f = FloatProgress(min=0, max=len(ensembl_ids))
-            display(f)
-
         results = defaultdict(list)
-        i = 0
         for record in query_res:
             gene_id = record['gene_id']
             protein_id = record['protein_id']
             results[gene_id].append(protein_id)
-            if show_progress_bar:
-                f.value += 1
-        if show_progress_bar:
-            f.value = len(ensembl_ids) - 1
 
     except Exception as e:
         print(e)
@@ -71,7 +61,7 @@ def ensembl_to_uniprot(ensembl_ids, species, show_progress_bar=False):
 ################################################################################
 
 
-def uniprot_to_reaction(uniprot_ids, species, show_progress_bar=False):
+def uniprot_to_reaction(uniprot_ids, species):
 
     id_to_names = {}
     results = defaultdict(list)
@@ -107,12 +97,7 @@ def uniprot_to_reaction(uniprot_ids, species, show_progress_bar=False):
         }
         query_res = session.run(query, params)
 
-        if show_progress_bar:
-            f = FloatProgress(min=0, max=len(uniprot_ids))
-            display(f)
-
         results = defaultdict(list)
-        i = 0
         for record in query_res:
             protein_id = record['protein_id']
             item = {
@@ -120,11 +105,6 @@ def uniprot_to_reaction(uniprot_ids, species, show_progress_bar=False):
                 'reaction_name': record['reaction_name']
             }
             results[protein_id].append(item)
-
-            if show_progress_bar:
-                f.value += 1
-        if show_progress_bar:
-            f.value = len(uniprot_ids) - 1
 
     finally:
         session.close()
@@ -137,7 +117,7 @@ def uniprot_to_reaction(uniprot_ids, species, show_progress_bar=False):
 ################################################################################
 
 
-def compound_to_reaction(compound_ids, species, show_progress_bar=False):
+def compound_to_reaction(compound_ids, species):
 
     id_to_names = {}
     results = defaultdict(list)
@@ -168,11 +148,6 @@ def compound_to_reaction(compound_ids, species, show_progress_bar=False):
         }
         query_res = session.run(query, params)
 
-        if show_progress_bar:
-            f = FloatProgress(min=0, max=len(compound_ids))
-            display(f)
-
-        i = 0
         for record in query_res:
             key = record['compound_id'].split(':')  # e.g. 'COMPOUND:C00025'
             compound_id = key[1]
@@ -181,10 +156,6 @@ def compound_to_reaction(compound_ids, species, show_progress_bar=False):
                 'reaction_name': record['reaction_name']
             }
             results[compound_id].append(item)
-            if show_progress_bar:
-                f.value += 1
-        if show_progress_bar:
-            f.value = len(compound_ids) - 1
 
     finally:
         session.close()
@@ -249,7 +220,6 @@ def get_reaction_entities(reaction_ids, species):
 
 
 def reaction_to_metabolite_pathway(reaction_ids, species,
-                                   show_progress_bar=False,
                                    leaf=True):
 
     id_to_names = {}
@@ -298,27 +268,18 @@ def reaction_to_metabolite_pathway(reaction_ids, species,
         }
         query_res = session.run(query, params)
 
-        if show_progress_bar:
-            f = FloatProgress(min=0, max=len(reaction_ids))
-            display(f)
-
-        i = 0
         for record in query_res:
             reaction_id = record['reaction_id']
             reaction_name = record['reaction_name']
             pathway_id = record['pathway_id']
             pathway_name = record['pathway_name']
             item = {
-                'pathway_id': reaction_id,
-                'pathway_name': reaction_name
+                'pathway_id': pathway_id,
+                'pathway_name': pathway_name
             }
             results[reaction_id].append(item)
             id_to_names[reaction_id] = reaction_name
             id_to_names[pathway_id] = pathway_name
-            if show_progress_bar:
-                f.value += 1
-        if show_progress_bar:
-            f.value = len(reaction_ids) - 1
 
     finally:
         session.close()
