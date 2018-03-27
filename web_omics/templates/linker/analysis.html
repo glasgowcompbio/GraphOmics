@@ -20,6 +20,7 @@
         <hr>
       </div>
     </div>
+
     <div class="row">
       <div class="col-md-2 padding-0">
         <h6>Genes</h6>
@@ -62,6 +63,50 @@
 
     </div>
 
+    <div class="row" id="row-clicked-info">
+      <div class="col-md-2 padding-0" id="gene-row-info">
+        <div class="panel panel-default">
+          <div class="panel-heading">
+            <h1 class="panel-title" id="peak-panel-title">Gene Information</h1>
+          </div>
+          <div class="panel-body">Click a gene above for more information</div>
+        </div>
+      </div>
+      <div class="col-md-2 padding-0" id="protein-row-info">
+        <div class="panel panel-default">
+          <div class="panel-heading">
+            <h1 class="panel-title" id="metabolite-panel-title">Protein Information</h1>
+          </div>
+          <div class="panel-body">Click a protein above for more information</div>
+        </div>
+      </div>
+      <div class="col-md-2 padding-0" id="compound-row-info">
+        <div class="panel panel-default">
+          <div class="panel-heading">
+            <h1 class="panel-title" id="metabolite-panel-title">Compound Information</h1>
+          </div>
+          <div class="panel-body">Click a compound above for more information</div>
+        </div>
+      </div>
+      <div class="col-md-3 padding-0" id="reaction-row-info">
+        <div class="panel panel-default">
+          <div class="panel-heading">
+            <h1 class="panel-title" id="pathway-panel-title">Reaction Information</h1>
+          </div>
+          <div class="panel-body">Click a reaction above for more information</div>
+        </div>
+      </div>
+      <div class="col-md-3 padding-0" id="pathway-row-info">
+        <div class="panel panel-default">
+          <div class="panel-heading">
+            <h1 class="panel-title" id="pathway-panel-title">Pathway Information</h1>
+          </div>
+          <div class="panel-body">Click a pathway above for more information</div>
+        </div>
+      </div>
+    </div>
+
+
 {% endblock %}
 
 {% block js_block %}
@@ -71,15 +116,26 @@
     <script type='text/javascript' src='{% static "js/firdi.js" %}'></script>
     <script type='text/javascript' src='{% static "js/alasql.js" %}'></script>
     <script type='text/javascript'>
-        var transcripts = JSON.parse('{{ transcripts_json|safe }}');
-        var proteins = JSON.parse('{{ proteins_json|safe }}');
-        var transcript_proteins = JSON.parse('{{ transcript_proteins_json|safe }}');
-        var reactions = JSON.parse('{{ reactions_json|safe }}');
-        var protein_reactions = JSON.parse('{{ protein_reactions_json|safe }}');
-        var compounds = JSON.parse('{{ compounds_json|safe }}');
-        var compound_reactions = JSON.parse('{{ compound_reactions_json|safe }}');
-        var pathways = JSON.parse('{{ pathways_json|safe }}');
-        var reaction_pathways = JSON.parse('{{ reaction_pathways_json|safe }}');
+        var transcripts = JSON.parse('{{ data.transcripts_json|safe }}');
+        var proteins = JSON.parse('{{ data.proteins_json|safe }}');
+        var transcript_proteins = JSON.parse('{{ data.transcript_proteins_json|safe }}');
+        var reactions = JSON.parse('{{ data.reactions_json|safe }}');
+        var protein_reactions = JSON.parse('{{ data.protein_reactions_json|safe }}');
+        var compounds = JSON.parse('{{ data.compounds_json|safe }}');
+        var compound_reactions = JSON.parse('{{ data.compound_reactions_json|safe }}');
+        var pathways = JSON.parse('{{ data.pathways_json|safe }}');
+        var reaction_pathways = JSON.parse('{{ data.reaction_pathways_json|safe }}');
+        var data = {
+            transcripts: transcripts,
+            proteins: proteins,
+            transcript_proteins: transcript_proteins,
+            reactions: reactions,
+            protein_reactions: protein_reactions,
+            compounds: compounds,
+            compound_reactions: compound_reactions,
+            pathways: pathways,
+            reaction_pathways: reaction_pathways
+        }
     </script>
     <script type='text/javascript' src='{% static "js/linker.js" %}'></script>
 

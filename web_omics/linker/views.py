@@ -6,6 +6,7 @@ import json
 import re
 
 from django.views.generic.edit import FormView
+from django.http import JsonResponse
 from linker.forms import LinkerForm
 
 import collections
@@ -91,7 +92,7 @@ class LinkerView(FormView):
 
         ### set everything to the request context ###
 
-        context = {
+        data = {
             'transcripts_json': transcripts_json,
             'proteins_json': proteins_json,
             'compounds_json': compounds_json,
@@ -102,6 +103,7 @@ class LinkerView(FormView):
             'compound_reactions_json': compound_2_reactions_json,
             'reaction_pathways_json': reaction_2_pathways_json
         }
+        context = {'data' : data}
 
         return render(self.request, self.success_url, context)
 
