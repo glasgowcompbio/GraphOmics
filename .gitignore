@@ -99,3 +99,9 @@ ENV/
 
 # mypy
 .mypy_cache/
+misc.xml
+.idea/modules.xml
+.idea/omics_integration.iml
+.idea/vcs.xml
+.idea/workspace.xml
+.idea/inspectionProfiles/Project_Default.xml
