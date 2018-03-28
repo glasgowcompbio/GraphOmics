@@ -178,3 +178,14 @@ def clean_label(w):
             filtered = re.sub(r'[^\w\s]', '', tok)
             results.append(filtered.strip())
     return ' '.join(results)
+
+
+def get_kegg_metabolite_info(request):
+    if request.is_ajax():
+        kegg_id = request.GET['id']
+        inchikey = "abc"
+        data = {
+            'kegg_id': kegg_id,
+            'inchikey': inchikey,
+        }
+        return JsonResponse(data)
