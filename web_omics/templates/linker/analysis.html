@@ -136,7 +136,11 @@
             pathways: pathways,
             reaction_pathways: reaction_pathways
         }
+        const get_ensembl_gene_info = "{% url "get_ensembl_gene_info" %}";
+        const get_uniprot_protein_info = "{% url "get_uniprot_protein_info" %}";
         const get_kegg_metabolite_info = "{% url "get_kegg_metabolite_info" %}";
+        const get_reactome_reaction_info = "{% url "get_reactome_reaction_info" %}";
+        const get_reactome_pathway_info = "{% url "get_reactome_pathway_info" %}";
     </script>
     <script type='text/javascript' src='{% static "js/linker.js" %}'></script>
 

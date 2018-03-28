@@ -13,7 +13,7 @@ import collections
 
 from linker.reactome import ensembl_to_uniprot, uniprot_to_reaction
 from linker.metadata import get_ensembl_metadata_online, get_uniprot_metadata_online, get_compound_metadata_online
-from linker.metadata import get_single_compound_metadata_online
+from linker.metadata import get_single_compound_metadata_online, get_single_uniprot_metadata_online
 from linker.reactome import compound_to_reaction, reaction_to_metabolite_pathway
 
 Relation = collections.namedtuple('Relation', 'keys values mapping_list')
@@ -180,6 +180,39 @@ def clean_label(w):
     return ' '.join(results)
 
 
+def get_ensembl_gene_info(request):
+    infos = []
+    images = []
+    links = []
+    data = {
+        'infos': infos,
+        'images': images,
+        'links': links
+    }
+    return JsonResponse(data)
+
+
+def get_uniprot_protein_info(request):
+    if request.is_ajax():
+        uniprot_id = request.GET['id']
+        metadata = get_single_uniprot_metadata_online(uniprot_id)
+
+        infos = []
+        selected = ['name']
+        for key in selected:
+            value = metadata[key]
+            infos.append({'key': key, 'value': str(value)})
+
+        images = []
+        links = []
+        data = {
+            'infos': infos,
+            'images': images,
+            'links': links
+        }
+        return JsonResponse(data)
+
+
 def get_kegg_metabolite_info(request):
     if request.is_ajax():
         kegg_id = request.GET['id']
@@ -187,9 +220,7 @@ def get_kegg_metabolite_info(request):
 
         infos = []
         selected = ['FORMULA']
-        for key in metadata:
-            if key not in selected:
-                continue
+        for key in selected:
             value = metadata[key]
             infos.append({'key': key, 'value': value})
 
@@ -206,3 +237,27 @@ def get_kegg_metabolite_info(request):
             'links': links
         }
         return JsonResponse(data)
+
+
+def get_reactome_reaction_info(request):
+    infos = []
+    images = []
+    links = []
+    data = {
+        'infos': infos,
+        'images': images,
+        'links': links
+    }
+    return JsonResponse(data)
+
+
+def get_reactome_pathway_info(request):
+    infos = []
+    images = []
+    links = []
+    data = {
+        'infos': infos,
+        'images': images,
+        'links': links
+    }
+    return JsonResponse(data)

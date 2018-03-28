@@ -63,7 +63,13 @@ def get_uniprot_metadata_online(uniprot_ids):
                     label = tag.contents[0]
                     uniprot_lookup[protein_id] = {'display_name': label}
 
-    return protein_metadata
+    return uniprot_lookup
+
+
+def get_single_uniprot_metadata_online(uniprot_id):
+    uniprot = UniProt()
+    res = uniprot.retrieve(uniprot_id)
+    return res
 
 
 def get_uniprot_metadata_reactome(uniprot_ids):

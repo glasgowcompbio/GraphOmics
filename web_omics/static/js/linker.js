@@ -128,7 +128,8 @@ const myLinker = (function () {
             });
 
             // set event handler when rows in the visible tables are clicked
-            this.visibleTableNames = ["compounds_table"];
+            this.visibleTableNames = ['transcripts_table', 'proteins_table',
+                'compounds_table', 'reactions_table', 'pathways_table'];
             this.visibleTableNames.forEach(tableName => $('#' + tableName)
                 .DataTable()
                 .on('user-select', this.dataTablesDrawFunction));
@@ -162,39 +163,58 @@ const myLinker = (function () {
     const infoPanesManager = {
         clearInfoPane: function (tableId) {
             // Wrapper function to call the appropriate info function for the given table/entity
-            if (tableId === 'peaks_table') {
-                this.clearPeakInfo();
+            if (tableId === 'transcripts_table') {
+                this.clearInfoPanel('gene-row-info', 'Gene Information');
+            } else if (tableId === 'proteins_table') {
+                this.clearInfoPanel('protein-row-info', 'Protein Information');
             } else if (tableId === 'compounds_table') {
                 this.clearInfoPanel('compound-row-info', 'Compound Information');
+            } else if (tableId === 'reactions_table') {
+                this.clearInfoPanel('reaction-row-info', 'Reaction Information');
             } else if (tableId === 'pathways_table') {
-                this.clearPathwayInfo();
+                this.clearInfoPanel('pathway-row-info', 'Pathway Information');
             }
         },
         getEntityInfo: function (tableId, rowObject) {
             // Wrapper function to call the appropriate info function for the given table/entity
-            if (tableId === 'peaks_table') {
-                // this.getPeakInfo(rowObject)
+            if (tableId === 'transcripts_table') {
+                this.getInfoPanel(rowObject, get_ensembl_gene_info,
+                    'gene-row-info', 'transcript_pk',
+                    'ensembl_id', 'Gene Information');
+            } else if (tableId === 'proteins_table') {
+                this.getInfoPanel(rowObject, get_uniprot_protein_info,
+                    'protein-row-info', 'protein_pk',
+                    'uniprot_id', 'Protein Information');
             } else if (tableId === 'compounds_table') {
                 this.getInfoPanel(rowObject, get_kegg_metabolite_info,
-                    'compound-row-info', 'compound_pk', 'kegg_id');
+                    'compound-row-info', 'compound_pk',
+                    'kegg_id', 'Compound Information');
+            } else if (tableId === 'reactions_table') {
+                this.getInfoPanel(rowObject, get_reactome_reaction_info,
+                    'reaction-row-info', 'reaction_pk',
+                    'reaction_id', 'Reaction Information');
             } else if (tableId === 'pathways_table') {
-                // this.getPathwayInfo(rowObject);
+                this.getInfoPanel(rowObject, get_reactome_pathway_info,
+                    'pathway-row-info', 'pathway_pk',
+                    'pathway_id', 'Pathway Information');
             }
         },
-        getInfoPanel: function (rowObject, dataUrl, rowId, pkCol, displayNameCol) {
-            this.clearInfoPanel(rowId);
+        getInfoPanel: function (rowObject, dataUrl,
+                                rowId, pkCol,
+                                displayNameCol, title) {
+            this.clearInfoPanel(rowId, title);
             if (rowObject[displayNameCol] != '---') {
 
                 const tableData = {'id': rowObject[pkCol]};
                 let infoDiv = $('<div/>');
-                let infoTitle = $('<h5/>', {
+                let infoTitle = $('<p/>', {
                     'text': rowObject[displayNameCol]
-                });
-                let dataDiv = $('<div\>', {
-                    'html': '<p>Loading data...</p>'
                 });
                 infoDiv.append(infoTitle);
 
+                let dataDiv = $('<div\>', {
+                    'html': '<p>Loading data...</p>'
+                });
                 $.getJSON(dataUrl, tableData, data => {
 
                     // loop over additional information
@@ -204,23 +224,25 @@ const myLinker = (function () {
                     }
 
                     // loop over images
+                    dataDiv.empty();
                     let images = data['images']
                     for (let item of images) {
                         let newImage = $('<img/>', {
                             'src': item,
                             'class': 'img-responsive'
                         });
-                        dataDiv.empty().append(newImage);
+                        dataDiv.append(newImage);
                     }
 
                     // loop over external links
                     let links = data['links']
                     for (let link of links) {
-                        dataDiv.append($('<p/>').append($('<a/>', {
+                        let newLink = $('<p/>').append($('<a/>', {
                             'href': link.href,
                             'text': link.text,
                             'target': '_blank'
-                        })));
+                        }));
+                        dataDiv.append(newLink);
                     }
 
                 });
