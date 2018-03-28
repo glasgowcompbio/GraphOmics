@@ -102,6 +102,14 @@ def get_compound_metadata_online(kegg_ids):
         metadata_map[kegg_id] = {'display_name': first_name}
     return metadata_map
 
+
+def get_single_compound_metadata_online(kegg_id):
+
+    s = KEGG()
+    res = s.get(kegg_id)
+    d = s.parse(res)
+    return d
+
 ################################################################################
 ### Reaction-related functions                                               ###
 ################################################################################

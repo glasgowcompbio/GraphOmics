@@ -164,8 +164,8 @@ const myLinker = (function () {
             // Wrapper function to call the appropriate info function for the given table/entity
             if (tableId === 'peaks_table') {
                 this.clearPeakInfo();
-            } else if (tableId === 'metabolites_table') {
-                this.clearMetaboliteInfo();
+            } else if (tableId === 'compounds_table') {
+                this.clearInfoPanel('compound-row-info', 'Compound Information');
             } else if (tableId === 'pathways_table') {
                 this.clearPathwayInfo();
             }
@@ -173,76 +173,89 @@ const myLinker = (function () {
         getEntityInfo: function (tableId, rowObject) {
             // Wrapper function to call the appropriate info function for the given table/entity
             if (tableId === 'peaks_table') {
-                this.getPeakInfo(rowObject)
+                // this.getPeakInfo(rowObject)
             } else if (tableId === 'compounds_table') {
-                this.getCompoundsInfo(rowObject);
+                this.getInfoPanel(rowObject, get_kegg_metabolite_info,
+                    'compound-row-info', 'compound_pk', 'kegg_id');
             } else if (tableId === 'pathways_table') {
-                this.getPathwayInfo(rowObject);
+                // this.getPathwayInfo(rowObject);
             }
         },
-        getCompoundsInfo: function (metaboliteObject) {
-            this.clearCompoundInfo();
-            if (metaboliteObject['compound_pk'] != '---') {
+        getInfoPanel: function (rowObject, dataUrl, rowId, pkCol, displayNameCol) {
+            this.clearInfoPanel(rowId);
+            if (rowObject[displayNameCol] != '---') {
 
-                const metaboliteInfo = {'id': metaboliteObject['compound_pk']};
-                let metabolite_info_div = $('<div/>', {
-                    'id': 'metabolite_info_div'
+                const tableData = {'id': rowObject[pkCol]};
+                let infoDiv = $('<div/>');
+                let infoTitle = $('<h5/>', {
+                    'text': rowObject[displayNameCol]
+                });
+                let dataDiv = $('<div\>', {
+                    'html': '<p>Loading data...</p>'
+                });
+                infoDiv.append(infoTitle);
+
+                $.getJSON(dataUrl, tableData, data => {
+
+                    // loop over additional information
+                    let infos = data['infos'];
+                    for (let item of infos) {
+                        infoDiv.append(`<p>${item.key}: ${item.value}</p>`);
+                    }
+
+                    // loop over images
+                    let images = data['images']
+                    for (let item of images) {
+                        let newImage = $('<img/>', {
+                            'src': item,
+                            'class': 'img-responsive'
+                        });
+                        dataDiv.empty().append(newImage);
+                    }
+
+                    // loop over external links
+                    let links = data['links']
+                    for (let link of links) {
+                        dataDiv.append($('<p/>').append($('<a/>', {
+                            'href': link.href,
+                            'text': link.text,
+                            'target': '_blank'
+                        })));
+                    }
+
                 });
 
-                let metabolite_info_title = $('<h5/>', {
-                    'text': metaboliteObject['kegg_id']
-                });
-                metabolite_info_div.append(metabolite_info_title);
-
-                let keggStructureDom = $('<div\>', {
-                    'html': '<p>Loading chemical structure...</p>'
-                });
-
-                $.getJSON(get_kegg_metabolite_info, metaboliteInfo, function (data) {
-                    const inchikey = data['inchikey'] || 'No Inchikey available';
-                    metabolite_info_div.append('<p>Inchikey: ' + inchikey + '</p>');
-                    let keggStructureImg = $('<img/>', {
-                        'src': 'http://www.kegg.jp/Fig/compound/' + data['kegg_id'] + '.gif',
-                        'class': 'img-responsive'
-                    });
-                    keggStructureDom.empty().append(keggStructureImg);
-                    keggStructureDom.append($('<p/>').append($('<a/>', {
-                        'href': 'http://www.genome.jp/dbget-bin/www_bget?cpd:' + data['kegg_id'],
-                        'target': '_blank',
-                        'text': 'Link to KEGG compound database'
-                    })));
-                });
-
-                $('#compound-row-info .panel-body').empty();
-                $('#compound-row-info .panel-body').append(metabolite_info_div);
-                $('#compound-row-info .panel-body').append(keggStructureDom);
+                const selector = '#' + rowId + ' .panel-body';
+                $(selector).empty();
+                $(selector).append(infoDiv);
+                $(selector).append(dataDiv);
             } else {
-                $('#compound-row-info .panel-body').text('Click a compound above for more information');
+                $(selector).text('Click an entry above for more information');
             }
         },
-        clearCompoundInfo: function () {
+        clearInfoPanel: function (rowId, title) {
             // Create the divs that make up the 'blank' metabolite info panel
-            var metabolite_row_info_panel = $('<div/>', {'class': 'panel panel-default'});
-            var metabolite_row_info_title = $('<div/>', {'class': 'panel-heading'});
-            var metabolite_row_info_title_content = $('<h1/>', {
+            var infoPanel = $('<div/>', {'class': 'panel panel-default'});
+            var infoTitle = $('<div/>', {'class': 'panel-heading'});
+            var infoTitleContent = $('<h1/>', {
                 'class': 'panel-title',
-                'id': 'metabolite-panel-title',
-                'text': 'Compound Information'
+                'text': title
             });
-            var metabolite_row_info_body_blank = $('<div/>', {
-                'text': 'Click a compound above for more information',
+            var bodyBlank = $('<div/>', {
+                'text': 'Click an entry above for more information',
                 'class': 'panel-body'
             });
 
             // Combine them
             // Put the title content into the panel title
-            metabolite_row_info_title.append(metabolite_row_info_title_content)
+            infoTitle.append(infoTitleContent)
             // Put the title into the parent panel
-            metabolite_row_info_panel.append(metabolite_row_info_title)
+            infoPanel.append(infoTitle)
             // Put the body content into the parent panel
-            metabolite_row_info_panel.append(metabolite_row_info_body_blank);
+            infoPanel.append(bodyBlank);
 
-            $('#compound-row-info').empty().append(metabolite_row_info_panel);
+            const selector = '#' + rowId;
+            $(selector).empty().append(infoPanel);
         },
     } // end infoPanesManager
 

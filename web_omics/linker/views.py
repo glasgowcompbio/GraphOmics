@@ -13,6 +13,7 @@ import collections
 
 from linker.reactome import ensembl_to_uniprot, uniprot_to_reaction
 from linker.metadata import get_ensembl_metadata_online, get_uniprot_metadata_online, get_compound_metadata_online
+from linker.metadata import get_single_compound_metadata_online
 from linker.reactome import compound_to_reaction, reaction_to_metabolite_pathway
 
 Relation = collections.namedtuple('Relation', 'keys values mapping_list')
@@ -26,7 +27,6 @@ class LinkerView(FormView):
     success_url = 'linker/analysis.html'
 
     def form_valid(self, form):
-
         transcripts_str = form.cleaned_data['transcripts']
         proteins_str = form.cleaned_data['proteins']
         compounds_str = form.cleaned_data['compounds']
@@ -36,10 +36,10 @@ class LinkerView(FormView):
 
         ensembl_ids = [x for x in iter(transcripts_str.splitlines())]
         transcript_2_proteins, transcript_2_proteins_json, id_to_names = reactome_map(species, ensembl_ids,
-                                                          ensembl_to_uniprot,
-                                                          'transcript_pk',
-                                                          'protein_pk',
-                                                          value_key=None)
+                                                                                      ensembl_to_uniprot,
+                                                                                      'transcript_pk',
+                                                                                      'protein_pk',
+                                                                                      value_key=None)
 
         ensembl_ids = transcript_2_proteins.keys
         # metadata_map = get_ensembl_metadata(ensembl_ids)
@@ -49,10 +49,10 @@ class LinkerView(FormView):
 
         protein_ids = transcript_2_proteins.values
         protein_2_reactions, protein_2_reactions_json, id_to_names = reactome_map(species, protein_ids,
-                                                        uniprot_to_reaction,
-                                                        'protein_pk',
-                                                        'reaction_pk',
-                                                        value_key='reaction_id')
+                                                                                  uniprot_to_reaction,
+                                                                                  'protein_pk',
+                                                                                  'reaction_pk',
+                                                                                  value_key='reaction_id')
 
         uniprot_ids = transcript_2_proteins.values
         # metadata_map = get_uniprot_metadata_online(uniprot_ids)
@@ -62,10 +62,10 @@ class LinkerView(FormView):
 
         compound_ids = [x for x in iter(compounds_str.splitlines())]
         compound_2_reactions, compound_2_reactions_json, id_to_names = reactome_map(species, compound_ids,
-                                                         compound_to_reaction,
-                                                         'compound_pk',
-                                                         'reaction_pk',
-                                                         value_key='reaction_id')
+                                                                                    compound_to_reaction,
+                                                                                    'compound_pk',
+                                                                                    'reaction_pk',
+                                                                                    value_key='reaction_id')
 
         metadata_map = get_compound_metadata_online(compound_ids)
         compounds_json = _pk_to_json('compound_pk', 'kegg_id', compound_ids, metadata_map)
@@ -75,10 +75,10 @@ class LinkerView(FormView):
         # reaction_ids = protein_2_reactions.values + compound_2_reactions.values
         reaction_ids = protein_2_reactions.values
         reaction_2_pathways, reaction_2_pathways_json, id_to_names = reactome_map(species, reaction_ids,
-                                                        reaction_to_metabolite_pathway,
-                                                        'reaction_pk',
-                                                        'pathway_pk',
-                                                        value_key='pathway_id')
+                                                                                  reaction_to_metabolite_pathway,
+                                                                                  'reaction_pk',
+                                                                                  'pathway_pk',
+                                                                                  value_key='pathway_id')
 
         metadata_map = {}
         for name in id_to_names:
@@ -103,7 +103,7 @@ class LinkerView(FormView):
             'compound_reactions_json': compound_2_reactions_json,
             'reaction_pathways_json': reaction_2_pathways_json
         }
-        context = {'data' : data}
+        context = {'data': data}
 
         return render(self.request, self.success_url, context)
 
@@ -183,9 +183,26 @@ def clean_label(w):
 def get_kegg_metabolite_info(request):
     if request.is_ajax():
         kegg_id = request.GET['id']
-        inchikey = "abc"
+        metadata = get_single_compound_metadata_online(kegg_id)
+
+        infos = []
+        selected = ['FORMULA']
+        for key in metadata:
+            if key not in selected:
+                continue
+            value = metadata[key]
+            infos.append({'key': key, 'value': value})
+
+        images = ['http://www.kegg.jp/Fig/compound/' + kegg_id + '.gif']
+        links = [
+            {
+                'text': 'Link to KEGG compound database',
+                'href': 'http://www.genome.jp/dbget-bin/www_bget?cpd:' + kegg_id
+            }
+        ]
         data = {
-            'kegg_id': kegg_id,
-            'inchikey': inchikey,
+            'infos': infos,
+            'images': images,
+            'links': links
         }
         return JsonResponse(data)
