@@ -19,6 +19,7 @@ from linker.reactome import compound_to_reaction, reaction_to_metabolite_pathway
 Relation = collections.namedtuple('Relation', 'keys values mapping_list')
 DUMMY_KEY = '0'  # this should be something that will appear first in the table when sorted alphabetically
 DUMMY_VALUE = "---"
+TRUNCTATE_LIMIT = 100
 
 
 class LinkerView(FormView):
@@ -198,13 +199,42 @@ def get_uniprot_protein_info(request):
         metadata = get_single_uniprot_metadata_online(uniprot_id)
 
         infos = []
-        selected = ['name']
+        selected = ['protein']
         for key in selected:
             value = metadata[key]
-            infos.append({'key': key, 'value': str(value)})
+            infos.append({'key': key, 'value': '; '.join(map(str, value))})
+
+        # manual navigation
+        # name = ''
+        # for child in metadata.soup.find_all('name'):
+        #     try:
+        #         if child['type'] == 'scientific':
+        #             name = child.contents
+        #     except KeyError:
+        #         continue
+        # infos.append({'key': 'name', 'value': name})
+
+        go = []
+        for child in metadata.soup.find_all('dbreference'):
+            try:
+                if child['type'] == 'GO':
+                    props = child.find_all('property')
+                    for prop in props:
+                        if prop['type'] == 'term':
+                            go.append(prop['value'])
+            except KeyError:
+                continue
+        go_str = '; '.join(go)
+        go_str = trunctate(go_str)
+        infos.append({'key': 'gene_ontologies', 'value': go_str})
 
         images = []
-        links = []
+        links = [
+            {
+                'text': 'Link to UniProt',
+                'href': 'http://www.uniprot.org/uniprot/' + uniprot_id
+            }
+        ]
         data = {
             'infos': infos,
             'images': images,
@@ -222,7 +252,12 @@ def get_kegg_metabolite_info(request):
         selected = ['FORMULA']
         for key in selected:
             value = metadata[key]
-            infos.append({'key': key, 'value': value})
+            infos.append({'key': key, 'value': str(value)})
+
+        # get pathways
+        pathway_str = '; '.join(metadata['PATHWAY'].values())
+        pathway_str = trunctate(pathway_str)
+        infos.append({'key': 'KEGG PATHWAY', 'value': pathway_str})
 
         images = ['http://www.kegg.jp/Fig/compound/' + kegg_id + '.gif']
         links = [
@@ -261,3 +296,8 @@ def get_reactome_pathway_info(request):
         'links': links
     }
     return JsonResponse(data)
+
+
+def trunctate(my_str):
+    my_str = (my_str[:TRUNCTATE_LIMIT] + '...') if len(my_str) > TRUNCTATE_LIMIT else my_str
+    return my_str

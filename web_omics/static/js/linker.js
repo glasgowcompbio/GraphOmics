@@ -13,7 +13,8 @@ const myLinker = (function () {
                 "columnDefs": [{
                     targets: 1,
                     render: $.fn.dataTable.render.ellipsis(50, false)
-                }]
+                }],
+                "order": [[ 1, "asc" ]]
             };
 
             const tables = [ // the ordering in this list is important! do not change it.
