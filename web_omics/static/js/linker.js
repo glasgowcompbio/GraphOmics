@@ -224,18 +224,8 @@ const myLinker = (function () {
                         infoDiv.append(`<p>${item.key}: ${item.value}</p>`);
                     }
 
-                    // loop over images
-                    dataDiv.empty();
-                    let images = data['images']
-                    for (let item of images) {
-                        let newImage = $('<img/>', {
-                            'src': item,
-                            'class': 'img-responsive'
-                        });
-                        dataDiv.append(newImage);
-                    }
-
                     // loop over external links
+                    dataDiv.empty();
                     let links = data['links']
                     for (let link of links) {
                         let newLink = $('<p/>').append($('<a/>', {
@@ -244,6 +234,74 @@ const myLinker = (function () {
                             'target': '_blank'
                         }));
                         dataDiv.append(newLink);
+                    }
+
+                    // loop over images
+                    function isImageUrl(url) {
+                        return(url.match(/\.(jpeg|jpg|gif|png)$/) != null);
+                    }
+                    let images = data['images'];
+                    let pdbs = [];
+                    for (let item of images) {
+                        if (isImageUrl(item)) {
+                            let newImage = $('<img/>', {
+                                'src': item,
+                                'class': 'img-responsive'
+                            });
+                            dataDiv.append(newImage);
+                        } else { // assume it's pdb
+                            pdbs.push(item);
+                        }
+                    }
+
+                    if (pdbs.length > 0) {
+
+                        // draw first pdb
+                        let first = pdbs[0];
+                        let pvDiv = $('<div/>', {'id': 'hereGoesTheViewer'});
+                        dataDiv.append(pvDiv);
+
+                        require([biopv_url], function (pv) {
+
+                            var viewer = pv.Viewer(document.getElementById('pvViewer'), {
+                              quality: 'medium',
+                              width: '400',
+                              height: '400',
+                              antialias: true,
+                              outline: true,
+                              slabMode: 'auto'
+                            });
+
+                            function load(pdbUrl) {
+                              pv.io.fetchPdb(pdbUrl, function(structure) {
+                                // render everything as helix/sheet/coil cartoon, coloring by secondary
+                                // structure succession
+                                var go = viewer.cartoon('structure', structure, {
+                                  color: pv.color.ssSuccession(),
+                                  showRelated: '1',
+                                });
+
+                                // find camera orientation such that the molecules biggest extents are
+                                // aligned to the screen plane.
+                                var rotation = pv.viewpoint.principalAxes(go);
+                                viewer.setRotation(rotation)
+
+                                // adapt zoom level to contain the whole structure
+                                viewer.autoZoom();
+                              });
+                            }
+
+                            // load default
+                            let queryUrl = get_swissmodel_protein_pdb + "?pdb_url=" + encodeURIComponent(first);
+                            load(queryUrl);
+
+                            // tell viewer to resize when window size changes.
+                            window.onresize = function(event) {
+                              viewer.fitParent();
+                            };
+
+                        });
+
                     }
 
                 });

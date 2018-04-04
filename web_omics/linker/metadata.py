@@ -32,6 +32,12 @@ def get_ensembl_metadata_online(ensembl_ids):
     return ensembl_lookup
 
 
+def get_single_ensembl_metadata_online(ensembl_id):
+    ens = Ensembl()
+    res = ens.get_lookup_by_id(ensembl_id, expand=True)
+    return res
+
+
 ################################################################################
 ### Protein-related functions                                                ###
 ################################################################################

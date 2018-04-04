@@ -3,6 +3,7 @@ from django.shortcuts import render
 # Create your views here.
 from django.http import HttpResponse
 import json
+import urllib.request
 import re
 
 from django.views.generic.edit import FormView
@@ -13,13 +14,13 @@ import collections
 
 from linker.reactome import ensembl_to_uniprot, uniprot_to_reaction
 from linker.metadata import get_ensembl_metadata_online, get_uniprot_metadata_online, get_compound_metadata_online
-from linker.metadata import get_single_compound_metadata_online, get_single_uniprot_metadata_online
-from linker.reactome import compound_to_reaction, reaction_to_metabolite_pathway
+from linker.metadata import get_single_ensembl_metadata_online, get_single_uniprot_metadata_online, get_single_compound_metadata_online
+from linker.reactome import compound_to_reaction, reaction_to_metabolite_pathway, get_reaction_entities
 
 Relation = collections.namedtuple('Relation', 'keys values mapping_list')
 DUMMY_KEY = '0'  # this should be something that will appear first in the table when sorted alphabetically
 DUMMY_VALUE = "---"
-TRUNCTATE_LIMIT = 100
+TRUNCATE_LIMIT = 200
 
 
 class LinkerView(FormView):
@@ -68,13 +69,13 @@ class LinkerView(FormView):
                                                                                     'reaction_pk',
                                                                                     value_key='reaction_id')
 
-        metadata_map = get_compound_metadata_online(compound_ids)
+        # metadata_map = get_compound_metadata_online(compound_ids)
+        metadata_map = {}
         compounds_json = _pk_to_json('compound_pk', 'kegg_id', compound_ids, metadata_map)
 
         ### maps reactions -> pathways using Reactome ###
 
-        # reaction_ids = protein_2_reactions.values + compound_2_reactions.values
-        reaction_ids = protein_2_reactions.values
+        reaction_ids = protein_2_reactions.values + compound_2_reactions.values
         reaction_2_pathways, reaction_2_pathways_json, id_to_names = reactome_map(species, reaction_ids,
                                                                                   reaction_to_metabolite_pathway,
                                                                                   'reaction_pk',
@@ -182,15 +183,34 @@ def clean_label(w):
 
 
 def get_ensembl_gene_info(request):
-    infos = []
-    images = []
-    links = []
-    data = {
-        'infos': infos,
-        'images': images,
-        'links': links
-    }
-    return JsonResponse(data)
+    if request.is_ajax():
+        ensembl_id = request.GET['id']
+        metadata = get_single_ensembl_metadata_online(ensembl_id)
+
+        infos = []
+        selected = ['display_name', 'description', 'biotype', 'species']
+        for key in selected:
+            value = metadata[key]
+            infos.append({'key': key, 'value': value})
+
+        images = []
+        links = [
+            {
+                'text': 'Link to Ensembl',
+                'href': 'https://www.ensembl.org/id/' + ensembl_id
+            }
+        ]
+        # for x in metadata['Transcript']:
+        #     text = 'Transcript: ' + x['display_name']
+        #     href = 'https://www.ensembl.org/id/' + x['id']
+        #     links.append({'text': text, 'href': href})
+
+        data = {
+            'infos': infos,
+            'images': images,
+            'links': links
+        }
+        return JsonResponse(data)
 
 
 def get_uniprot_protein_info(request):
@@ -204,35 +224,45 @@ def get_uniprot_protein_info(request):
             value = metadata[key]
             infos.append({'key': key, 'value': '; '.join(map(str, value))})
 
-        # manual navigation
-        # name = ''
-        # for child in metadata.soup.find_all('name'):
-        #     try:
-        #         if child['type'] == 'scientific':
-        #             name = child.contents
-        #     except KeyError:
-        #         continue
-        # infos.append({'key': 'name', 'value': name})
-
-        go = []
-        for child in metadata.soup.find_all('dbreference'):
+        # get comments
+        selected = ['function', 'catalytic activity', 'subunit']
+        for child in metadata.soup.find_all('comment'):
             try:
-                if child['type'] == 'GO':
-                    props = child.find_all('property')
-                    for prop in props:
-                        if prop['type'] == 'term':
-                            go.append(prop['value'])
+                if child['type'] in selected:
+                    infos.append({'key': child['type'], 'value': truncate(child.text)})
             except KeyError:
                 continue
-        go_str = '; '.join(go)
-        go_str = trunctate(go_str)
-        infos.append({'key': 'gene_ontologies', 'value': go_str})
+
+        # gene ontologies
+        # go = []
+        # for child in metadata.soup.find_all('dbreference'):
+        #     try:
+        #         if child['type'] == 'GO':
+        #             props = child.find_all('property')
+        #             for prop in props:
+        #                 if prop['type'] == 'term':
+        #                     go.append(prop['value'])
+        #     except KeyError:
+        #         continue
+        # go_str = '; '.join(go)
+        # go_str = truncate(go_str)
+        # infos.append({'key': 'gene_ontologies', 'value': go_str})
 
         images = []
+        with urllib.request.urlopen('https://swissmodel.expasy.org/repository/uniprot/' + uniprot_id + '.json') as url:
+            data = json.loads(url.read().decode())
+            for struct in data['result']['structures']:
+                pdb_link = struct['coordinates']
+                images.append(pdb_link)
+
         links = [
             {
                 'text': 'Link to UniProt',
                 'href': 'http://www.uniprot.org/uniprot/' + uniprot_id
+            },
+            {
+                'text': 'Link to SWISS-MODEL',
+                'href': 'https://swissmodel.expasy.org/repository/uniprot/' + uniprot_id
             }
         ]
         data = {
@@ -242,6 +272,12 @@ def get_uniprot_protein_info(request):
         }
         return JsonResponse(data)
 
+
+def get_swissmodel_protein_pdb(request):
+    pdb_url = request.GET['pdb_url']
+    with urllib.request.urlopen(pdb_url) as response:
+        content = response.read()
+        return HttpResponse(content, content_type="text/plain")
 
 def get_kegg_metabolite_info(request):
     if request.is_ajax():
@@ -256,7 +292,7 @@ def get_kegg_metabolite_info(request):
 
         # get pathways
         pathway_str = '; '.join(metadata['PATHWAY'].values())
-        pathway_str = trunctate(pathway_str)
+        pathway_str = truncate(pathway_str)
         infos.append({'key': 'KEGG PATHWAY', 'value': pathway_str})
 
         images = ['http://www.kegg.jp/Fig/compound/' + kegg_id + '.gif']
@@ -275,15 +311,29 @@ def get_kegg_metabolite_info(request):
 
 
 def get_reactome_reaction_info(request):
-    infos = []
-    images = []
-    links = []
-    data = {
-        'infos': infos,
-        'images': images,
-        'links': links
-    }
-    return JsonResponse(data)
+    if request.is_ajax():
+        reactome_id = request.GET['id']
+
+        infos = []
+        results = get_reaction_entities([reactome_id], 'Mus musculus')[reactome_id]
+        print(results)
+        for res in results:
+            infos.append({'key': res[0], 'value': res[1]})
+
+        images = []
+
+        links = [
+            {
+                'text': 'Link to Reactome database',
+                'href': 'https://reactome.org/content/detail/' + reactome_id
+            }
+        ]
+        data = {
+            'infos': infos,
+            'images': images,
+            'links': links
+        }
+        return JsonResponse(data)
 
 
 def get_reactome_pathway_info(request):
@@ -298,6 +348,6 @@ def get_reactome_pathway_info(request):
     return JsonResponse(data)
 
 
-def trunctate(my_str):
-    my_str = (my_str[:TRUNCTATE_LIMIT] + '...') if len(my_str) > TRUNCTATE_LIMIT else my_str
+def truncate(my_str):
+    my_str = (my_str[:TRUNCATE_LIMIT] + '...') if len(my_str) > TRUNCATE_LIMIT else my_str
     return my_str

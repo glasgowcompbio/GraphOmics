@@ -8,12 +8,14 @@
     padding: 5px;
     font-size: 1em;
 }
+
 .dataTables_wrapper .dataTables_paginate {
     float: right;
     text-align: right;
     padding-top: 0.25em;
     height: 60px;
 }
+
 .dataTables_wrapper .dataTables_paginate .paginate_button {
     box-sizing: border-box;
     display: inline-block;
@@ -29,6 +31,7 @@
     border-radius: 2px;
     font-size: 1em;
 }
+
 .dataTables_wrapper .dataTables_paginate .paginate_button.current, .dataTables_wrapper .dataTables_paginate .paginate_button.current:hover {
     color: #fff !important;
     border: 1px solid #979797;
@@ -36,6 +39,7 @@
     background: #4b9ad5;
     font-size: 1em;
 }
+
 .dataTables_wrapper .dataTables_paginate .paginate_button.disabled, .dataTables_wrapper .dataTables_paginate .paginate_button.disabled:hover, .dataTables_wrapper .dataTables_paginate .paginate_button.disabled:active {
     cursor: default;
     color: #4b9ad5 !important;
@@ -44,7 +48,13 @@
     box-shadow: none;
     font-size: 1em;
 }
-.padding-0{
+
+.padding-0 {
     padding-right: 1px;
     padding-left: 1px;
+}
+
+#pvViewer {
+    width: 400px;
+    height: 400px;
 }
