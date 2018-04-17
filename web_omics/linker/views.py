@@ -7,6 +7,7 @@ import urllib.request
 import re
 
 from django.views.generic.edit import FormView
+from django.urls import reverse
 from django.http import JsonResponse
 from linker.forms import LinkerForm
 
@@ -69,8 +70,7 @@ class LinkerView(FormView):
                                                                                     'reaction_pk',
                                                                                     value_key='reaction_id')
 
-        # metadata_map = get_compound_metadata_online(compound_ids)
-        metadata_map = {}
+        metadata_map = get_compound_metadata_online(compound_ids)
         compounds_json = _pk_to_json('compound_pk', 'kegg_id', compound_ids, metadata_map)
 
         ### maps reactions -> pathways using Reactome ###
@@ -279,6 +279,7 @@ def get_swissmodel_protein_pdb(request):
         content = response.read()
         return HttpResponse(content, content_type="text/plain")
 
+
 def get_kegg_metabolite_info(request):
     if request.is_ajax():
         kegg_id = request.GET['id']
@@ -316,12 +317,15 @@ def get_reactome_reaction_info(request):
 
         infos = []
         results = get_reaction_entities([reactome_id], 'Mus musculus')[reactome_id]
-        print(results)
         for res in results:
-            infos.append({'key': res[0], 'value': res[1]})
+            display_name = res[2]
+            relationship_types = res[3]
+            if len(relationship_types) == 1: # ignore the sub-complexes
+                infos.append({'key': display_name, 'value': ';'.join(relationship_types)})
 
-        images = []
-
+        images = [
+            'https://reactome.org/ContentService/exporter/diagram/' + reactome_id + '.jpg?sel=' + reactome_id + "&quality=7"
+        ]
         links = [
             {
                 'text': 'Link to Reactome database',
@@ -337,15 +341,24 @@ def get_reactome_reaction_info(request):
 
 
 def get_reactome_pathway_info(request):
-    infos = []
-    images = []
-    links = []
-    data = {
-        'infos': infos,
-        'images': images,
-        'links': links
-    }
-    return JsonResponse(data)
+    if request.is_ajax():
+        pathway_id = request.GET['id']
+        infos = []
+        images = [
+            'https://reactome.org/ContentService/exporter/diagram/' + pathway_id + '.jpg?sel=' + pathway_id
+        ]
+        links = [
+            {
+                'text': 'Link to Reactome database',
+                'href': 'https://reactome.org/content/detail/' + pathway_id
+            }
+        ]
+        data = {
+            'infos': infos,
+            'images': images,
+            'links': links
+        }
+        return JsonResponse(data)
 
 
 def truncate(my_str):

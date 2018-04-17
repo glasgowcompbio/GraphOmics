@@ -6,6 +6,7 @@ from neo4j.v1 import GraphDatabase, basic_auth
 import xmltodict
 import pandas as pd
 from bioservices.kegg import KEGG
+from bioservices.reactome import Reactome
 
 ################################################################################
 ### Gene-related functions                                                   ###
@@ -178,9 +179,8 @@ def produce_kegg_dict(kegg_location, param):
 ### Reaction-related functions                                               ###
 ################################################################################
 
+
 # get all the entities involved in a reaction
-
-
 def get_reaction_entities(reaction_ids, species):
 
     results = defaultdict(list)
@@ -190,7 +190,7 @@ def get_reaction_entities(reaction_ids, species):
                                       auth=basic_auth("neo4j", "neo4j"))
         session = driver.session()
         query = """
-        MATCH (rle:ReactionLikeEvent)-[:input|output|catalystActivity
+        MATCH (rle:ReactionLikeEvent)-[rr:input|output|catalystActivity
               |physicalEntity|regulatedBy|regulator|hasComponent|hasMember
               |hasCandidate*]->(dbo:DatabaseObject)
         WHERE
@@ -199,7 +199,9 @@ def get_reaction_entities(reaction_ids, species):
         RETURN
             rle.stId AS reaction_id,
             dbo.stId AS entity_id,
-            dbo.schemaClass AS schema_class
+            dbo.schemaClass AS schema_class,
+            dbo.displayName as display_name,
+            extract(rel IN rr | type(rel)) AS types
         """
         params = {
             'reaction_ids': reaction_ids,
@@ -210,7 +212,9 @@ def get_reaction_entities(reaction_ids, species):
             reaction_id = record['reaction_id']
             entity_id = record['entity_id']
             schema_class = record['schema_class']
-            item = (schema_class, entity_id)
+            display_name = record['display_name']
+            relationship_types = record['types']
+            item = (schema_class, entity_id, display_name, relationship_types)
             results[reaction_id].append(item)
 
     finally:

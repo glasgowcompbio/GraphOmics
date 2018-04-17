@@ -249,6 +249,17 @@ const myLinker = (function () {
                                 'class': 'img-responsive'
                             });
                             dataDiv.append(newImage);
+                        } else if (item.includes('reactome')) { // handle reactome images
+                            let newLink = $('<a/>', {
+                                'href': item + "&quality=10",
+                                'target': '_blank'
+                            }).append(
+                                $('<img/>', {
+                                    'src': item + "&quality=5",
+                                    'class': 'img-responsive'
+                                })
+                            );
+                            dataDiv.append(newLink);
                         } else { // assume it's pdb
                             pdbs.push(item);
                         }
@@ -258,15 +269,15 @@ const myLinker = (function () {
 
                         // draw first pdb
                         let first = pdbs[0];
-                        let pvDiv = $('<div/>', {'id': 'hereGoesTheViewer'});
+                        let pvDiv = $('<div/>', {'id': 'pvViewer'});
                         dataDiv.append(pvDiv);
 
                         require([biopv_url], function (pv) {
 
                             var viewer = pv.Viewer(document.getElementById('pvViewer'), {
                               quality: 'medium',
-                              width: '400',
-                              height: '400',
+                              width: '200',
+                              height: '200',
                               antialias: true,
                               outline: true,
                               slabMode: 'auto'
