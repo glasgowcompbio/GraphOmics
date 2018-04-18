@@ -118,6 +118,33 @@ def uniprot_to_reaction(uniprot_ids, species):
 ################################################################################
 
 
+def get_all_compound_ids():
+
+    results = []
+    try:
+
+        driver = GraphDatabase.driver("bolt://localhost:7687",
+                                      auth=basic_auth("neo4j", "neo4j"))
+        session = driver.session()
+        query = """
+        MATCH (di:DatabaseIdentifier)
+        WHERE
+            di.databaseName = 'COMPOUND'
+        RETURN DISTINCT
+            di.displayName AS compound_id
+        """
+        query_res = session.run(query)
+        for record in query_res:
+            key = record['compound_id'].split(':')  # e.g. 'COMPOUND:C00025'
+            compound_id = key[1]
+            results.append(compound_id)
+
+    finally:
+        session.close()
+
+    return results
+
+
 def compound_to_reaction(compound_ids, species):
 
     id_to_names = {}

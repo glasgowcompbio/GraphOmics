@@ -10,11 +10,12 @@ from django.views.generic.edit import FormView
 from django.urls import reverse
 from django.http import JsonResponse
 from linker.forms import LinkerForm
+from django.templatetags.static import static
 
 import collections
 
 from linker.reactome import ensembl_to_uniprot, uniprot_to_reaction
-from linker.metadata import get_ensembl_metadata_online, get_uniprot_metadata_online, get_compound_metadata_online
+from linker.metadata import get_ensembl_metadata_online, get_uniprot_metadata_online, get_compound_metadata_online, get_compound_metadata_from_json
 from linker.metadata import get_single_ensembl_metadata_online, get_single_uniprot_metadata_online, get_single_compound_metadata_online
 from linker.reactome import compound_to_reaction, reaction_to_metabolite_pathway, get_reaction_entities
 
@@ -69,8 +70,9 @@ class LinkerView(FormView):
                                                                                     'compound_pk',
                                                                                     'reaction_pk',
                                                                                     value_key='reaction_id')
-
-        metadata_map = get_compound_metadata_online(compound_ids)
+        rel_path = static('json/compound_names.json')
+        json_url = self.request.build_absolute_uri(rel_path)
+        metadata_map = get_compound_metadata_from_json(compound_ids, json_url)
         compounds_json = _pk_to_json('compound_pk', 'kegg_id', compound_ids, metadata_map)
 
         ### maps reactions -> pathways using Reactome ###

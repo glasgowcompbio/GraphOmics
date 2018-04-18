@@ -1,6 +1,9 @@
 from bioservices.kegg import KEGG
 from bioservices import Ensembl
 from bioservices import UniProt
+import json
+import urllib.request
+
 
 ################################################################################
 ### Gene-related functions                                                   ###
@@ -104,14 +107,29 @@ def get_compound_metadata_online(kegg_ids):
     s = KEGG()
     metadata_map = {}
     for i in range(len(kegg_ids)):
-        if i % 10 == 0:
-            print("Retrieving %d/%d KEGG records" % (i, len(kegg_ids)))
-        kegg_id = kegg_ids[i]
-        res = s.get(kegg_id)
-        d = s.parse(res)
-        first_name = d['NAME'][0]
-        first_name = first_name.replace(';', '') # strip last ';' character
-        metadata_map[kegg_id] = {'display_name': first_name}
+        try:
+            if i % 10 == 0:
+                print("Retrieving %d/%d KEGG records" % (i, len(kegg_ids)))
+            kegg_id = kegg_ids[i]
+            res = s.get(kegg_id)
+            d = s.parse(res)
+            first_name = d['NAME'][0]
+            first_name = first_name.replace(';', '') # strip last ';' character
+            metadata_map[kegg_id] = {'display_name': first_name}
+        except TypeError:
+            print('kegg_id=%s parsed_data=%s' % (kegg_id, d))
+    return metadata_map
+
+
+def get_compound_metadata_from_json(kegg_ids, json_url):
+    metadata_map = {}
+    with urllib.request.urlopen(json_url) as url:
+        lookup = json.loads(url.read().decode())
+        for kegg_id in kegg_ids:
+            try:
+                metadata_map[kegg_id] = lookup[kegg_id]
+            except ValueError:
+                print('kegg_id=%s is not found in %s!' % (kegg_id, json_url))
     return metadata_map
 
 
