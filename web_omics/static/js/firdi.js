@@ -455,6 +455,7 @@ const FiRDI = (function() {
         const pageInfo = tableAPI.page.info();
         const rowIndex = tableAPI.rows()[0].indexOf(tableAPI.row('#' + idNum).index());
         const thePage = Math.floor(rowIndex / pageInfo['length']);
+        console.log('idNum=' + idNum + ' rowIndex=' + rowIndex + ' thePage=' + thePage);
 
         tableAPI.page(thePage).draw('page');
 

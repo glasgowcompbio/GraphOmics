@@ -1,28 +1,32 @@
-from django.shortcuts import render
-
-# Create your views here.
-from django.http import HttpResponse
 import json
-import urllib.request
 import re
-
-from django.views.generic.edit import FormView
-from django.urls import reverse
-from django.http import JsonResponse
-from linker.forms import LinkerForm
-from django.templatetags.static import static
+import urllib.request
 
 import collections
+# Create your views here.
+from django.http import HttpResponse
+from django.http import JsonResponse
+from django.shortcuts import render
+from django.templatetags.static import static
+from django.views.generic.edit import FormView
 
-from linker.reactome import ensembl_to_uniprot, uniprot_to_reaction
-from linker.metadata import get_ensembl_metadata_online, get_uniprot_metadata_online, get_compound_metadata_online, get_compound_metadata_from_json
-from linker.metadata import get_single_ensembl_metadata_online, get_single_uniprot_metadata_online, get_single_compound_metadata_online
+from linker.forms import LinkerForm
+from linker.metadata import get_compound_metadata_from_json
+from linker.metadata import get_single_ensembl_metadata_online, get_single_uniprot_metadata_online, \
+    get_single_compound_metadata_online
 from linker.reactome import compound_to_reaction, reaction_to_metabolite_pathway, get_reaction_entities
+from linker.reactome import ensembl_to_uniprot, uniprot_to_reaction
 
 Relation = collections.namedtuple('Relation', 'keys values mapping_list')
 DUMMY_KEY = '0'  # this should be something that will appear first in the table when sorted alphabetically
 DUMMY_VALUE = "---"
 TRUNCATE_LIMIT = 200
+
+TRANSCRIPT_PK = 'transcript_pk'
+PROTEIN_PK = 'protein_pk'
+COMPOUND_PK = 'compound_pk'
+REACTION_PK = 'reaction_pk'
+PATHWAY_PK = 'pathway_pk'
 
 
 class LinkerView(FormView):
@@ -36,54 +40,61 @@ class LinkerView(FormView):
         compounds_str = form.cleaned_data['compounds']
         species = form.cleaned_data['species']
 
-        ### maps transcript -> proteins using Reactome ###
+        ### all the ids that we have from the user ###
+        observed_ensembl_ids = [x for x in iter(transcripts_str.splitlines())]
+        observed_protein_ids = [x for x in iter(proteins_str.splitlines())]
+        observed_compound_ids = [x for x in iter(compounds_str.splitlines())]
 
-        ensembl_ids = [x for x in iter(transcripts_str.splitlines())]
-        transcript_2_proteins, transcript_2_proteins_json, id_to_names = reactome_map(species, ensembl_ids,
-                                                                                      ensembl_to_uniprot,
-                                                                                      'transcript_pk',
-                                                                                      'protein_pk',
-                                                                                      value_key=None)
+        ### map genes -> proteins using Reactome ###
 
-        ensembl_ids = transcript_2_proteins.keys
-        # metadata_map = get_ensembl_metadata(ensembl_ids)
-        transcripts_json = _pk_to_json('transcript_pk', 'ensembl_id', ensembl_ids)
+        gene_ids = observed_ensembl_ids
+        mapping, id_to_names = ensembl_to_uniprot(gene_ids, species)
+        transcript_2_proteins = _make_relations(mapping, TRANSCRIPT_PK, PROTEIN_PK, value_key=None)
+        transcript_2_proteins = _add_dummy(transcript_2_proteins, gene_ids, [], TRANSCRIPT_PK, PROTEIN_PK)
 
         ### maps proteins -> reactions using Reactome ###
 
-        protein_ids = transcript_2_proteins.values
-        protein_2_reactions, protein_2_reactions_json, id_to_names = reactome_map(species, protein_ids,
-                                                                                  uniprot_to_reaction,
-                                                                                  'protein_pk',
-                                                                                  'reaction_pk',
-                                                                                  value_key='reaction_id')
-
-        uniprot_ids = transcript_2_proteins.values
-        # metadata_map = get_uniprot_metadata_online(uniprot_ids)
-        proteins_json = _pk_to_json('protein_pk', 'uniprot_id', uniprot_ids)
+        inferred_protein_ids = transcript_2_proteins.values
+        protein_ids = observed_protein_ids + inferred_protein_ids
+        mapping, id_to_names = uniprot_to_reaction(protein_ids, species)
+        protein_2_reactions = _make_relations(mapping, PROTEIN_PK, REACTION_PK, value_key='reaction_id')
 
         ### maps compounds -> reactions using Reactome ###
 
-        compound_ids = [x for x in iter(compounds_str.splitlines())]
-        compound_2_reactions, compound_2_reactions_json, id_to_names = reactome_map(species, compound_ids,
-                                                                                    compound_to_reaction,
-                                                                                    'compound_pk',
-                                                                                    'reaction_pk',
-                                                                                    value_key='reaction_id')
+        compound_ids = observed_compound_ids
+        mapping, id_to_names = compound_to_reaction(compound_ids, species)
+        compound_2_reactions = _make_relations(mapping, COMPOUND_PK, REACTION_PK, value_key='reaction_id')
+
+        ### maps reactions -> pathways using Reactome ###
+
+        reaction_ids = list(set(protein_2_reactions.values).union(set(compound_2_reactions.values)))
+        protein_2_reactions = _add_dummy(protein_2_reactions, protein_ids, reaction_ids, PROTEIN_PK, REACTION_PK)
+        compound_2_reactions = _add_dummy(compound_2_reactions, compound_ids, reaction_ids, COMPOUND_PK, REACTION_PK)
+
+        mapping, id_to_names = reaction_to_metabolite_pathway(reaction_ids, species)
+        reaction_2_pathways = _make_relations(mapping, REACTION_PK, PATHWAY_PK, value_key='pathway_id')
+        reaction_2_pathways = _add_dummy(reaction_2_pathways, reaction_ids, [], REACTION_PK, PATHWAY_PK)
+
+        ### set everything to the request context ###
+
+        transcript_2_proteins_json = json.dumps(transcript_2_proteins.mapping_list)
+        protein_2_reactions_json = json.dumps(protein_2_reactions.mapping_list)
+        compound_2_reactions_json = json.dumps(compound_2_reactions.mapping_list)
+        reaction_2_pathways_json = json.dumps(reaction_2_pathways.mapping_list)
+
+        # metadata_map = get_ensembl_metadata(ensembl_ids)
+        metadata_map = {}
+        transcripts_json = _pk_to_json(TRANSCRIPT_PK, 'ensembl_id', gene_ids, metadata_map)
+
+        # metadata_map = get_uniprot_metadata_online(uniprot_ids)
+        proteins_json = _pk_to_json('protein_pk', 'uniprot_id', protein_ids)
+
         rel_path = static('json/compound_names.json')
         json_url = self.request.build_absolute_uri(rel_path)
         metadata_map = get_compound_metadata_from_json(compound_ids, json_url)
         compounds_json = _pk_to_json('compound_pk', 'kegg_id', compound_ids, metadata_map)
 
-        ### maps reactions -> pathways using Reactome ###
-
-        reaction_ids = protein_2_reactions.values + compound_2_reactions.values
-        reaction_2_pathways, reaction_2_pathways_json, id_to_names = reactome_map(species, reaction_ids,
-                                                                                  reaction_to_metabolite_pathway,
-                                                                                  'reaction_pk',
-                                                                                  'pathway_pk',
-                                                                                  value_key='pathway_id')
-
+        # TODO: this filtering is too aggressive
         metadata_map = {}
         for name in id_to_names:
             tok = id_to_names[name]
@@ -93,8 +104,6 @@ class LinkerView(FormView):
         pathway_ids = reaction_2_pathways.values
         reactions_json = _pk_to_json('reaction_pk', 'reaction_id', reaction_ids, metadata_map)
         pathways_json = _pk_to_json('pathway_pk', 'pathway_id', pathway_ids, metadata_map)
-
-        ### set everything to the request context ###
 
         data = {
             'transcripts_json': transcripts_json,
@@ -126,12 +135,12 @@ def _pk_to_json(pk_label, display_label, data, metadata_map={}):
     return output_json
 
 
-def _make_relations(mapping_dict, all_keys, pk_label_1, pk_label_2, value_key=None):
+def _make_relations(mapping, source_pk, target_pk, value_key=None):
     id_values = []
     mapping_list = []
 
-    for key in mapping_dict:
-        value_list = mapping_dict[key]
+    for key in mapping:
+        value_list = mapping[key]
 
         # value_list can be either a list of strings or dictionaries
         # check if the first element is a dict, else assume it's a string
@@ -149,28 +158,49 @@ def _make_relations(mapping_dict, all_keys, pk_label_1, pk_label_2, value_key=No
                 assert value_key is not None, 'value_key is missing'
                 actual_value = value[value_key]
             id_values.append(actual_value)
-            row = {pk_label_1: key, pk_label_2: actual_value}
+            row = {source_pk: key, target_pk: actual_value}
             mapping_list.append(row)
 
-    unique_keys = set(mapping_dict.keys())
+    unique_keys = set(mapping.keys())
     unique_values = set(id_values)
-
-    # insert dummy entries
-    for key in all_keys:
-        if key not in unique_keys:
-            row = {pk_label_1: key, pk_label_2: DUMMY_KEY}
-            mapping_list.append(row)
-    row = {pk_label_1: DUMMY_KEY, pk_label_2: DUMMY_KEY}
-    mapping_list.append(row)
 
     return Relation(keys=list(unique_keys), values=list(unique_values),
                     mapping_list=mapping_list)
 
 
-def reactome_map(species, source_ids, mapping_func,
+def _add_dummy(relation, source_ids, target_ids, source_pk, target_pk):
+    # Create a copy as we don't want to modify the original list
+    mapping_list = list(relation.mapping_list)
+
+    # Insert dummy entries. We need to do this for the inner joins
+    # across all tables to work.
+
+    # first we add dummy entries for all the unmapped ids from the source
+    for key in source_ids:
+        if key not in relation.keys:
+            row = {source_pk: key, target_pk: DUMMY_KEY}
+            mapping_list.append(row)
+
+    # Then we add dummy entries for all the unmapped ids from the target
+    for key in target_ids:
+        if key not in relation.values:
+            row = {source_pk: DUMMY_KEY, target_pk: key}
+            mapping_list.append(row)
+
+    # Finally link the dummy-vs-dummy entries across
+    row = {source_pk: DUMMY_KEY, target_pk: DUMMY_KEY}
+    mapping_list.append(row)
+
+    return Relation(keys=relation.keys, values=relation.values, mapping_list=mapping_list)
+
+
+def reactome_map(species, source_ids, target_ids, mapping_func,
                  source_pk, target_pk, value_key=None):
     mapping, id_to_names = mapping_func(source_ids, species)
-    relations = _make_relations(mapping, source_ids, source_pk, target_pk, value_key=value_key)
+    relations = _make_relations(mapping, source_pk, target_pk,
+                                value_key=value_key)
+    relations = _add_dummy(relations, source_ids, target_ids,
+                           source_pk, target_pk)
     relations_json = json.dumps(relations.mapping_list)
     return relations, relations_json, id_to_names
 
@@ -294,9 +324,9 @@ def get_kegg_metabolite_info(request):
             infos.append({'key': key, 'value': str(value)})
 
         # get pathways
-        pathway_str = '; '.join(metadata['PATHWAY'].values())
-        pathway_str = truncate(pathway_str)
-        infos.append({'key': 'KEGG PATHWAY', 'value': pathway_str})
+        # pathway_str = '; '.join(metadata['PATHWAY'].values())
+        # pathway_str = truncate(pathway_str)
+        # infos.append({'key': 'KEGG PATHWAY', 'value': pathway_str})
 
         images = ['http://www.kegg.jp/Fig/compound/' + kegg_id + '.gif']
         links = [
@@ -318,12 +348,16 @@ def get_reactome_reaction_info(request):
         reactome_id = request.GET['id']
 
         infos = []
+        temp = collections.defaultdict(list)
         results = get_reaction_entities([reactome_id], 'Mus musculus')[reactome_id]
         for res in results:
             display_name = res[2]
             relationship_types = res[3]
-            if len(relationship_types) == 1: # ignore the sub-complexes
-                infos.append({'key': display_name, 'value': ';'.join(relationship_types)})
+            if len(relationship_types) == 1:  # ignore the sub-complexes
+                rel = relationship_types[0]
+                temp[rel].append(display_name)
+        for k, v in temp.items():
+            infos.append({'key': k, 'value': '; '.join(v)})
 
         images = [
             'https://reactome.org/ContentService/exporter/diagram/' + reactome_id + '.jpg?sel=' + reactome_id + "&quality=7"

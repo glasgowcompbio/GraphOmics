@@ -208,7 +208,7 @@ const myLinker = (function () {
 
                 const tableData = {'id': rowObject[pkCol]};
                 let infoDiv = $('<div/>');
-                let infoTitle = $('<p/>', {
+                let infoTitle = $('<h6/>', {
                     'text': rowObject[displayNameCol]
                 });
                 infoDiv.append(infoTitle);
@@ -221,7 +221,7 @@ const myLinker = (function () {
                     // loop over additional information
                     let infos = data['infos'];
                     for (let item of infos) {
-                        infoDiv.append(`<p>${item.key}: ${item.value}</p>`);
+                        infoDiv.append(`<p><strong>${item.key}</strong>: ${item.value}</p>`);
                     }
 
                     // loop over external links
