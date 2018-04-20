@@ -207,7 +207,7 @@ const FiRDI = (function() {
 
       const constraintTableNames = this.constraintTableConstraintKeyNames.map(t => t['tableName']);
       const unpackedConstraints = constraintTableNames.map(n => constraints[n]);
-      console.log("unpackedConstraints.length = " + unpackedConstraints.length);
+      // console.log("unpackedConstraints.length = " + unpackedConstraints.length);
       let skipConstraints = [];
       let selectedConstraints = []
       unpackedConstraints.forEach(function (uc, i) {
@@ -224,7 +224,7 @@ const FiRDI = (function() {
               selectedConstraints.push(uc);
           }
           skipConstraints.push(sc);
-          console.log('%d. skip %s (%s)', i, sc, uc);
+          // console.log('%d. skip %s (%s)', i, sc, uc);
       });
 
       // debugger;
@@ -413,8 +413,10 @@ const FiRDI = (function() {
       const sqlStatement = "SELECT DISTINCT " + fieldNames.join(", ") + " FROM ?";
 
       if (focus !== tableName) {
+        console.log(sqlStatement + ' (queryResult)')
         dataForTables[tableName] = alasql(sqlStatement, [queryResult]);
       } else {
+        console.log(sqlStatement + ' (focusResult)')
         dataForTables[tableName] = alasql(sqlStatement, [focusResult]);
       }
 
@@ -427,10 +429,12 @@ const FiRDI = (function() {
     updateTables: function() {
       if (this.stackManager.stack.length > 0) {
         // debugger;
-        console.log('\n---------- updateTables() ----------\n');
+
+        console.log('queryResult');
         let dataForTables = this.constraintsManager.makeEmptyConstraint(this.tablesInfo);
         const queryResult = this.sqlManager.queryDatabase(this.tablesInfo, this.constraintsManager.constraints);
 
+        console.log('focusResult');
         const focus = this.stackManager.peek();
         const focusConstraints = this.constraintsManager.getFocusConstraints(focus, this.tablesInfo);
         const focusResult = this.sqlManager.queryDatabase(this.tablesInfo, focusConstraints);
@@ -441,7 +445,7 @@ const FiRDI = (function() {
       }
     },
     addSelectionStyle: function(tableName) {
-        console.log(tableName);
+        // console.log(tableName);
       const tableAPI = $(this.dataTablesIds[tableName]).DataTable(),
         idNum = this.constraintsManager.constraints[tableName];
 
@@ -455,7 +459,7 @@ const FiRDI = (function() {
         const pageInfo = tableAPI.page.info();
         const rowIndex = tableAPI.rows()[0].indexOf(tableAPI.row('#' + idNum).index());
         const thePage = Math.floor(rowIndex / pageInfo['length']);
-        console.log('idNum=' + idNum + ' rowIndex=' + rowIndex + ' thePage=' + thePage);
+        // console.log('idNum=' + idNum + ' rowIndex=' + rowIndex + ' thePage=' + thePage);
 
         tableAPI.page(thePage).draw('page');
 
@@ -463,11 +467,11 @@ const FiRDI = (function() {
 
       }
     },
-    resetTable: function(tableFieldNames, dataForTables) {
+    resetTable: function(tableFieldNames, dataForTables, queryResult) {
       const tableName = tableFieldNames['tableName'];
       const fieldNames = tableFieldNames['fieldNames'];
       const sqlStatement = "SELECT DISTINCT " + fieldNames.join(", ") + " FROM ?";
-      const queryResult = this.sqlManager.queryDatabase(this.tablesInfo, this.constraintsManager.constraints);
+      console.log(sqlStatement + ' (resetTable)');
       const tableAPI = $(this.dataTablesIds[tableName]).DataTable();
 
       dataForTables[tableFieldNames['tableName']] = alasql(sqlStatement, [queryResult]);
@@ -491,8 +495,9 @@ const FiRDI = (function() {
     },
     resetTables: function() {
       let dataForTables = this.constraintsManager.makeEmptyConstraint(this.tablesInfo);
-
-      this.tableFieldNames.forEach(tableFieldNames => this.resetTable(tableFieldNames, dataForTables));
+      console.log('resetTable');
+      const queryResult = this.sqlManager.queryDatabase(this.tablesInfo, this.constraintsManager.constraints);
+      this.tableFieldNames.forEach(tableFieldNames => this.resetTable(tableFieldNames, dataForTables, queryResult));
     },
     trClickHandler: function(e, dt, type, cell, originalEvent) {
       // Calls the appropriate constraint function depending on the state of the bound table

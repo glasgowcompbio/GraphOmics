@@ -50,7 +50,6 @@ class LinkerView(FormView):
         gene_ids = observed_ensembl_ids
         mapping, id_to_names = ensembl_to_uniprot(gene_ids, species)
         transcript_2_proteins = _make_relations(mapping, TRANSCRIPT_PK, PROTEIN_PK, value_key=None)
-        transcript_2_proteins = _add_dummy(transcript_2_proteins, gene_ids, [], TRANSCRIPT_PK, PROTEIN_PK)
 
         ### maps proteins -> reactions using Reactome ###
 
@@ -68,11 +67,15 @@ class LinkerView(FormView):
         ### maps reactions -> pathways using Reactome ###
 
         reaction_ids = list(set(protein_2_reactions.values).union(set(compound_2_reactions.values)))
-        protein_2_reactions = _add_dummy(protein_2_reactions, protein_ids, reaction_ids, PROTEIN_PK, REACTION_PK)
-        compound_2_reactions = _add_dummy(compound_2_reactions, compound_ids, reaction_ids, COMPOUND_PK, REACTION_PK)
 
         mapping, id_to_names = reaction_to_metabolite_pathway(reaction_ids, species)
         reaction_2_pathways = _make_relations(mapping, REACTION_PK, PATHWAY_PK, value_key='pathway_id')
+
+        ### add dummy entries ###
+
+        transcript_2_proteins = _add_dummy(transcript_2_proteins, gene_ids, [], TRANSCRIPT_PK, PROTEIN_PK)
+        protein_2_reactions = _add_dummy(protein_2_reactions, protein_ids, reaction_ids, PROTEIN_PK, REACTION_PK)
+        compound_2_reactions = _add_dummy(compound_2_reactions, compound_ids, reaction_ids, COMPOUND_PK, REACTION_PK)
         reaction_2_pathways = _add_dummy(reaction_2_pathways, reaction_ids, [], REACTION_PK, PATHWAY_PK)
 
         ### set everything to the request context ###
