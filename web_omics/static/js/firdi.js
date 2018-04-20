@@ -405,7 +405,17 @@ const FiRDI = (function () {
             }, {});
 
             this.initTableClicks();
-            this.bigResult = undefined;
+            this.bigResult = this.sqlManager.queryDatabase(this.tablesInfo, this.constraintsManager.defaultConstraints);
+
+            this.resetDataForTables = this.constraintsManager.makeEmptyConstraint(this.tablesInfo);
+            for (let i = 0; i < this.tableFieldNames.length; i++) {
+                tfn = this.tableFieldNames[i];
+                const tableName = tfn['tableName'];
+                const fieldNames = tfn['fieldNames'];
+                const sqlStatement = "SELECT DISTINCT " + fieldNames.join(", ") + " FROM ?";
+                console.log(sqlStatement + ' (resetTable)');
+                this.resetDataForTables[tableName] = alasql(sqlStatement, [this.bigResult]);
+            }
 
             return this;
         },
@@ -468,20 +478,12 @@ const FiRDI = (function () {
             if (this.stackManager.stack.length > 0) {
                 // debugger;
 
-                if (this.bigResult === undefined) {
-                    this.bigResult = this.sqlManager.queryDatabase(this.tablesInfo, this.constraintsManager.defaultConstraints);
-                }
-
-                console.log('focusResult');
                 const focus = this.stackManager.peek();
                 const focusConstraints = this.constraintsManager.getFocusConstraints(focus, this.tablesInfo);
                 const focusResult = this.sqlManager.queryDatabase(this.tablesInfo, focusConstraints, this.bigResult);
-                console.log(focusResult);
 
-                console.log('queryResult');
                 let dataForTables = this.constraintsManager.makeEmptyConstraint(this.tablesInfo);
                 const queryResult = this.sqlManager.queryDatabase(this.tablesInfo, this.constraintsManager.constraints, this.bigResult);
-                console.log(queryResult);
 
                 this.tableFieldNames.forEach(tableFieldNames => this.getFocusData(dataForTables, focusResult, queryResult, tableFieldNames, focus));
             } else {
@@ -511,21 +513,15 @@ const FiRDI = (function () {
 
             }
         },
-        resetTable: function (tableFieldNames, dataForTables, queryResult) {
+        resetTable: function (tableFieldNames) {
             const tableName = tableFieldNames['tableName'];
-            const fieldNames = tableFieldNames['fieldNames'];
-            const sqlStatement = "SELECT DISTINCT " + fieldNames.join(", ") + " FROM ?";
-            console.log(sqlStatement + ' (resetTable)');
             const tableAPI = $(this.dataTablesIds[tableName]).DataTable();
-
-            dataForTables[tableFieldNames['tableName']] = alasql(sqlStatement, [queryResult]);
-
             const oldPageInfo = tableAPI.page.info();
             const oldRowIndex = oldPageInfo['start'];
             const rowID = tableAPI.row(oldRowIndex).id();
 
             tableAPI.clear();
-            tableAPI.rows.add(dataForTables[tableName]);
+            tableAPI.rows.add(this.resetDataForTables[tableName]);
             tableAPI.draw();
 
             // go back to the previous page
@@ -538,9 +534,7 @@ const FiRDI = (function () {
 
         },
         resetTables: function () {
-            let dataForTables = this.constraintsManager.makeEmptyConstraint(this.tablesInfo);
-            console.log('resetTable');
-            this.tableFieldNames.forEach(tableFieldNames => this.resetTable(tableFieldNames, dataForTables, this.bigResult));
+            this.tableFieldNames.forEach(tableFieldNames => this.resetTable(tableFieldNames));
         },
         trClickHandler: function (e, dt, type, cell, originalEvent) {
             // Calls the appropriate constraint function depending on the state of the bound table
