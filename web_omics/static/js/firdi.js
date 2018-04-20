@@ -184,12 +184,18 @@ const FiRDI = (function () {
                 .filter((tk, idx, tka) => tka.indexOf(tk) === idx)
                 .map(t => JSON.parse(t));
         },
-        makeWhereSubClauses: function () {
-            return this.constraintTableConstraintKeyNames
-                .map(t => t['tableName'] + "." + t['constraintKeyName'])
+        makeWhereSubClauses: function (includeTableName) {
+            if (includeTableName) {
+                return this.constraintTableConstraintKeyNames
+                    .map(t => t['tableName'] + "." + t['constraintKeyName'])
+            } else {
+                return this.constraintTableConstraintKeyNames
+                    .map(t => t['constraintKeyName'])
+            }
         },
-        makeWhereClause: function (tablesInfo, skipConstraints) {
-            const whereSubClauses = this.makeWhereSubClauses();
+        makeWhereClause: function (tablesInfo, skipConstraints, includeTableName) {
+            const incl = (includeTableName === undefined ? true : includeTableName);
+            const whereSubClauses = this.makeWhereSubClauses(incl);
             let selectedWhereSubClauses = [];
             whereSubClauses.forEach(function (value, i) {
                 if (!skipConstraints[i]) {
@@ -209,11 +215,13 @@ const FiRDI = (function () {
 
             return [selectClause, innerJoinClause, whereClause].join(" ");
         },
-        queryDatabase: function (tablesInfo, constraints) {
+        queryDatabase: function (tablesInfo, constraints, prevQueryResult) {
 
             const constraintTableNames = this.constraintTableConstraintKeyNames.map(t => t['tableName']);
             const unpackedConstraints = constraintTableNames.map(n => constraints[n]);
             // console.log("unpackedConstraints.length = " + unpackedConstraints.length);
+
+            // TODO: quick hack by joe to speed things up
             let skipConstraints = [];
             let selectedConstraints = []
             unpackedConstraints.forEach(function (uc, i) {
@@ -233,12 +241,26 @@ const FiRDI = (function () {
                 // console.log('%d. skip %s (%s)', i, sc, uc);
             });
 
-            // debugger;
-            const sqlQuery = this.makeSQLquery(tablesInfo, skipConstraints);
-            console.log(sqlQuery);
-            const compiledSQLQuery = alasql.compile(sqlQuery);
-
-            return compiledSQLQuery(selectedConstraints);
+            if (prevQueryResult === undefined) { // no previous query
+                const sqlQuery = this.makeSQLquery(tablesInfo, skipConstraints);
+                console.log(sqlQuery);
+                const compiledSQLQuery = alasql.compile(sqlQuery);
+                return compiledSQLQuery(selectedConstraints);
+            } else {
+                // reuse existing query result
+                const selectClause = 'SELECT * FROM ?';
+                const includeTableName = false;
+                const whereClause = this.makeWhereClause(tablesInfo, skipConstraints, includeTableName);
+                const sqlQuery = [selectClause, whereClause].join(" ");
+                console.log(sqlQuery);
+                if (whereClause.length == 0) {
+                    return prevQueryResult;
+                } else {
+                    const compiledSQLQuery = alasql.compile(sqlQuery);
+                    selectedConstraints.unshift(prevQueryResult);
+                    return compiledSQLQuery(selectedConstraints);
+                }
+            }
         }
     };
 
@@ -383,6 +405,7 @@ const FiRDI = (function () {
             }, {});
 
             this.initTableClicks();
+            this.bigResult = undefined;
 
             return this;
         },
@@ -445,14 +468,20 @@ const FiRDI = (function () {
             if (this.stackManager.stack.length > 0) {
                 // debugger;
 
-                console.log('queryResult');
-                let dataForTables = this.constraintsManager.makeEmptyConstraint(this.tablesInfo);
-                const queryResult = this.sqlManager.queryDatabase(this.tablesInfo, this.constraintsManager.constraints);
+                if (this.bigResult === undefined) {
+                    this.bigResult = this.sqlManager.queryDatabase(this.tablesInfo, this.constraintsManager.defaultConstraints);
+                }
 
                 console.log('focusResult');
                 const focus = this.stackManager.peek();
                 const focusConstraints = this.constraintsManager.getFocusConstraints(focus, this.tablesInfo);
-                const focusResult = this.sqlManager.queryDatabase(this.tablesInfo, focusConstraints);
+                const focusResult = this.sqlManager.queryDatabase(this.tablesInfo, focusConstraints, this.bigResult);
+                console.log(focusResult);
+
+                console.log('queryResult');
+                let dataForTables = this.constraintsManager.makeEmptyConstraint(this.tablesInfo);
+                const queryResult = this.sqlManager.queryDatabase(this.tablesInfo, this.constraintsManager.constraints, this.bigResult);
+                console.log(queryResult);
 
                 this.tableFieldNames.forEach(tableFieldNames => this.getFocusData(dataForTables, focusResult, queryResult, tableFieldNames, focus));
             } else {
@@ -511,8 +540,7 @@ const FiRDI = (function () {
         resetTables: function () {
             let dataForTables = this.constraintsManager.makeEmptyConstraint(this.tablesInfo);
             console.log('resetTable');
-            const queryResult = this.sqlManager.queryDatabase(this.tablesInfo, this.constraintsManager.constraints);
-            this.tableFieldNames.forEach(tableFieldNames => this.resetTable(tableFieldNames, dataForTables, queryResult));
+            this.tableFieldNames.forEach(tableFieldNames => this.resetTable(tableFieldNames, dataForTables, this.bigResult));
         },
         trClickHandler: function (e, dt, type, cell, originalEvent) {
             // Calls the appropriate constraint function depending on the state of the bound table
