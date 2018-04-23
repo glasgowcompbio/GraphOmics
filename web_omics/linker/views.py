@@ -13,7 +13,7 @@ from django.views.generic.edit import FormView
 from linker.forms import LinkerForm
 from linker.metadata import get_compound_metadata_from_json
 from linker.metadata import get_single_ensembl_metadata_online, get_single_uniprot_metadata_online, \
-    get_single_compound_metadata_online
+    get_single_compound_metadata_online, clean_label
 from linker.reactome import compound_to_reaction, reaction_to_metabolite_pathway, get_reaction_entities
 from linker.reactome import ensembl_to_uniprot, uniprot_to_reaction
 
@@ -101,7 +101,7 @@ class LinkerView(FormView):
         metadata_map = {}
         for name in id_to_names:
             tok = id_to_names[name]
-            filtered = re.sub(r'[^\w\s]', '', tok)
+            filtered = clean_label(tok)
             metadata_map[name] = {'display_name': filtered}
 
         pathway_ids = reaction_2_pathways.values
@@ -206,15 +206,6 @@ def reactome_map(species, source_ids, target_ids, mapping_func,
                            source_pk, target_pk)
     relations_json = json.dumps(relations.mapping_list)
     return relations, relations_json, id_to_names
-
-
-def clean_label(w):
-    results = []
-    for tok in w.split(' '):
-        if 'name' not in tok.lower():
-            filtered = re.sub(r'[^\w\s]', '', tok)
-            results.append(filtered.strip())
-    return ' '.join(results)
 
 
 def get_ensembl_gene_info(request):

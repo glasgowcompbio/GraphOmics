@@ -3,6 +3,7 @@ from bioservices import Ensembl
 from bioservices import UniProt
 import json
 import urllib.request
+import re
 
 
 ################################################################################
@@ -79,6 +80,16 @@ def get_single_uniprot_metadata_online(uniprot_id):
     uniprot = UniProt()
     res = uniprot.retrieve(uniprot_id)
     return res
+
+
+def clean_label(w):
+    results = []
+    for tok in w.split(' '):
+        if 'name' not in tok.lower():
+            # filtered = re.sub(r'[^\w\s]', '', tok)
+            filtered = tok.replace("'", "")
+            results.append(filtered.strip())
+    return ' '.join(results)
 
 
 def get_uniprot_metadata_reactome(uniprot_ids):
