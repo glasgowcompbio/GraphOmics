@@ -1,6 +1,7 @@
 # forms.py for decomposition
 from django import forms
 import os
+from linker.reactome import get_species_list
 
 def load_example_data(file_path):
 
@@ -18,10 +19,10 @@ example_genes = ""
 example_proteins = ""
 example_compounds = load_example_data('kegg_id.txt')
 
-SPECIES_CHOICES = [
-    ('Mus musculus', 'Mus musculus'),
-    ('Homo sapiens', 'Homo sapiens'),
-]
+species_list = get_species_list()
+SPECIES_CHOICES = []
+for idx, s in enumerate(species_list):
+    SPECIES_CHOICES.append((idx, s, ))
 
 class LinkerForm(forms.Form):
     # genes = forms.CharField(required = False,

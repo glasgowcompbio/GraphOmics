@@ -8,6 +8,39 @@ import pandas as pd
 from bioservices.kegg import KEGG
 from bioservices.reactome import Reactome
 
+
+def get_species_list():
+
+    results = []
+    try:
+
+        driver = GraphDatabase.driver("bolt://localhost:7687",
+                                      auth=basic_auth("neo4j", "neo4j"))
+        session = driver.session()
+        query = """
+        MATCH (n:Species) RETURN n.displayName AS name order by name        
+        """
+        query_res = session.run(query)
+        for record in query_res:
+            results.append(record['name'])
+
+    except Exception as e:
+        print(e)
+
+    finally:
+        session.close()
+
+    return results
+
+
+def get_species_dict():
+    species_list = get_species_list()
+    species_dict = {}
+    for idx, s in enumerate(species_list):
+        species_dict[idx] = s
+    return species_dict
+
+
 ################################################################################
 ### Gene-related functions                                                   ###
 ################################################################################

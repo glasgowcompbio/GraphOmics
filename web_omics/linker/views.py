@@ -1,6 +1,7 @@
 import json
 import re
 import urllib.request
+from urllib.parse import urlparse
 
 import collections
 # Create your views here.
@@ -15,7 +16,7 @@ from linker.metadata import get_compound_metadata_from_json
 from linker.metadata import get_single_ensembl_metadata_online, get_single_uniprot_metadata_online, \
     get_single_compound_metadata_online, clean_label
 from linker.reactome import compound_to_reaction, reaction_to_metabolite_pathway, get_reaction_entities
-from linker.reactome import ensembl_to_uniprot, uniprot_to_reaction
+from linker.reactome import ensembl_to_uniprot, uniprot_to_reaction, get_species_dict
 
 Relation = collections.namedtuple('Relation', 'keys values mapping_list')
 DUMMY_KEY = '0'  # this should be something that will appear first in the table when sorted alphabetically
@@ -38,7 +39,9 @@ class LinkerView(FormView):
         transcripts_str = form.cleaned_data['transcripts']
         proteins_str = form.cleaned_data['proteins']
         compounds_str = form.cleaned_data['compounds']
-        species = form.cleaned_data['species']
+        species_key = int(form.cleaned_data['species'])
+        species_dict = get_species_dict()
+        species = species_dict[species_key]
 
         ### all the ids that we have from the user ###
         observed_ensembl_ids = [x for x in iter(transcripts_str.splitlines())]
@@ -117,7 +120,8 @@ class LinkerView(FormView):
             'transcript_proteins_json': transcript_2_proteins_json,
             'protein_reactions_json': protein_2_reactions_json,
             'compound_reactions_json': compound_2_reactions_json,
-            'reaction_pathways_json': reaction_2_pathways_json
+            'reaction_pathways_json': reaction_2_pathways_json,
+            'species': species
         }
         context = {'data': data}
 
@@ -340,10 +344,11 @@ def get_kegg_metabolite_info(request):
 def get_reactome_reaction_info(request):
     if request.is_ajax():
         reactome_id = request.GET['id']
+        species = urllib.parse.unquote(request.GET['species'])
 
         infos = []
         temp = collections.defaultdict(list)
-        results = get_reaction_entities([reactome_id], 'Mus musculus')[reactome_id]
+        results = get_reaction_entities([reactome_id], species)[reactome_id]
         for res in results:
             display_name = res[2]
             relationship_types = res[3]

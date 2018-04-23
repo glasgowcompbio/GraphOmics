@@ -206,7 +206,10 @@ const myLinker = (function () {
             this.clearInfoPanel(rowId, title);
             if (rowObject[displayNameCol] != '---') {
 
-                const tableData = {'id': rowObject[pkCol]};
+                const tableData = {
+                    'id': rowObject[pkCol],
+                    'species': SPECIES
+                };
                 let infoDiv = $('<div/>');
                 let infoTitle = $('<h6/>', {
                     'text': rowObject[displayNameCol]
