@@ -274,7 +274,7 @@ const myLinker = (function () {
 
                         require([biopv_url], function (pv) {
 
-                            var viewer = pv.Viewer(document.getElementById('pvViewer'), {
+                            let viewer = pv.Viewer(document.getElementById('pvViewer'), {
                               quality: 'medium',
                               width: '200',
                               height: '200',
@@ -287,14 +287,14 @@ const myLinker = (function () {
                               pv.io.fetchPdb(pdbUrl, function(structure) {
                                 // render everything as helix/sheet/coil cartoon, coloring by secondary
                                 // structure succession
-                                var go = viewer.cartoon('structure', structure, {
+                                let go = viewer.cartoon('structure', structure, {
                                   color: pv.color.ssSuccession(),
                                   showRelated: '1',
                                 });
 
                                 // find camera orientation such that the molecules biggest extents are
                                 // aligned to the screen plane.
-                                var rotation = pv.viewpoint.principalAxes(go);
+                                let rotation = pv.viewpoint.principalAxes(go);
                                 viewer.setRotation(rotation)
 
                                 // adapt zoom level to contain the whole structure
@@ -327,13 +327,13 @@ const myLinker = (function () {
         },
         clearInfoPanel: function (rowId, title) {
             // Create the divs that make up the 'blank' metabolite info panel
-            var infoPanel = $('<div/>', {'class': 'panel panel-default'});
-            var infoTitle = $('<div/>', {'class': 'panel-heading'});
-            var infoTitleContent = $('<h1/>', {
+            let infoPanel = $('<div/>', {'class': 'panel panel-default'});
+            let infoTitle = $('<div/>', {'class': 'panel-heading'});
+            let infoTitleContent = $('<h1/>', {
                 'class': 'panel-title',
                 'text': title
             });
-            var bodyBlank = $('<div/>', {
+            let bodyBlank = $('<div/>', {
                 'text': 'Click an entry above for more information',
                 'class': 'panel-body'
             });
