@@ -9,6 +9,7 @@ const FiRDI = (function () {
             const filteredTableInfo = this.uniqueDataFilter(tablesInfo);
             const dataTablesSettings = this.makeDataTablesSettingsObjects(filteredTableInfo, dataTablesColumnsSettings);
             this.initialiseDataTables(dataTablesSettings);
+            this.filteredTableInfo = filteredTableInfo;
 
             return this;
         },
@@ -21,7 +22,9 @@ const FiRDI = (function () {
             // Gets the distinct entries for the tableData for datatables initialisation
             return tablesInfo.filter(isTableVisible)
                 .map(tableInfo => {
-                    tableInfo['tableData'] = alasql("SELECT DISTINCT " + Object.keys(tableInfo['tableData'][0]).join(", ") + " FROM ?", [tableInfo['tableData']]);
+                    const sql = "SELECT DISTINCT " + Object.keys(tableInfo['tableData'][0]).join(", ") + " FROM ?";
+                    tableInfo['tableData'] = alasql(sql, [tableInfo['tableData']]);
+                    console.log(sql);
                     return tableInfo;
                 });
         },
@@ -73,19 +76,23 @@ const FiRDI = (function () {
             return this;
         },
         initialiseAlasqlTables: function (tablesInfo) {
-            tablesInfo.forEach(function (t) {
+            tablesInfo.forEach(function (t, i) {
+                const tName = t['tableName'];
+
                 // Create table
-                let sql = "CREATE TABLE " + t['tableName'];
+                let sql = "CREATE TABLE " + tName;
                 console.log(sql);
                 alasql(sql);
+
                 // Create index
-                if (t['options']['pk'] !== undefined) {
-                    sql = "CREATE UNIQUE INDEX tmp ON " + t['tableName'] + "(" + t['options']['pk'] + ")";
-                    console.log(sql);
-                    alasql(sql);
-                }
+                const columns = Object.keys(t.tableData[0]).join(', ');
+                const idxName = 'idx' + i;
+                sql = "CREATE UNIQUE INDEX " + idxName + " ON " + tName + "(" + columns + ")";
+                console.log(sql);
+                alasql(sql);
+
                 // Add data
-                alasql.tables[t['tableName']].data = t['tableData'];
+                alasql.tables[tName].data = t['tableData'];
             });
         },
         clearAlasqlTables: function (tablesInfo) {
@@ -407,15 +414,9 @@ const FiRDI = (function () {
             this.initTableClicks();
             this.bigResult = this.sqlManager.queryDatabase(this.tablesInfo, this.constraintsManager.defaultConstraints);
 
-            this.resetDataForTables = this.constraintsManager.makeEmptyConstraint(this.tablesInfo);
-            for (let i = 0; i < this.tableFieldNames.length; i++) {
-                tfn = this.tableFieldNames[i];
-                const tableName = tfn['tableName'];
-                const fieldNames = tfn['fieldNames'];
-                const sqlStatement = "SELECT DISTINCT " + fieldNames.join(", ") + " FROM ?";
-                console.log(sqlStatement + ' (resetTable)');
-                this.resetDataForTables[tableName] = alasql(sqlStatement, [this.bigResult]);
-            }
+            d = {}
+            this.dataTablesOptionsManager.filteredTableInfo.map(t => d[t.tableName]= t.tableData);
+            this.resetDataForTables = d;
 
             return this;
         },
