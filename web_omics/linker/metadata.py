@@ -3,7 +3,7 @@ from bioservices import Ensembl
 from bioservices import UniProt
 import json
 import urllib.request
-import re
+import pickle
 
 
 ################################################################################
@@ -40,6 +40,19 @@ def get_single_ensembl_metadata_online(ensembl_id):
     ens = Ensembl()
     res = ens.get_lookup_by_id(ensembl_id, expand=True)
     return res
+
+
+def get_gene_names(ensembl_ids, pickled_gene_names_url):
+    metadata_map = {}
+    with urllib.request.urlopen(pickled_gene_names_url) as url:
+        gtf_dict = pickle.load(url)
+        for ensembl_id in ensembl_ids:
+            try:
+                display_name = gtf_dict[ensembl_id]
+                metadata_map[ensembl_id] = {'display_name': display_name}
+            except KeyError:
+                metadata_map[ensembl_id] = {'display_name': ensembl_id}
+    return metadata_map
 
 
 ################################################################################

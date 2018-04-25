@@ -14,7 +14,7 @@ from django.views.generic.edit import FormView
 from linker.forms import LinkerForm
 from linker.metadata import get_compound_metadata_from_json
 from linker.metadata import get_single_ensembl_metadata_online, get_single_uniprot_metadata_online, \
-    get_single_compound_metadata_online, clean_label
+    get_single_compound_metadata_online, clean_label, get_gene_names
 from linker.reactome import compound_to_reaction, reaction_to_metabolite_pathway, get_reaction_entities
 from linker.reactome import ensembl_to_uniprot, uniprot_to_reaction, get_species_dict
 
@@ -76,7 +76,7 @@ class LinkerView(FormView):
 
         ### add dummy entries ###
 
-        transcript_2_proteins = _add_dummy(transcript_2_proteins, gene_ids, [], TRANSCRIPT_PK, PROTEIN_PK)
+        transcript_2_proteins = _add_dummy(transcript_2_proteins, gene_ids, protein_ids, TRANSCRIPT_PK, PROTEIN_PK)
         protein_2_reactions = _add_dummy(protein_2_reactions, protein_ids, reaction_ids, PROTEIN_PK, REACTION_PK)
         compound_2_reactions = _add_dummy(compound_2_reactions, compound_ids, reaction_ids, COMPOUND_PK, REACTION_PK)
         reaction_2_pathways = _add_dummy(reaction_2_pathways, reaction_ids, [], REACTION_PK, PATHWAY_PK)
@@ -88,19 +88,19 @@ class LinkerView(FormView):
         compound_2_reactions_json = json.dumps(compound_2_reactions.mapping_list)
         reaction_2_pathways_json = json.dumps(reaction_2_pathways.mapping_list)
 
-        # metadata_map = get_ensembl_metadata(ensembl_ids)
-        metadata_map = {}
+        rel_path = static('data/gene_names.p')
+        pickled_url = self.request.build_absolute_uri(rel_path)
+        metadata_map = get_gene_names(gene_ids, pickled_url)
         transcripts_json = _pk_to_json(TRANSCRIPT_PK, 'ensembl_id', gene_ids, metadata_map)
 
         # metadata_map = get_uniprot_metadata_online(uniprot_ids)
         proteins_json = _pk_to_json('protein_pk', 'uniprot_id', protein_ids)
 
-        rel_path = static('json/compound_names.json')
+        rel_path = static('data/compound_names.json')
         json_url = self.request.build_absolute_uri(rel_path)
         metadata_map = get_compound_metadata_from_json(compound_ids, json_url)
         compounds_json = _pk_to_json('compound_pk', 'kegg_id', compound_ids, metadata_map)
 
-        # TODO: this filtering is too aggressive
         metadata_map = {}
         for name in id_to_names:
             tok = id_to_names[name]
@@ -218,7 +218,7 @@ def get_ensembl_gene_info(request):
         metadata = get_single_ensembl_metadata_online(ensembl_id)
 
         infos = []
-        selected = ['display_name', 'description', 'biotype', 'species']
+        selected = ['description', 'biotype', 'species']
         for key in selected:
             value = metadata[key]
             infos.append({'key': key, 'value': value})
