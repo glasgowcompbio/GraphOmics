@@ -249,10 +249,11 @@ def get_uniprot_protein_info(request):
         metadata = get_single_uniprot_metadata_online(uniprot_id)
 
         infos = []
-        selected = ['protein']
-        for key in selected:
-            value = metadata[key]
-            infos.append({'key': key, 'value': '; '.join(map(str, value))})
+        fullname = [x.text for x in metadata.soup.select('protein > recommendedname > fullname')][0]
+        shortname = [x.text for x in metadata.soup.select('protein > recommendedname > shortname')][0]
+        ecnumber = [x.text for x in metadata.soup.select('protein > recommendedname > ecnumber')][0]
+        infos.append({'key': 'Name', 'value': "{} ({})".format(fullname, shortname) })
+        infos.append({'key': 'EC Number', 'value': 'EC' + ecnumber })
 
         # get comments
         selected = ['function', 'catalytic activity', 'subunit']
