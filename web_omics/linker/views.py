@@ -279,11 +279,11 @@ def get_uniprot_protein_info(request):
         # infos.append({'key': 'gene_ontologies', 'value': go_str})
 
         images = []
-        with urllib.request.urlopen('https://swissmodel.expasy.org/repository/uniprot/' + uniprot_id + '.json') as url:
-            data = json.loads(url.read().decode())
-            for struct in data['result']['structures']:
-                pdb_link = struct['coordinates']
-                images.append(pdb_link)
+        # with urllib.request.urlopen('https://swissmodel.expasy.org/repository/uniprot/' + uniprot_id + '.json') as url:
+        #     data = json.loads(url.read().decode())
+        #     for struct in data['result']['structures']:
+        #         pdb_link = struct['coordinates']
+        #         images.append(pdb_link)
 
         links = [
             {
