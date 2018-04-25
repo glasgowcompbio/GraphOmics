@@ -44,13 +44,13 @@ class LinkerView(FormView):
         species = species_dict[species_key]
 
         ### all the ids that we have from the user ###
-        observed_ensembl_ids = [x for x in iter(transcripts_str.splitlines())]
+        observed_gene_ids = [x for x in iter(transcripts_str.splitlines())]
         observed_protein_ids = [x for x in iter(proteins_str.splitlines())]
         observed_compound_ids = [x for x in iter(compounds_str.splitlines())]
 
         ### map genes -> proteins using Reactome ###
 
-        gene_ids = observed_ensembl_ids
+        gene_ids = observed_gene_ids
         mapping, id_to_names = ensembl_to_uniprot(gene_ids, species)
         transcript_2_proteins = _make_relations(mapping, TRANSCRIPT_PK, PROTEIN_PK, value_key=None)
 
@@ -91,15 +91,15 @@ class LinkerView(FormView):
         rel_path = static('data/gene_names.p')
         pickled_url = self.request.build_absolute_uri(rel_path)
         metadata_map = get_gene_names(gene_ids, pickled_url)
-        transcripts_json = _pk_to_json(TRANSCRIPT_PK, 'ensembl_id', gene_ids, metadata_map)
+        transcripts_json = _pk_to_json(TRANSCRIPT_PK, 'gene_id', gene_ids, metadata_map)
 
         # metadata_map = get_uniprot_metadata_online(uniprot_ids)
-        proteins_json = _pk_to_json('protein_pk', 'uniprot_id', protein_ids)
+        proteins_json = _pk_to_json('protein_pk', 'protein_id', protein_ids)
 
         rel_path = static('data/compound_names.json')
         json_url = self.request.build_absolute_uri(rel_path)
         metadata_map = get_compound_metadata_from_json(compound_ids, json_url)
-        compounds_json = _pk_to_json('compound_pk', 'kegg_id', compound_ids, metadata_map)
+        compounds_json = _pk_to_json('compound_pk', 'compound_id', compound_ids, metadata_map)
 
         metadata_map = {}
         for name in id_to_names:
@@ -249,11 +249,27 @@ def get_uniprot_protein_info(request):
         metadata = get_single_uniprot_metadata_online(uniprot_id)
 
         infos = []
-        fullname = [x.text for x in metadata.soup.select('protein > recommendedname > fullname')][0]
-        shortname = [x.text for x in metadata.soup.select('protein > recommendedname > shortname')][0]
-        ecnumber = [x.text for x in metadata.soup.select('protein > recommendedname > ecnumber')][0]
-        infos.append({'key': 'Name', 'value': "{} ({})".format(fullname, shortname) })
-        infos.append({'key': 'EC Number', 'value': 'EC' + ecnumber })
+        try:
+            fullname = [x.text for x in metadata.soup.select('protein > recommendedname > fullname')][0]
+        except IndexError:
+            fullname = uniprot_id
+
+        shortName = None
+        try:
+            shortname = [x.text for x in metadata.soup.select('protein > recommendedname > shortname')][0]
+        except IndexError:
+            pass
+
+        if shortName is not None:
+            infos.append({'key': 'Name', 'value': "{} ({})".format(fullname, shortname) })
+        else:
+            infos.append({'key': 'Name', 'value': "{}".format(fullname) })
+
+        try:
+            ecnumber = [x.text for x in metadata.soup.select('protein > recommendedname > ecnumber')][0]
+            infos.append({'key': 'EC Number', 'value': 'EC' + ecnumber })
+        except IndexError:
+            pass
 
         # get comments
         selected = ['function', 'catalytic activity', 'subunit']
