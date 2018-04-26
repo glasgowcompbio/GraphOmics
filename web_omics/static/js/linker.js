@@ -20,18 +20,18 @@ const myLinker = (function () {
             const tables = [ // the ordering in this list is important! do not change it.
 
                 {
-                    "tableName": "transcripts_table",
-                    "tableData": data.transcripts,
+                    "tableName": "genes_table",
+                    "tableData": data.genes,
                     "options": {
                         "visible": true,
-                        "pk": "transcript_pk"
+                        "pk": "gene_pk"
                     },
-                    "relationship": {"with": "transcript_proteins", "using": "transcript_pk"}
+                    "relationship": {"with": "gene_proteins", "using": "gene_pk"}
                 },
 
                 {
-                    "tableName": "transcript_proteins",
-                    "tableData": data.transcript_proteins,
+                    "tableName": "gene_proteins",
+                    "tableData": data.gene_proteins,
                     "options": {
                         "visible": false
                     },
@@ -115,7 +115,7 @@ const myLinker = (function () {
 
             // Hide certain columns
             const columnsToHidePerTable = [
-                {"tableName": "transcripts_table", "columnNames": ["transcript_pk"]},
+                {"tableName": "genes_table", "columnNames": ["gene_pk"]},
                 {"tableName": "proteins_table", "columnNames": ["protein_pk"]},
                 {"tableName": "compounds_table", "columnNames": ["compound_pk"]},
                 {"tableName": "reactions_table", "columnNames": ["reaction_pk"]},
@@ -129,7 +129,7 @@ const myLinker = (function () {
             });
 
             // set event handler when rows in the visible tables are clicked
-            this.visibleTableNames = ['transcripts_table', 'proteins_table',
+            this.visibleTableNames = ['genes_table', 'proteins_table',
                 'compounds_table', 'reactions_table', 'pathways_table'];
             this.visibleTableNames.forEach(tableName => $('#' + tableName)
                 .DataTable()
@@ -164,7 +164,7 @@ const myLinker = (function () {
     const infoPanesManager = {
         clearInfoPane: function (tableId) {
             // Wrapper function to call the appropriate info function for the given table/entity
-            if (tableId === 'transcripts_table') {
+            if (tableId === 'genes_table') {
                 this.clearInfoPanel('gene-row-info', 'Gene Information');
             } else if (tableId === 'proteins_table') {
                 this.clearInfoPanel('protein-row-info', 'Protein Information');
@@ -178,9 +178,9 @@ const myLinker = (function () {
         },
         getEntityInfo: function (tableId, rowObject) {
             // Wrapper function to call the appropriate info function for the given table/entity
-            if (tableId === 'transcripts_table') {
+            if (tableId === 'genes_table') {
                 this.getInfoPanel(rowObject, get_ensembl_gene_info,
-                    'gene-row-info', 'transcript_pk',
+                    'gene-row-info', 'gene_pk',
                     'ensembl_id', 'Gene Information');
             } else if (tableId === 'proteins_table') {
                 this.getInfoPanel(rowObject, get_uniprot_protein_info,

@@ -14,10 +14,13 @@ def load_example_data(file_path):
 
     return example_data
 
-example_transcripts = load_example_data('ens_id.txt')
-example_genes = ""
+example_genes = load_example_data('../static/data/gene_ids.csv')
 example_proteins = ""
-example_compounds = load_example_data('kegg_id.txt')
+example_compounds = load_example_data('../static/data/compound_ids.csv')
+
+# example_genes = load_example_data('../static/data/gene_data.csv')
+# example_proteins = ""
+# example_compounds = load_example_data('../static/data/compound_data.csv')
 
 species_list = get_species_list()
 SPECIES_CHOICES = []
@@ -25,17 +28,14 @@ for idx, s in enumerate(species_list):
     SPECIES_CHOICES.append((idx, s, ))
 
 class LinkerForm(forms.Form):
-    # genes = forms.CharField(required = False,
-    #                            widget = forms.Textarea(attrs={'rows': 4, 'cols': 40}),
-    #                            initial = example_genes)
-    transcripts = forms.CharField(required = False,
-                               widget = forms.Textarea(attrs={'rows': 4, 'cols': 40}),
-                               initial = example_transcripts)
+    genes = forms.CharField(required = False,
+                               widget = forms.Textarea(attrs={'rows': 10, 'cols': 120}),
+                               initial = example_genes)
     proteins = forms.CharField(required = False,
-                               widget = forms.Textarea(attrs={'rows': 4, 'cols': 40}),
+                               widget = forms.Textarea(attrs={'rows': 10, 'cols': 120}),
                                initial = example_proteins)
     compounds = forms.CharField(required = False,
-                               widget = forms.Textarea(attrs={'rows': 4, 'cols': 40}),
+                               widget = forms.Textarea(attrs={'rows': 10, 'cols': 120}),
                                initial = example_compounds)
 
     def __init__(self, *args, **kwargs):

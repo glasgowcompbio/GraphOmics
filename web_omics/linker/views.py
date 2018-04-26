@@ -23,7 +23,7 @@ DUMMY_KEY = '0'  # this should be something that will appear first in the table 
 DUMMY_VALUE = "---"
 TRUNCATE_LIMIT = 200
 
-TRANSCRIPT_PK = 'transcript_pk'
+GENE_PK = 'gene_pk'
 PROTEIN_PK = 'protein_pk'
 COMPOUND_PK = 'compound_pk'
 REACTION_PK = 'reaction_pk'
@@ -36,7 +36,7 @@ class LinkerView(FormView):
     success_url = 'linker/analysis.html'
 
     def form_valid(self, form):
-        transcripts_str = form.cleaned_data['transcripts']
+        genes_str = form.cleaned_data['genes']
         proteins_str = form.cleaned_data['proteins']
         compounds_str = form.cleaned_data['compounds']
         species_key = int(form.cleaned_data['species'])
@@ -44,19 +44,19 @@ class LinkerView(FormView):
         species = species_dict[species_key]
 
         ### all the ids that we have from the user ###
-        observed_gene_ids = [x for x in iter(transcripts_str.splitlines())]
-        observed_protein_ids = [x for x in iter(proteins_str.splitlines())]
-        observed_compound_ids = [x for x in iter(compounds_str.splitlines())]
+        observed_gene_ids = [x for x in iter(genes_str.splitlines()[1:])]
+        observed_protein_ids = [x for x in iter(proteins_str.splitlines()[1:])]
+        observed_compound_ids = [x for x in iter(compounds_str.splitlines()[1:])]
 
         ### map genes -> proteins using Reactome ###
 
         gene_ids = observed_gene_ids
         mapping, id_to_names = ensembl_to_uniprot(gene_ids, species)
-        transcript_2_proteins = _make_relations(mapping, TRANSCRIPT_PK, PROTEIN_PK, value_key=None)
+        gene_2_proteins = _make_relations(mapping, GENE_PK, PROTEIN_PK, value_key=None)
 
         ### maps proteins -> reactions using Reactome ###
 
-        inferred_protein_ids = transcript_2_proteins.values
+        inferred_protein_ids = gene_2_proteins.values
         protein_ids = observed_protein_ids + inferred_protein_ids
         mapping, id_to_names = uniprot_to_reaction(protein_ids, species)
         protein_2_reactions = _make_relations(mapping, PROTEIN_PK, REACTION_PK, value_key='reaction_id')
@@ -76,14 +76,14 @@ class LinkerView(FormView):
 
         ### add dummy entries ###
 
-        transcript_2_proteins = _add_dummy(transcript_2_proteins, gene_ids, protein_ids, TRANSCRIPT_PK, PROTEIN_PK)
+        gene_2_proteins = _add_dummy(gene_2_proteins, gene_ids, protein_ids, GENE_PK, PROTEIN_PK)
         protein_2_reactions = _add_dummy(protein_2_reactions, protein_ids, reaction_ids, PROTEIN_PK, REACTION_PK)
         compound_2_reactions = _add_dummy(compound_2_reactions, compound_ids, reaction_ids, COMPOUND_PK, REACTION_PK)
         reaction_2_pathways = _add_dummy(reaction_2_pathways, reaction_ids, [], REACTION_PK, PATHWAY_PK)
 
         ### set everything to the request context ###
 
-        transcript_2_proteins_json = json.dumps(transcript_2_proteins.mapping_list)
+        gene_2_proteins_json = json.dumps(gene_2_proteins.mapping_list)
         protein_2_reactions_json = json.dumps(protein_2_reactions.mapping_list)
         compound_2_reactions_json = json.dumps(compound_2_reactions.mapping_list)
         reaction_2_pathways_json = json.dumps(reaction_2_pathways.mapping_list)
@@ -91,7 +91,7 @@ class LinkerView(FormView):
         rel_path = static('data/gene_names.p')
         pickled_url = self.request.build_absolute_uri(rel_path)
         metadata_map = get_gene_names(gene_ids, pickled_url)
-        transcripts_json = _pk_to_json(TRANSCRIPT_PK, 'gene_id', gene_ids, metadata_map)
+        genes_json = _pk_to_json(GENE_PK, 'gene_id', gene_ids, metadata_map)
 
         # metadata_map = get_uniprot_metadata_online(uniprot_ids)
         proteins_json = _pk_to_json('protein_pk', 'protein_id', protein_ids)
@@ -112,12 +112,12 @@ class LinkerView(FormView):
         pathways_json = _pk_to_json('pathway_pk', 'pathway_id', pathway_ids, metadata_map)
 
         data = {
-            'transcripts_json': transcripts_json,
+            'genes_json': genes_json,
             'proteins_json': proteins_json,
             'compounds_json': compounds_json,
             'reactions_json': reactions_json,
             'pathways_json': pathways_json,
-            'transcript_proteins_json': transcript_2_proteins_json,
+            'gene_proteins_json': gene_2_proteins_json,
             'protein_reactions_json': protein_2_reactions_json,
             'compound_reactions_json': compound_2_reactions_json,
             'reaction_pathways_json': reaction_2_pathways_json,

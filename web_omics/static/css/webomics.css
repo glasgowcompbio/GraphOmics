@@ -14,3 +14,8 @@ h6,
   font-size: 18px;
   font-weight: bold;
 }
+textarea {
+    font-size: 14px;
+    line-height: 18px;
+    padding: 5px 11px;
+}

@@ -24,7 +24,7 @@
     <div class="row">
       <div class="col-md-2 padding-0">
         <h6>Genes</h6>
-        <table id="transcripts_table" class="table hover compact pod-table">
+        <table id="genes_table" class="table hover compact pod-table">
         </table>
       </div>
 
@@ -117,9 +117,9 @@
     <script type='text/javascript' src='{% static "js/firdi.js" %}'></script>
     <script type='text/javascript' src='{% static "js/alasql.js" %}'></script>
     <script type='text/javascript'>
-        var transcripts = JSON.parse('{{ data.transcripts_json|safe }}');
+        var genes = JSON.parse('{{ data.genes_json|safe }}');
         var proteins = JSON.parse('{{ data.proteins_json|safe }}');
-        var transcript_proteins = JSON.parse('{{ data.transcript_proteins_json|safe }}');
+        var gene_proteins = JSON.parse('{{ data.gene_proteins_json|safe }}');
         var reactions = JSON.parse('{{ data.reactions_json|safe }}');
         var protein_reactions = JSON.parse('{{ data.protein_reactions_json|safe }}');
         var compounds = JSON.parse('{{ data.compounds_json|safe }}');
@@ -127,9 +127,9 @@
         var pathways = JSON.parse('{{ data.pathways_json|safe }}');
         var reaction_pathways = JSON.parse('{{ data.reaction_pathways_json|safe }}');
         var data = {
-            transcripts: transcripts,
+            genes: genes,
             proteins: proteins,
-            transcript_proteins: transcript_proteins,
+            gene_proteins: gene_proteins,
             reactions: reactions,
             protein_reactions: protein_reactions,
             compounds: compounds,
