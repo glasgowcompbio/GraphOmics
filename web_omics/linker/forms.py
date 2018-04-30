@@ -14,13 +14,13 @@ def load_example_data(file_path):
 
     return example_data
 
-example_genes = load_example_data('../static/data/gene_ids.csv')
-example_proteins = ""
-example_compounds = load_example_data('../static/data/compound_ids.csv')
-
 # example_genes = load_example_data('../static/data/gene_data.csv')
 # example_proteins = ""
 # example_compounds = load_example_data('../static/data/compound_data.csv')
+
+example_genes = load_example_data('../static/data/gene_ids.csv')
+example_proteins = ""
+example_compounds = load_example_data('../static/data/compound_ids.csv')
 
 species_list = get_species_list()
 SPECIES_CHOICES = []

@@ -2,9 +2,12 @@ import json
 import re
 import urllib.request
 from urllib.parse import urlparse
-
+from io import StringIO
 import collections
-# Create your views here.
+
+import pandas as pd
+import numpy as np
+
 from django.http import HttpResponse
 from django.http import JsonResponse
 from django.shortcuts import render
@@ -19,8 +22,8 @@ from linker.reactome import compound_to_reaction, reaction_to_metabolite_pathway
 from linker.reactome import ensembl_to_uniprot, uniprot_to_reaction, get_species_dict
 
 Relation = collections.namedtuple('Relation', 'keys values mapping_list')
-DUMMY_KEY = '0'  # this should be something that will appear first in the table when sorted alphabetically
-DUMMY_VALUE = "---"
+NA = '-'  # this should be something that will appear first in the table when sorted alphabetically
+
 TRUNCATE_LIMIT = 200
 
 GENE_PK = 'gene_pk'
@@ -44,9 +47,12 @@ class LinkerView(FormView):
         species = species_dict[species_key]
 
         ### all the ids that we have from the user ###
-        observed_gene_ids = [x for x in iter(genes_str.splitlines()[1:])]
-        observed_protein_ids = [x for x in iter(proteins_str.splitlines()[1:])]
-        observed_compound_ids = [x for x in iter(compounds_str.splitlines()[1:])]
+        observed_gene_df = csv_to_dataframe(genes_str)
+        observed_protein_df = csv_to_dataframe(proteins_str)
+        observed_compound_df = csv_to_dataframe(compounds_str)
+        observed_gene_ids = get_ids_from_dataframe(observed_gene_df)
+        observed_protein_ids = get_ids_from_dataframe(observed_protein_df)
+        observed_compound_ids = get_ids_from_dataframe(observed_compound_df)
 
         ### map genes -> proteins using Reactome ###
 
@@ -58,6 +64,7 @@ class LinkerView(FormView):
 
         inferred_protein_ids = gene_2_proteins.values
         protein_ids = observed_protein_ids + inferred_protein_ids
+        protein_ids = list(set(observed_protein_ids + inferred_protein_ids))
         mapping, id_to_names = uniprot_to_reaction(protein_ids, species)
         protein_2_reactions = _make_relations(mapping, PROTEIN_PK, REACTION_PK, value_key='reaction_id')
 
@@ -69,17 +76,41 @@ class LinkerView(FormView):
 
         ### maps reactions -> pathways using Reactome ###
 
-        reaction_ids = list(set(protein_2_reactions.values).union(set(compound_2_reactions.values)))
-
+        reaction_ids = list(set(protein_2_reactions.values + compound_2_reactions.values))
         mapping, id_to_names = reaction_to_metabolite_pathway(reaction_ids, species)
         reaction_2_pathways = _make_relations(mapping, REACTION_PK, PATHWAY_PK, value_key='pathway_id')
 
-        ### add dummy entries ###
+        ### add links ###
 
-        gene_2_proteins = _add_dummy(gene_2_proteins, gene_ids, protein_ids, GENE_PK, PROTEIN_PK)
-        protein_2_reactions = _add_dummy(protein_2_reactions, protein_ids, reaction_ids, PROTEIN_PK, REACTION_PK)
-        compound_2_reactions = _add_dummy(compound_2_reactions, compound_ids, reaction_ids, COMPOUND_PK, REACTION_PK)
-        reaction_2_pathways = _add_dummy(reaction_2_pathways, reaction_ids, [], REACTION_PK, PATHWAY_PK)
+        # map NA to NA
+        gene_2_proteins = _add_links(gene_2_proteins, GENE_PK, PROTEIN_PK, [NA], [NA])
+        protein_2_reactions = _add_links(protein_2_reactions, PROTEIN_PK, REACTION_PK, [NA], [NA])
+        compound_2_reactions = _add_links(compound_2_reactions, COMPOUND_PK, REACTION_PK, [NA], [NA])
+        reaction_2_pathways = _add_links(reaction_2_pathways, REACTION_PK, PATHWAY_PK, [NA], [NA])
+
+        # map genes that have no proteins to NA
+        gene_pk_list = [x for x in gene_ids if x not in gene_2_proteins.keys]
+        gene_2_proteins = _add_links(gene_2_proteins, GENE_PK, PROTEIN_PK, gene_pk_list, [NA])
+
+        # map proteins that have no reactions to NA
+        protein_pk_list = [x for x in protein_ids if x not in protein_2_reactions.keys]
+        protein_2_reactions = _add_links(protein_2_reactions, PROTEIN_PK, REACTION_PK, protein_pk_list, [NA])
+
+        # map reactions that have no proteins to NA
+        reaction_pk_list = [x for x in reaction_ids if x not in compound_2_reactions.values]
+        protein_2_reactions = _add_links(protein_2_reactions, COMPOUND_PK, REACTION_PK, reaction_pk_list, [NA])
+
+        # map compounds that have no reactions to NA
+        compound_pk_list = [x for x in compound_ids if x not in compound_2_reactions.keys]
+        compound_2_reactions = _add_links(compound_2_reactions, COMPOUND_PK, REACTION_PK, compound_pk_list, [NA])
+
+        # map reactions that have no compounds to NA
+        reaction_pk_list = [x for x in reaction_ids if x not in compound_2_reactions.values]
+        compound_2_reactions = _add_links(compound_2_reactions, COMPOUND_PK, REACTION_PK, [NA], reaction_pk_list)
+
+        # map reactions that have no pathways to NA
+        reaction_pk_list = [x for x in reaction_ids if x not in reaction_2_pathways.keys]
+        reaction_2_pathways = _add_links(reaction_2_pathways, REACTION_PK, PATHWAY_PK, reaction_pk_list, [NA])
 
         ### set everything to the request context ###
 
@@ -91,15 +122,15 @@ class LinkerView(FormView):
         rel_path = static('data/gene_names.p')
         pickled_url = self.request.build_absolute_uri(rel_path)
         metadata_map = get_gene_names(gene_ids, pickled_url)
-        genes_json = _pk_to_json(GENE_PK, 'gene_id', gene_ids, metadata_map)
+        genes_json = _pk_to_json(GENE_PK, 'gene_id', gene_ids, metadata_map, observed_gene_df)
 
         # metadata_map = get_uniprot_metadata_online(uniprot_ids)
-        proteins_json = _pk_to_json('protein_pk', 'protein_id', protein_ids)
+        proteins_json = _pk_to_json('protein_pk', 'protein_id', protein_ids, metadata_map, observed_protein_df)
 
         rel_path = static('data/compound_names.json')
         json_url = self.request.build_absolute_uri(rel_path)
         metadata_map = get_compound_metadata_from_json(compound_ids, json_url)
-        compounds_json = _pk_to_json('compound_pk', 'compound_id', compound_ids, metadata_map)
+        compounds_json = _pk_to_json('compound_pk', 'compound_id', compound_ids, metadata_map, observed_compound_df)
 
         metadata_map = {}
         for name in id_to_names:
@@ -108,8 +139,8 @@ class LinkerView(FormView):
             metadata_map[name] = {'display_name': filtered}
 
         pathway_ids = reaction_2_pathways.values
-        reactions_json = _pk_to_json('reaction_pk', 'reaction_id', reaction_ids, metadata_map)
-        pathways_json = _pk_to_json('pathway_pk', 'pathway_id', pathway_ids, metadata_map)
+        reactions_json = _pk_to_json('reaction_pk', 'reaction_id', reaction_ids, metadata_map, None)
+        pathways_json = _pk_to_json('pathway_pk', 'pathway_id', pathway_ids, metadata_map, None)
 
         data = {
             'genes_json': genes_json,
@@ -128,16 +159,64 @@ class LinkerView(FormView):
         return render(self.request, self.success_url, context)
 
 
-def _pk_to_json(pk_label, display_label, data, metadata_map={}):
+def csv_to_dataframe(csv_str):
+    data = StringIO(csv_str)
+    try:
+        df = pd.read_csv(data)
+    except pd.errors.EmptyDataError:
+        df = None
+    return df
+
+
+def get_ids_from_dataframe(df):
+    if df is None:
+        return []
+    else:
+        return df.values[:, 0].tolist() # id is always the first column
+
+
+def _pk_to_json(pk_label, display_label, data, metadata_map, observed_df):
+
+    # turn the first column of the dataframe into index
+    if observed_df is not None:
+        observed_df = observed_df.set_index(observed_df.columns[0])
+        observed_df = observed_df[~observed_df.index.duplicated(keep='first')] # remove row with duplicate indices
+
     output = []
     for item in sorted(data):
+
+        if item == NA:
+            continue # handled below after this loop
+
+        # add primary key to row data
+        row = {pk_label: item}
+
+        # add display label to row_data
         if len(metadata_map) > 0 and item in metadata_map and metadata_map[item] is not None:
             label = metadata_map[item]['display_name']
         else:
             label = item
-        row = {pk_label: item, display_label: label}
+        row[display_label] = label
+
+        # add the remaining data columns to row
+        if observed_df is not None:
+            try:
+                data = observed_df.loc[item].to_dict()
+            except KeyError: # missing data
+                data = {}
+                for col in observed_df.columns:
+                    data.update({col: 0})
+            row.update(data)
+
         output.append(row)
-    output.append({pk_label: DUMMY_KEY, display_label: DUMMY_VALUE})  # add dummy entry
+
+    # add dummy entry
+    row = {pk_label: NA, display_label: NA}
+    if observed_df is not None: # and the the values of the remaining columns for the dummy entry
+        for col in observed_df.columns:
+            row.update({col: 0})
+    output.append(row)
+
     output_json = json.dumps(output)
     return output_json
 
@@ -175,41 +254,31 @@ def _make_relations(mapping, source_pk, target_pk, value_key=None):
                     mapping_list=mapping_list)
 
 
-def _add_dummy(relation, source_ids, target_ids, source_pk, target_pk):
-    # Create a copy as we don't want to modify the original list
-    mapping_list = list(relation.mapping_list)
+def _add_dummy(relation, source_ids, target_ids, source_pk_label, target_pk_label):
 
-    # Insert dummy entries. We need to do this for the inner joins
-    # across all tables to work.
+    to_add = [x for x in source_ids if x not in relation.keys]
+    relation = _add_links(relation, source_pk_label, target_pk_label, to_add, [NA])
 
-    # first we add dummy entries for all the unmapped ids from the source
-    for key in source_ids:
-        if key not in relation.keys:
-            row = {source_pk: key, target_pk: DUMMY_KEY}
-            mapping_list.append(row)
+    # to_add = [x for x in target_ids if x not in relation.values]
+    # relation = _add_links(relation, source_pk_label, target_pk_label, [NA], to_add)
 
-    # Then we add dummy entries for all the unmapped ids from the target
-    for key in target_ids:
-        if key not in relation.values:
-            row = {source_pk: DUMMY_KEY, target_pk: key}
-            mapping_list.append(row)
-
-    # Finally link the dummy-vs-dummy entries across
-    row = {source_pk: DUMMY_KEY, target_pk: DUMMY_KEY}
-    mapping_list.append(row)
-
-    return Relation(keys=relation.keys, values=relation.values, mapping_list=mapping_list)
+    # relation = _add_links(relation, source_pk_label, target_pk_label, [NA], [NA])
+    return relation
 
 
-def reactome_map(species, source_ids, target_ids, mapping_func,
-                 source_pk, target_pk, value_key=None):
-    mapping, id_to_names = mapping_func(source_ids, species)
-    relations = _make_relations(mapping, source_pk, target_pk,
-                                value_key=value_key)
-    relations = _add_dummy(relations, source_ids, target_ids,
-                           source_pk, target_pk)
-    relations_json = json.dumps(relations.mapping_list)
-    return relations, relations_json, id_to_names
+def _add_links(relation, source_pk_label, target_pk_label, source_pk_list, target_pk_list):
+
+    rel_mapping_list = list(relation.mapping_list)
+    rel_keys = relation.keys
+    rel_values = relation.values
+
+    for s1 in source_pk_list:
+        if s1 not in rel_keys: rel_keys.append(s1)
+        for s2 in target_pk_list:
+            rel_mapping_list.append({source_pk_label: s1, target_pk_label: s2})
+            if s2 not in rel_keys: rel_values.append(s2)
+
+    return Relation(keys=rel_keys, values=rel_values, mapping_list=rel_mapping_list)
 
 
 def get_ensembl_gene_info(request):

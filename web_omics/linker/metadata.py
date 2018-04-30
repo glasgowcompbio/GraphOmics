@@ -152,8 +152,8 @@ def get_compound_metadata_from_json(kegg_ids, json_url):
         for kegg_id in kegg_ids:
             try:
                 metadata_map[kegg_id] = lookup[kegg_id]
-            except ValueError:
-                print('kegg_id=%s is not found in %s!' % (kegg_id, json_url))
+            except KeyError:
+                metadata_map[kegg_id] = {'display_name': kegg_id}
     return metadata_map
 
 
