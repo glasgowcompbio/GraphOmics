@@ -4,115 +4,118 @@
 {% block title %}WebOmics{% endblock %}
 
 {% block head_block %}
-    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/v/dt/dt-1.10.16/sc-1.4.4/sl-1.2.5/datatables.min.css"/>
+    <!-- link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/v/dt/dt-1.10.16/sc-1.4.4/sl-1.2.5/datatables.min.css"/ -->
+    <link rel="stylesheet" type="text/css"
+          href="https://cdn.datatables.net/v/dt/dt-1.10.16/b-1.5.1/b-colvis-1.5.1/r-2.2.1/sc-1.4.4/sl-1.2.5/datatables.min.css"/>
     <link rel="stylesheet" type="text/css" href='{% static "css/analysis.css" %}'/>
 {% endblock %}
 
 {% block body_block %}
 
-    <div class="row">
-      <div class="col-md-12">
-        <h5>Data Integration Results</h5>
-        <p>
-            <input type="text" style="width: 600px;" id="global_filter"/>
-            <input type="button" value="Search">
-        </p>
-        <hr>
-      </div>
-    </div>
+    <div class="container-fluid testimonial-group">
 
-    <div class="row">
-      <div class="col-md-2 padding-0">
-        <h6>Genes</h6>
-        <table id="genes_table" class="table hover compact pod-table">
-        </table>
-      </div>
-
-      <div class="col-md-2 padding-0">
-        <h6>Proteins</h6>
-        <table id="proteins_table" class="table hover compact pod-table">
-      </table>
-      </div>
-
-      <div class="col-md-2 padding-0">
-        <h6>Compounds</h6>
-        <table id="compounds_table" class="table hover compact pod-table">
-        </table>
-      </div>
-
-      <div class="col-md-3 padding-0">
-        <h6>Reactions</h6>
-        <table id="reactions_table" class="table hover compact pod-table">
-        </table>
-      </div>
-
-      <div class="col-md-3 padding-0">
-        <h6>Pathways</h6>
-        <table id="pathways_table" class="table hover compact pod-table">
-        </table>
-      </div>
-
-      <!-- p>
-          This page shows the results of data integration across the different
-          omics data provided using the Reactome database.
-          Clicking a record (table row) adds a constraint across the other tables.
-          Clicking a constraining record (highlighted in blue) removes that constraint.
-          Multiple constraints across table can be used.
-          Note that the constraints are across all the tables.
-      </p -->
-
-    </div>
-
-    <div style="word-wrap: break-word;">
-        <div class="row" id="row-clicked-info">
-          <div class="col-md-2 padding-0" id="gene-row-info">
-            <div class="panel panel-default">
-              <div class="panel-heading">
-                <h1 class="panel-title">Gene Information</h1>
-              </div>
-              <div class="panel-body">Click an entry above for more information</div>
+        <div class="row">
+            <div class="col-md-12">
+                <h5>Data Integration Results</h5>
+                <p>
+                    <input type="text" style="width: 600px;" id="global_filter"/>
+                    <input type="button" value="Search">
+                </p>
+                <hr>
             </div>
-          </div>
-          <div class="col-md-2 padding-0" id="protein-row-info">
-            <div class="panel panel-default">
-              <div class="panel-heading">
-                <h1 class="panel-title">Protein Information</h1>
-              </div>
-              <div class="panel-body">Click an entry above for more information</div>
-            </div>
-          </div>
-          <div class="col-md-2 padding-0" id="compound-row-info">
-            <div class="panel panel-default">
-              <div class="panel-heading">
-                <h1 class="panel-title">Compound Information</h1>
-              </div>
-              <div class="panel-body">Click an entry above for more information</div>
-            </div>
-          </div>
-          <div class="col-md-3 padding-0" id="reaction-row-info">
-            <div class="panel panel-default">
-              <div class="panel-heading">
-                <h1 class="panel-title">Reaction Information</h1>
-              </div>
-              <div class="panel-body">Click an entry above for more information</div>
-            </div>
-          </div>
-          <div class="col-md-3 padding-0" id="pathway-row-info">
-            <div class="panel panel-default">
-              <div class="panel-heading">
-                <h1 class="panel-title">Pathway Information</h1>
-              </div>
-              <div class="panel-body">Click an entry above for more information</div>
-            </div>
-          </div>
         </div>
+
+        <div class="row text-center flex-nowrap">
+            <div class="col padding-0">
+                <h6>Genes</h6>
+                <table id="genes_table" class="table hover compact pod-table" style="width:100%">
+                </table>
+                <div id="gene-row-info">
+                    <div class="panel panel-default">
+                        <div class="panel-heading">
+                            <h6 class="panel-title">Gene Information</h6>
+                        </div>
+                        <div class="panel-body">Click an entry above for more information</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col padding-0">
+                <h6>Proteins</h6>
+                <table id="proteins_table" class="table hover compact pod-table" style="width:100%">
+                </table>
+                <div id="protein-row-info">
+                    <div class="panel panel-default">
+                        <div class="panel-heading">
+                            <h6 class="panel-title">Protein Information</h6>
+                        </div>
+                        <div class="panel-body">Click an entry above for more information</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col padding-0">
+                <h6>Compounds</h6>
+                <table id="compounds_table" class="table hover compact pod-table" style="width:100%">
+                </table>
+                <div id="compound-row-info">
+                    <div class="panel panel-default">
+                        <div class="panel-heading">
+                            <h6 class="panel-title">Compound Information</h6>
+                        </div>
+                        <div class="panel-body">Click an entry above for more information</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col padding-0">
+                <h6>Reactions</h6>
+                <table id="reactions_table" class="table hover compact pod-table" style="width:100%">
+                </table>
+                <div id="reaction-row-info">
+                    <div class="panel panel-default">
+                        <div class="panel-heading">
+                            <h6 class="panel-title">Reaction Information</h6>
+                        </div>
+                        <div class="panel-body">Click an entry above for more information</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col padding-0">
+                <h6>Pathways</h6>
+                <table id="pathways_table" class="table hover compact pod-table" style="width:100%">
+                </table>
+                <div id="pathway-row-info">
+                    <div class="panel panel-default">
+                        <div class="panel-heading">
+                            <h6 class="panel-title">Pathway Information</h6>
+                        </div>
+                        <div class="panel-body">Click an entry above for more information</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- p>
+                This page shows the results of data integration across the different
+                omics data provided using the Reactome database.
+                Clicking a record (table row) adds a constraint across the other tables.
+                Clicking a constraining record (highlighted in blue) removes that constraint.
+                Multiple constraints across table can be used.
+                Note that the constraints are across all the tables.
+            </p -->
+
+        </div>
+
     </div>
 
 {% endblock %}
 
 {% block js_block %}
 
-    <script type="text/javascript" src="https://cdn.datatables.net/v/dt/dt-1.10.16/sc-1.4.4/sl-1.2.5/datatables.min.js"></script>
+    <!-- script type="text/javascript" src="https://cdn.datatables.net/v/dt/dt-1.10.16/sc-1.4.4/sl-1.2.5/datatables.min.js"></script -->
+    <script type="text/javascript"
+            src="https://cdn.datatables.net/v/dt/dt-1.10.16/b-1.5.1/b-colvis-1.5.1/r-2.2.1/sc-1.4.4/sl-1.2.5/datatables.min.js"></script>
     <script type="text/javascript" src="https://cdn.datatables.net/plug-ins/1.10.16/dataRender/ellipsis.js"></script>
     <script type='text/javascript' src='{% static "js/firdi.js" %}'></script>
     <script type='text/javascript' src='{% static "js/alasql.js" %}'></script>

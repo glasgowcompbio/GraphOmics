@@ -472,6 +472,10 @@ def get_reactome_pathway_info(request):
             {
                 'text': 'Link to Reactome database',
                 'href': 'https://reactome.org/content/detail/' + pathway_id
+            },
+            {
+                'text': 'SBML Export',
+                'href': 'https://reactome.org/ContentService/exporter/sbml/' + pathway_id + '.xml'
             }
         ]
         data = {

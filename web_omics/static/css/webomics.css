@@ -1,3 +1,4 @@
+/*
 .wrap {
     display: flex;
     justify-content: center;
@@ -18,4 +19,15 @@ textarea {
     font-size: 14px;
     line-height: 18px;
     padding: 5px 11px;
+}
+ */
+/* https://stackoverflow.com/questions/38901166/horizontal-scrollable-divs-in-a-bootstrap-row */
+
+.testimonial-group > .row {
+  overflow-x: auto;
+  white-space: nowrap;
+}
+.testimonial-group > .row > .col-sm-4 {
+  display: inline-block;
+  float: none;
 }

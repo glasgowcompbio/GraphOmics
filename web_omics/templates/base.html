@@ -1,90 +1,77 @@
 <!DOCTYPE html>
 {% load static %}
 <html lang="en">
-  <head>
+<head>
 
     <!-- The following 3 meta tags *must* come first in the head; any other head content must come *after* these tags -->
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
     <title>WebOmics - {% block title %}{% endblock %}</title>
 
     <!-- Bootstrap and jquery -->
-    <link href="{% static 'css/bootstrap.css' %}" rel="stylesheet">
-    <!-- link href="{% static 'css/bootstrap-theme.css' %}" rel="stylesheet" -->
-    <link href="{% static 'css/jquery-ui.css' %}" rel="stylesheet">
-    <link href="{% static 'css/jquery-ui.structure.css' %}" rel="stylesheet">
-    <link href="{% static 'css/jquery-ui.theme.css' %}" rel="stylesheet">
-    <link href="{% static 'css/flat-ui.css' %}" rel="stylesheet">
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.1/css/bootstrap.min.css"
+          integrity="sha384-WskhaSGFgHYWDcbwN70/dfYBj47jz9qbsMId/iRN3ewGhXQFZCSftd1LZCfmhktB" crossorigin="anonymous">
+    <link href="{% static 'css/bootstrap4-business-tycoon.min.css' %}" rel="stylesheet">
+
     <!-- Custom CSS -->
     <link href="{% static 'css/webomics.css' %}" rel="stylesheet">
-
-    <!-- Google web fonts -->
-    <link rel="stylesheet" type="text/css" href="http://fonts.googleapis.com/css?family=Tangerine">
 
     <!-- Any other additional things you want to include .. -->
     {% block head_block %}
     {% endblock %}
 
-    <!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
-    <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
-    <!--[if lt IE 9]>
-      <script src="https://oss.maxcdn.com/html5shiv/3.7.2/html5shiv.min.js"></script>
-      <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
-    <![endif]-->
-  </head>
-  <body role="document">
+</head>
+<body role="document">
 
-  <!-- Fixed navbar -->
-    <nav class="navbar navbar-inverse navbar-fixed-top">
-      <div class="container"  style="width: 100%">
-        <div class="navbar-header">
-          <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
-            <span class="sr-only">Toggle navigation</span>
-            <span class="icon-bar"></span>
-            <span class="icon-bar"></span>
-            <span class="icon-bar"></span>
-          </button>
-          <a class="navbar-brand" href="/">WebOmics</a>
-        </div>
-        <div id="navbar" class="navbar-collapse collapse">
-          <ul class="nav navbar-nav navbar-left">
-            <li><a href="/linker"><strong>Data Integration</strong></a></li>
-          </ul>
-          <ul class="nav navbar-nav navbar-right">
-            {% if user.is_authenticated %}
-                <li>
-                    <a href="/registration/logout" class="pull-right"><strong>Log out {{ user }}</strong></a>
-                    {% ifnotequal request.user.username "guest" %}
-                        <a href="/registration/profile" class="pull-right"><strong>Update Profile</strong></a>
-                    {% endifnotequal %}
-                    {% if request.user.is_staff %}
-                        <a href="/basicviz/list_log" class="pull-right"><strong>View Job Logs</strong></a>
-                    {% endif %}
-                </li>
-            {% else %}
-                <li>
-                    <a href="/registration/login" class="pull-right"><strong>Log in</strong></a>
-                </li>
-            {% endif %}
-          </ul>
-        </div><!--/.nav-collapse -->
-      </div>
-    </nav>
-    <div class="container" style="margin-top: 50px; background: white; width: 100%">
-        {% block body_block %}<h1>Hello, world!</h1>{% endblock %}
+<nav class="navbar navbar-expand-lg navbar-light bg-light">
+    <a class="navbar-brand" href="/">WebOmics</a>
+    <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+    </button>
+
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+        <ul class="navbar-nav mr-auto">
+            <li class="nav-item active">
+                <a class="nav-link" href="/linker">Analysis</a>
+            </li>
+            <!-- li class="nav-item dropdown">
+                <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-toggle="dropdown"
+                   aria-haspopup="true" aria-expanded="false">
+                    Dropdown
+                </a>
+                <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+                    <a class="dropdown-item" href="#">Action</a>
+                    <a class="dropdown-item" href="#">Another action</a>
+                    <div class="dropdown-divider"></div>
+                    <a class="dropdown-item" href="#">Something else here</a>
+                </div>
+            </li -->
+        </ul>
+        <form class="form-inline my-2 my-lg-0">
+            <input class="form-control mr-sm-2" type="search" placeholder="Search" aria-label="Search">
+            <button class="btn btn-success my-2 my-sm-0" type="submit">Search</button>
+        </form>
     </div>
+</nav>
 
-    <!-- jQuery (necessary for Bootstrap's JavaScript plugins) -->
-    <!-- <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script> -->
-    <!-- Include all compiled plugins (below), or include individual files as needed -->
-    <script type='text/javascript' src='{% static "js/jquery-3.3.1.js" %}'></script>
-    <script type='text/javascript' src='{% static "js/jquery-ui.min.js" %}'> </script>
-    <script type='text/javascript' src='{% static "js/bootstrap.min.js" %}'></script>
-    <script type='text/javascript' src='{% static "js/flat-ui.js" %}'></script>
-    <script type='text/javascript' src='{% static "js/jquery.blockUI.js" %}'></script>
-    {% block js_block %}
-    {% endblock %}
+{% block body_block %}
+{% endblock %}
 
-  </body>
+<!-- jQuery (necessary for Bootstrap's JavaScript plugins) -->
+<!-- <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script> -->
+<!-- Include all compiled plugins (below), or include individual files as needed -->
+<script src="https://code.jquery.com/jquery-3.3.1.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.3/umd/popper.min.js"
+        integrity="sha384-ZMP7rVo3mIykV+2+9J3UJ46jBk0WLaUAdn689aCwoqbBJiSnjAK/l8WvCWPIPm49"
+        crossorigin="anonymous"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.1.1/js/bootstrap.min.js"
+        integrity="sha384-smHYKdLADwkXOn1EmN1qk/HfnUcbVRZyYmZ4qpPea6sjB/pTJ0euyQp0Mk8ck+5T"
+        crossorigin="anonymous"></script>
+<script type='text/javascript' src='{% static "js/jquery.blockUI.js" %}'></script>
+{% block js_block %}
+{% endblock %}
+
+</body>
 </html>

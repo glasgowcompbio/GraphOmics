@@ -6,18 +6,19 @@
 {% endblock %}
 
 {% block body_block %}
-    <h4>Create a New Data Integration Analysis</h4>
-    <form id="analysis_form"
-        method="post"
-        action="."
-        enctype="multipart/form-data">
-        {% csrf_token %}
-        <table>
-            {{ form.as_table }}
-        </table>
-        <br/>
-        <input type="submit" name="submit" value="Submit Your Analysis" class="btn btn-primary" />
-        &nbsp;(<a href="">Load Example Data</a>)
-    </form>
-
+    <div class="container-fluid">
+        <h4>Create a New Data Integration Analysis</h4>
+        <form id="analysis_form"
+              method="post"
+              action="."
+              enctype="multipart/form-data">
+            {% csrf_token %}
+            <table>
+                {{ form.as_table }}
+            </table>
+            <br/>
+            <input type="submit" name="submit" value="Submit Your Analysis" class="btn btn-primary"/>
+            &nbsp;(<a href="">Load Example Data</a>)
+        </form>
+    </div>
 {% endblock %}

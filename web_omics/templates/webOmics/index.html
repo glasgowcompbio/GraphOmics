@@ -3,30 +3,32 @@
 {% load staticfiles %}
 
 {% block body_block %}
-<div class="text-center" style="margin-top: 30px; margin-bottom: 30px">
-    <img src="{% static 'images/banner.png' %}" alt="Banner" width="60%"/>
-    <br/>
-    <a href="/linker" class="btn btn-primary">Create a New Data Integration Analysis</a>
-</div>
-  <div class="panel panel-default">
-    <div class="panel-body">
-        <h4>Integrated Omics Analysis</h4>
-        <p>
-            Data integration across multiple -omics is challenging. WebOmics help you view the relationship between entities
-            across multiple omics, and visualise them as a network graph and also infer the most probable pathways given
-            all the observed supports.
-        </p>
+    <div class="container-fluid">
+        <div class="text-center" style="margin-top: 30px; margin-bottom: 30px">
+            <img src="{% static 'images/banner.png' %}" alt="Banner" width="60%"/>
+            <br/>
+            <a href="/linker" class="btn btn-primary">Create a New Data Integration Analysis</a>
+        </div>
+        <div class="panel panel-default">
+            <div class="panel-body">
+                <h4>Integrated Omics Analysis</h4>
+                <p>
+                    Data integration across multiple -omics is challenging. WebOmics help you view the relationship
+                    between entities
+                    across multiple omics, and visualise them as a network graph and also infer the most probable
+                    pathways given
+                    all the observed supports.
+                </p>
+            </div>
+        </div>
+        <div class="panel panel-default">
+            <div class="panel-body">
+                <h4>Links</h4>
+                <p>
+                    The codes for this website, alongside other analysis module, can be found
+                    at <a href="https://github.com/joewandy/omics_integration">https://github.com/joewandy/omics_integration</a>
+                </p>
+            </div>
+        </div>
     </div>
-  </div>
-  <div class="panel panel-default">
-    <div class="panel-body">
-        <h4>Links</h4>
-        <p>
-            The codes for this website, alongside other analysis module, can be found
-            at <a href="https://github.com/joewandy/omics_integration">https://github.com/joewandy/omics_integration</a>
-        </p>
-    </div>
-  </div>
-</div>
-
 {% endblock %}

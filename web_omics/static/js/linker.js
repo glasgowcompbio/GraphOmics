@@ -14,7 +14,8 @@ const myLinker = (function () {
                     targets: 1,
                     render: $.fn.dataTable.render.ellipsis(50, false)
                 }],
-                "order": [[ 1, "asc" ]]
+                "order": [[ 1, "asc" ]],
+                // 'responsive': true
             };
 
             const tables = [ // the ordering in this list is important! do not change it.
@@ -249,7 +250,7 @@ const myLinker = (function () {
                         if (isImageUrl(item)) {
                             let newImage = $('<img/>', {
                                 'src': item,
-                                'class': 'img-responsive'
+                                'class': 'img-fluid'
                             });
                             dataDiv.append(newImage);
                         } else if (item.includes('reactome')) { // handle reactome images
@@ -259,7 +260,7 @@ const myLinker = (function () {
                             }).append(
                                 $('<img/>', {
                                     'src': item + "&quality=5",
-                                    'class': 'img-responsive'
+                                    'class': 'img-fluid'
                                 })
                             );
                             dataDiv.append(newLink);
@@ -332,7 +333,7 @@ const myLinker = (function () {
             // Create the divs that make up the 'blank' metabolite info panel
             let infoPanel = $('<div/>', {'class': 'panel panel-default'});
             let infoTitle = $('<div/>', {'class': 'panel-heading'});
-            let infoTitleContent = $('<h1/>', {
+            let infoTitleContent = $('<h6/>', {
                 'class': 'panel-title',
                 'text': title
             });
