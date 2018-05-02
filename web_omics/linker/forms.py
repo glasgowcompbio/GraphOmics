@@ -14,18 +14,21 @@ def load_example_data(file_path):
 
     return example_data
 
-# example_genes = load_example_data('../static/data/gene_data.csv')
-# example_proteins = ""
-# example_compounds = load_example_data('../static/data/compound_data.csv')
-
-example_genes = load_example_data('../static/data/gene_ids.csv')
+example_genes = load_example_data('../static/data/gene_data.csv')
 example_proteins = ""
-example_compounds = load_example_data('../static/data/compound_ids.csv')
+example_compounds = load_example_data('../static/data/compound_data.csv')
+
+# example_genes = load_example_data('../static/data/gene_ids_small.csv')
+# example_proteins = ""
+# example_compounds = load_example_data('../static/data/compound_ids.csv')
 
 species_list = get_species_list()
 SPECIES_CHOICES = []
+mus_musculus = None
 for idx, s in enumerate(species_list):
     SPECIES_CHOICES.append((idx, s, ))
+    if s == 'Mus musculus':
+        mus_musculus = (idx, s, )
 
 class LinkerForm(forms.Form):
     genes = forms.CharField(required = False,
@@ -41,4 +44,5 @@ class LinkerForm(forms.Form):
     def __init__(self, *args, **kwargs):
         super(LinkerForm, self).__init__(*args, **kwargs)
         self.fields['species'] = forms.ChoiceField(required = True,
-                                                   choices = SPECIES_CHOICES)
+                                                   choices = SPECIES_CHOICES,
+                                                   initial = mus_musculus[0])

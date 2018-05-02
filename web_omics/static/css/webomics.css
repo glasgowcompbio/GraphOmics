@@ -1,33 +1,74 @@
-/*
-.wrap {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-}
-p {
-  font-size: 14px;
-  line-height: 1.72222;
-  margin: 0 0 15px;
-  font-weight: normal;
-}
-h6,
-.h6 {
-  font-size: 18px;
-  font-weight: bold;
-}
-textarea {
-    font-size: 14px;
-    line-height: 18px;
-    padding: 5px 11px;
-}
- */
 /* https://stackoverflow.com/questions/38901166/horizontal-scrollable-divs-in-a-bootstrap-row */
-
-.testimonial-group > .row {
+.datatables_group > .row {
   overflow-x: auto;
   white-space: nowrap;
 }
-.testimonial-group > .row > .col-sm-4 {
+.datatables_group > .row > .col-sm-4 {
   display: inline-block;
   float: none;
+}
+
+/*
+.dataTables_wrapper {
+    position: relative;
+    clear: both;
+    *zoom: 1;
+    zoom: 1;
+    border: 1px dotted;
+    border-color: black;
+    padding: 5px;
+    font-size: 1em;
+}
+
+.dataTables_wrapper .dataTables_paginate {
+    float: right;
+    text-align: right;
+    padding-top: 0.25em;
+    height: 60px;
+}
+
+.dataTables_wrapper .dataTables_paginate .paginate_button {
+    box-sizing: border-box;
+    display: inline-block;
+    min-width: 1.5em;
+    padding: 1px;
+    margin-left: 2px;
+    text-align: center;
+    text-decoration: none !important;
+    cursor: pointer;
+    *cursor: hand;
+    color: #4b9ad5 !important;
+    border: 1px solid;
+    border-radius: 2px;
+    font-size: 1em;
+}
+
+.dataTables_wrapper .dataTables_paginate .paginate_button.current, .dataTables_wrapper .dataTables_paginate .paginate_button.current:hover {
+    color: #fff !important;
+    border: 1px solid #979797;
+    background-color: white;
+    background: #4b9ad5;
+    font-size: 1em;
+}
+
+.dataTables_wrapper .dataTables_paginate .paginate_button.disabled, .dataTables_wrapper .dataTables_paginate .paginate_button.disabled:hover, .dataTables_wrapper .dataTables_paginate .paginate_button.disabled:active {
+    cursor: default;
+    color: #4b9ad5 !important;
+    border: 1px solid;
+    background: transparent;
+    box-shadow: none;
+    font-size: 1em;
+}
+*/
+
+.card {
+    max-width: 100%;
+}
+.card-text {
+    word-wrap: break-word;
+}
+
+#pvViewer {
+    width: 400px;
+    height: 400px;
 }
