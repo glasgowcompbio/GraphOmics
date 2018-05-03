@@ -11,98 +11,115 @@
 
 {% block body_block %}
 
-    <div class="container-fluid datatables_group">
+    <div class="container-fluid">
 
-        <div class="row">
-            <div class="col-md-12">
-                <h5>Data Integration Results</h5>
-                <p>
-                    <input type="text" style="width: 600px;" id="global_filter"/>
-                    <input type="button" value="Search">
-                </p>
-                <hr>
-            </div>
+        <div class="m-1 mb-3">
+            <h5>Data Integration Results</h5>
+            <form class="form-inline my-2 my-lg-0">
+                <input class="form-control mr-sm-2" type="search" placeholder="Search" aria-label="Search"
+                       style="width: 600px;"
+                       id="global_filter">
+                <button class="btn btn-success my-2 my-sm-0" type="button">Search</button>
+            </form>
         </div>
 
         <div class="card-group">
-            <div class="card border-0">
-                <div class="card-block">
-                    <h4 class="card-title bg-dark text-white">Genes</h4>
-                    <table id="genes_table" class="table hover compact pod-table mb-0" style="width:100%">
-                    </table>
-                    <div id="gene-row-info" class="card-footer">
-                        <div class="panel panel-default">
-                            <div class="panel-heading">
-                                <h6 class="panel-title">Gene Information</h6>
-                            </div>
-                            <div class="panel-body">Click an entry above for more information</div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="card border-0">
-                <div class="card-block">
-                    <h4 class="card-title bg-dark text-white">Proteins</h4>
-                    <table id="proteins_table" class="table hover compact pod-table mb-0" style="width:100%">
-                    </table>
-                    <div id="protein-row-info" class="card-footer">
-                        <div class="panel panel-default">
-                            <div class="panel-heading">
-                                <h6 class="panel-title">Protein Information</h6>
-                            </div>
-                            <div class="panel-body">Click an entry above for more information</div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="card border-0">
-                <div class="card-block">
-                    <h4 class="card-title bg-dark text-white">Compounds</h4>
-                    <table id="compounds_table" class="table hover compact pod-table mb-0" style="width:100%">
-                    </table>
-                    <div id="compound-row-info" class="card-footer">
-                        <div class="panel panel-default">
-                            <div class="panel-heading">
-                                <h6 class="panel-title">Compound Information</h6>
-                            </div>
-                            <div class="panel-body">Click an entry above for more information</div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="card border-0">
-                <div class="card-block">
-                    <h4 class="card-title bg-dark text-white">Reactions</h4>
-                    <table id="reactions_table" class="table hover compact pod-table mb-0" style="width:100%">
-                    </table>
-                    <div id="reaction-row-info" class="card-footer">
-                        <div class="panel panel-default">
-                            <div class="panel-heading">
-                                <h6 class="panel-title">Reaction Information</h6>
-                            </div>
-                            <div class="panel-body">Click an entry above for more information</div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="card border-0" style="flex-grow:2">
-                <div class="card-block">
-                    <h4 class="card-title bg-dark text-white">Pathways</h4>
-                    <table id="pathways_table" class="table hover compact pod-table mb-0" style="width:100%">
-                    </table>
-                    <div id="pathway-row-info" class="card-footer">
-                        <div class="panel panel-default">
-                            <div class="panel-heading">
-                                <h6 class="panel-title">Pathway Information</h6>
-                            </div>
-                            <div class="panel-body">Click an entry above for more information</div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
 
-        <div class="row text-center flex-nowrap">
+            <!-- Gene card -->
+            <div class="card border-light">
+                <div class="card-block">
+                    <div class="card-header text-white bg-primary">Gene Information</div>
+                    <div class="card-body m-0 p-1">
+                        <div id="gene-row-info" class="card-text">
+                            <p>Select an entry below.</p>
+                        </div>
+                    </div>
+                    <div class="card-header text-white bg-primary">Gene Data</div>
+                    <div>
+                        <div class="card-table">
+                            <table id="genes_table" class="table hover compact pod-table mb-0" style="width:100%">
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Protein card -->
+            <div class="card border-light">
+                <div class="card-block">
+                    <div class="card-header text-white bg-primary">Protein Information</div>
+                    <div class="card-body m-0 p-1">
+                        <div id="protein-row-info" class="card-text">
+                            <p>Select an entry below.</p>
+                        </div>
+                    </div>
+                    <div class="card-header text-white bg-primary">Protein Data</div>
+                    <div>
+                        <div class="card-table">
+                            <table id="proteins_table" class="table hover compact pod-table mb-0" style="width:100%">
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Compound card -->
+            <div class="card border-light">
+                <div class="card-block">
+                    <div class="card-header text-white bg-primary">Compound Information</div>
+                    <div class="card-body m-0 p-1">
+                        <div id="compound-row-info" class="card-text">
+                            <p>Select an entry below.</p>
+                        </div>
+                    </div>
+                    <div class="card-header text-white bg-primary">Compound Data</div>
+                    <div>
+                        <div class="card-table">
+                            <table id="compounds_table" class="table hover compact pod-table mb-0" style="width:100%">
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Reaction card -->
+            <div class="card border-light">
+                <div class="card-block">
+                    <div class="card-header text-white bg-primary">Reaction Information</div>
+                    <div class="card-body m-0 p-1">
+                        <div id="reaction-row-info" class="card-text">
+                            <p>Select an entry below.</p>
+                        </div>
+                    </div>
+                    <div class="card-header text-white bg-primary">Reaction Data</div>
+                    <div>
+                        <div class="card-table">
+                            <table id="reactions_table" class="table hover compact pod-table mb-0" style="width:100%">
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Reaction card -->
+            <div class="card border-light" style="flex-grow:2">
+                <div class="card-block">
+                    <div class="card-header text-white bg-primary">Pathway Information</div>
+                    <div class="card-body m-0 p-1">
+                        <div id="pathway-row-info" class="card-text">
+                            <p>Select an entry below.</p>
+                        </div>
+                    </div>
+                    <div class="card-header text-white bg-primary">Pathway Data</div>
+                    <div>
+                        <div class="card-table">
+                            <table id="pathways_table" class="table hover compact pod-table mb-0" style="width:100%">
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
         </div>
 
     </div>

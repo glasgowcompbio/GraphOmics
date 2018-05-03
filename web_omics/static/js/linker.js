@@ -4,7 +4,7 @@ const myLinker = (function () {
         init: function (data) {
 
             const defaultDataTablesSettings = {
-                "dom": "prt",
+                "dom": "rtp",
                 "pageLength": 10,
                 // "scrollY": "400px",
                 // "scrollCollapse": true,
@@ -182,15 +182,15 @@ const myLinker = (function () {
             if (tableId === 'genes_table') {
                 this.getInfoPanel(rowObject, get_ensembl_gene_info,
                     'gene-row-info', 'gene_pk',
-                    'ensembl_id', 'Gene Information');
+                    'gene_id', 'Gene Information');
             } else if (tableId === 'proteins_table') {
                 this.getInfoPanel(rowObject, get_uniprot_protein_info,
                     'protein-row-info', 'protein_pk',
-                    'uniprot_id', 'Protein Information');
+                    'protein_id', 'Protein Information');
             } else if (tableId === 'compounds_table') {
                 this.getInfoPanel(rowObject, get_kegg_metabolite_info,
                     'compound-row-info', 'compound_pk',
-                    'kegg_id', 'Compound Information');
+                    'compound_id', 'Compound Information');
             } else if (tableId === 'reactions_table') {
                 this.getInfoPanel(rowObject, get_reactome_reaction_info,
                     'reaction-row-info', 'reaction_pk',
@@ -321,37 +321,20 @@ const myLinker = (function () {
 
                 });
 
-                const selector = '#' + rowId + ' .panel-body';
+                const selector = '#' + rowId;
                 $(selector).empty();
                 $(selector).append(infoDiv);
                 $(selector).append(dataDiv);
             } else {
-                $(selector).text('Click an entry above for more information');
+                $(selector).text('Select an entry below.');
             }
         },
         clearInfoPanel: function (rowId, title) {
-            // Create the divs that make up the 'blank' metabolite info panel
-            let infoPanel = $('<div/>', {'class': 'panel panel-default'});
-            let infoTitle = $('<div/>', {'class': 'panel-heading'});
-            let infoTitleContent = $('<h6/>', {
-                'class': 'panel-title',
-                'text': title
+            let content = $('<p/>', {
+                'text': 'Select an entry below.'
             });
-            let bodyBlank = $('<div/>', {
-                'text': 'Click an entry above for more information',
-                'class': 'panel-body'
-            });
-
-            // Combine them
-            // Put the title content into the panel title
-            infoTitle.append(infoTitleContent)
-            // Put the title into the parent panel
-            infoPanel.append(infoTitle)
-            // Put the body content into the parent panel
-            infoPanel.append(bodyBlank);
-
             const selector = '#' + rowId;
-            $(selector).empty().append(infoPanel);
+            $(selector).empty().append(content);
         },
     } // end infoPanesManager
 

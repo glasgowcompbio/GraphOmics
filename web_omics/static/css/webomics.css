@@ -63,9 +63,13 @@
 
 .card {
     max-width: 100%;
+    font-size: 12px;
 }
 .card-text {
     word-wrap: break-word;
+}
+.card-table {
+    overflow-x: scroll;
 }
 
 #pvViewer {
