@@ -72,6 +72,11 @@
     overflow-x: scroll;
 }
 
+div.dt-buttons {
+    position: relative;
+    float: left;
+}
+
 #pvViewer {
     width: 400px;
     height: 400px;

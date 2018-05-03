@@ -17,6 +17,11 @@ const FiRDI = (function () {
             dataTablesSettingsObjects.forEach(function (x) {
                 $('#' + x['tableName']).DataTable(x['tableSettings']);
             });
+            const buttons = $(".buttons-colvis");
+            for (let button of buttons) {
+                button.textContent = '▼';
+            }
+            $.fx.off = true;
         },
         uniqueDataFilter: function (tablesInfo) {
             // Gets the distinct entries for the tableData for datatables initialisation

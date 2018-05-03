@@ -4,7 +4,7 @@ const myLinker = (function () {
         init: function (data) {
 
             const defaultDataTablesSettings = {
-                "dom": "rtp",
+                "dom": "Brtp",
                 "pageLength": 10,
                 // "scrollY": "400px",
                 // "scrollCollapse": true,
@@ -14,7 +14,13 @@ const myLinker = (function () {
                     targets: 1,
                     render: $.fn.dataTable.render.ellipsis(50, false)
                 }],
-                "order": [[ 1, "asc" ]],
+                "order": [[1, "asc"]],
+                buttons: [
+                    {
+                        extend: 'colvis',
+                        columns: ':gt(1)'
+                    }
+                ],
                 // 'responsive': true
             };
 
@@ -242,8 +248,9 @@ const myLinker = (function () {
 
                     // loop over images
                     function isImageUrl(url) {
-                        return(url.match(/\.(jpeg|jpg|gif|png)$/) != null);
+                        return (url.match(/\.(jpeg|jpg|gif|png)$/) != null);
                     }
+
                     let images = data['images'];
                     let pdbs = [];
                     for (let item of images) {
@@ -279,31 +286,31 @@ const myLinker = (function () {
                         require([biopv_url], function (pv) {
 
                             let viewer = pv.Viewer(document.getElementById('pvViewer'), {
-                              quality: 'medium',
-                              width: '200',
-                              height: '200',
-                              antialias: true,
-                              outline: true,
-                              slabMode: 'auto'
+                                quality: 'medium',
+                                width: '200',
+                                height: '200',
+                                antialias: true,
+                                outline: true,
+                                slabMode: 'auto'
                             });
 
                             function load(pdbUrl) {
-                              pv.io.fetchPdb(pdbUrl, function(structure) {
-                                // render everything as helix/sheet/coil cartoon, coloring by secondary
-                                // structure succession
-                                let go = viewer.cartoon('structure', structure, {
-                                  color: pv.color.ssSuccession(),
-                                  showRelated: '1',
+                                pv.io.fetchPdb(pdbUrl, function (structure) {
+                                    // render everything as helix/sheet/coil cartoon, coloring by secondary
+                                    // structure succession
+                                    let go = viewer.cartoon('structure', structure, {
+                                        color: pv.color.ssSuccession(),
+                                        showRelated: '1',
+                                    });
+
+                                    // find camera orientation such that the molecules biggest extents are
+                                    // aligned to the screen plane.
+                                    let rotation = pv.viewpoint.principalAxes(go);
+                                    viewer.setRotation(rotation)
+
+                                    // adapt zoom level to contain the whole structure
+                                    viewer.autoZoom();
                                 });
-
-                                // find camera orientation such that the molecules biggest extents are
-                                // aligned to the screen plane.
-                                let rotation = pv.viewpoint.principalAxes(go);
-                                viewer.setRotation(rotation)
-
-                                // adapt zoom level to contain the whole structure
-                                viewer.autoZoom();
-                              });
                             }
 
                             // load default
@@ -311,8 +318,8 @@ const myLinker = (function () {
                             load(queryUrl);
 
                             // tell viewer to resize when window size changes.
-                            window.onresize = function(event) {
-                              viewer.fitParent();
+                            window.onresize = function (event) {
+                                viewer.fitParent();
                             };
 
                         });
