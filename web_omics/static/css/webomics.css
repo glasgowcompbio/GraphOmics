@@ -76,6 +76,9 @@ div.dt-buttons {
     position: relative;
     float: left;
 }
+button.dt-button {
+   font-size: 8px;
+}
 
 #pvViewer {
     width: 400px;

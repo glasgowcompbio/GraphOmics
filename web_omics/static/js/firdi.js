@@ -19,7 +19,9 @@ const FiRDI = (function () {
             });
             const buttons = $(".buttons-colvis");
             for (let button of buttons) {
-                button.textContent = '▼';
+                btn = $(button);
+                // btn.addClass('btn-xs');
+                btn.text('▼');
             }
             $.fx.off = true;
         },
@@ -482,7 +484,7 @@ const FiRDI = (function () {
         },
         updateTables: function () {
             if (this.stackManager.stack.length > 0) {
-                // debugger;
+                debugger;
 
                 const focus = this.stackManager.peek();
                 const focusConstraints = this.constraintsManager.getFocusConstraints(focus, this.tablesInfo);
