@@ -31,7 +31,8 @@ const myLinker = (function () {
                     "tableData": data.genes,
                     "options": {
                         "visible": true,
-                        "pk": "gene_pk"
+                        "pk": "gene_pk",
+                        "order_by": "gene_id"
                     },
                     "relationship": {"with": "gene_proteins", "using": "gene_pk"}
                 },
@@ -50,7 +51,8 @@ const myLinker = (function () {
                     "tableData": data.proteins,
                     "options": {
                         "visible": true,
-                        "pk": "protein_pk"
+                        "pk": "protein_pk",
+                        "order_by": "protein_id"
                     },
                     "relationship": {"with": "protein_reactions", "using": "protein_pk"}
                 },
@@ -69,7 +71,8 @@ const myLinker = (function () {
                     "tableData": data.reactions,
                     "options": {
                         "visible": true,
-                        "pk": "reaction_pk"
+                        "pk": "reaction_pk",
+                        "order_by": "reaction_id"
                     },
                     "relationship": [
                         {"with": "compound_reactions", "using": "reaction_pk"},
@@ -82,7 +85,8 @@ const myLinker = (function () {
                     "tableData": data.compounds,
                     "options": {
                         "visible": true,
-                        "pk": "compound_pk"
+                        "pk": "compound_pk",
+                        "order_by": "compound_id"
                     }
                 },
 
@@ -109,7 +113,8 @@ const myLinker = (function () {
                     "tableData": data.pathways,
                     "options": {
                         "visible": true,
-                        "pk": "pathway_pk"
+                        "pk": "pathway_pk",
+                        "order_by": "pathway_id"
                     }
                 }
 

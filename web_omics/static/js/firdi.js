@@ -29,7 +29,8 @@ const FiRDI = (function () {
             // Gets the distinct entries for the tableData for datatables initialisation
             return tablesInfo.filter(isTableVisible)
                 .map(tableInfo => {
-                    const sql = "SELECT DISTINCT " + Object.keys(tableInfo['tableData'][0]).join(", ") + " FROM ?";
+                    const sql = "SELECT DISTINCT " + Object.keys(tableInfo['tableData'][0]).join(", ") +
+                        " FROM ? ORDER BY " + tableInfo.options.order_by + " ASC";
                     tableInfo['tableData'] = alasql(sql, [tableInfo['tableData']]);
                     console.log(sql);
                     return tableInfo;
@@ -125,7 +126,6 @@ const FiRDI = (function () {
                 .join(", ");
         },
         assembleInnerJoinStatementFromRelationship: function (relationship) {
-            // debugger;
             function parseRelationship(r) {
                 if (r['with']) {
                     return "INNER JOIN " + r['with'] + " ON " + r['tableName'] + "." + r['using'] + " = " + r['with'] + "." + r['using'] + " ";
@@ -164,7 +164,6 @@ const FiRDI = (function () {
             return tablesInfo[0]['tableName'];
         },
         getRelationship: function (tableInfo) {
-            // debugger;
             function parseRelationship(r) {
                 let parsed = {'tableName': tableInfo['tableName'], 'with': r['with'], 'using': r['using']};
                 return parsed;
@@ -459,14 +458,16 @@ const FiRDI = (function () {
                 .filter(isTableVisible)
                 .map(tableInfo => ({
                     'tableName': tableInfo['tableName'],
-                    'fieldNames': Object.keys(tableInfo['tableData'][0])
+                    'fieldNames': Object.keys(tableInfo['tableData'][0]),
+                    'orderBy': tableInfo['options']['order_by']
                 }));
         },
         getFocusData: function (dataForTables, focusResult, queryResult, tableFieldNames, focus) {
             // Function to get the default constraints for the focus table
             const tableName = tableFieldNames['tableName'];
             const fieldNames = tableFieldNames['fieldNames'];
-            const sqlStatement = "SELECT DISTINCT " + fieldNames.join(", ") + " FROM ?";
+            const orderBy = tableFieldNames['orderBy'];
+            const sqlStatement = "SELECT DISTINCT " + fieldNames.join(", ") + " FROM ? ORDER BY " + orderBy + " ASC";
 
             if (focus !== tableName) {
                 console.log(sqlStatement + ' (queryResult)')
@@ -484,7 +485,6 @@ const FiRDI = (function () {
         },
         updateTables: function () {
             if (this.stackManager.stack.length > 0) {
-                debugger;
 
                 const focus = this.stackManager.peek();
                 const focusConstraints = this.constraintsManager.getFocusConstraints(focus, this.tablesInfo);
@@ -546,7 +546,6 @@ const FiRDI = (function () {
         },
         trClickHandler: function (e, dt, type, cell, originalEvent) {
             // Calls the appropriate constraint function depending on the state of the bound table
-            // debugger;
             e.preventDefault();
             const tableName = e.currentTarget.id;
             const tableAPI = $(this.dataTablesIds[tableName]).DataTable()
