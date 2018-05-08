@@ -262,11 +262,11 @@ const myLinker = (function () {
                             dataDiv.append(newImage);
                         } else if (item.includes('reactome')) { // handle reactome images
                             let newLink = $('<a/>', {
-                                'href': item + "&quality=10",
+                                'href': item + "&quality=7",
                                 'target': '_blank'
                             }).append(
                                 $('<img/>', {
-                                    'src': item + "&quality=5",
+                                    'src': item + "&quality=3",
                                     'class': 'img-fluid'
                                 })
                             );
