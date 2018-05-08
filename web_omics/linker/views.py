@@ -97,8 +97,8 @@ class LinkerView(FormView):
         protein_2_reactions = _add_links(protein_2_reactions, PROTEIN_PK, REACTION_PK, protein_pk_list, [NA])
 
         # map reactions that have no proteins to NA
-        reaction_pk_list = [x for x in reaction_ids if x not in compound_2_reactions.values]
-        protein_2_reactions = _add_links(protein_2_reactions, COMPOUND_PK, REACTION_PK, reaction_pk_list, [NA])
+        reaction_pk_list = [x for x in reaction_ids if x not in protein_2_reactions.values]
+        protein_2_reactions = _add_links(protein_2_reactions, PROTEIN_PK, REACTION_PK, [NA], reaction_pk_list)
 
         # map compounds that have no reactions to NA
         compound_pk_list = [x for x in compound_ids if x not in compound_2_reactions.keys]
@@ -156,7 +156,16 @@ class LinkerView(FormView):
         }
         context = {'data': data}
 
+        # for k, v in data.items():
+        #     save_json_string(v, 'debugging/' + k + '.json')
+
         return render(self.request, self.success_url, context)
+
+
+# def save_json_string(data, outfile):
+#     with open(outfile, 'w') as f:
+#         f.write(data)
+#         print(outfile + ' saved')
 
 
 def csv_to_dataframe(csv_str):
