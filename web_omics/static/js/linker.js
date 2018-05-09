@@ -149,7 +149,7 @@ const myLinker = (function () {
 
             // enable global search box
             $('#global_filter').on('keyup click', function () {
-                let val = $('#global_filter').val();
+                const val = $('#global_filter').val();
                 $.fn.dataTable.tables({api: true}).search(val).draw();
             });
 
@@ -158,10 +158,14 @@ const myLinker = (function () {
         dataTablesDrawFunction: function (e, dt, type, cell, originalEvent) {
             // calls the appropriate info pane functions
             e.preventDefault();
-            const tableId = e.currentTarget.id,
-                tables = $('.dataTable').DataTable(),
-                tableAPI = tables.table('#' + tableId),
-                selectedData = tableAPI.row('.selected').data();
+            // reset the global search box
+            $('#global_filter').val('');
+            $.fn.dataTable.tables({api: true}).search('').draw();
+            // update table
+            const tableId = e.currentTarget.id;
+            const tables = $('.dataTable').DataTable();
+            const tableAPI = tables.table('#' + tableId);
+            const selectedData = tableAPI.row('.selected').data();
 
             if (selectedData) {
                 infoPanesManager.getEntityInfo(tableId, selectedData);
