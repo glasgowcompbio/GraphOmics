@@ -12,7 +12,7 @@ const myLinker = (function () {
                 // see https://datatables.net/plug-ins/dataRender/ellipsis
                 "columnDefs": [{
                     targets: 1,
-                    render: $.fn.dataTable.render.ellipsis(50, false)
+                    render: $.fn.dataTable.render.ellipsis(30, false)
                 }],
                 "order": [[1, "asc"]],
                 buttons: [
@@ -220,7 +220,7 @@ const myLinker = (function () {
                                 rowId, pkCol,
                                 displayNameCol, title) {
             this.clearInfoPanel(rowId, title);
-            if (rowObject[displayNameCol] != '---') {
+            if (rowObject[displayNameCol] != '-') {
 
                 const tableData = {
                     'id': rowObject[pkCol],

@@ -8,6 +8,14 @@
   float: none;
 }
 
+.table.dataTable {
+    height: 320px;
+}
+
+.dataTables_wrapper .dataTables_paginate {
+    height: 65px;
+}
+
 /*
 .dataTables_wrapper {
     position: relative;
@@ -61,6 +69,11 @@
 }
 */
 
+/*
+table.dataTable tbody tr {
+    height: 40px;
+}
+*/
 .card {
     max-width: 100%;
     font-size: 12px;
