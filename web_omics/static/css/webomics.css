@@ -69,11 +69,9 @@
 }
 */
 
-/*
 table.dataTable tbody tr {
-    height: 40px;
+    cursor: pointer;
 }
-*/
 .card {
     max-width: 100%;
     font-size: 12px;
