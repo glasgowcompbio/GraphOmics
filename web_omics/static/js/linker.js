@@ -193,9 +193,11 @@ const myLinker = (function () {
         dataTablesDrawFunction: function (e, dt, type, cell, originalEvent) {
             // calls the appropriate info pane functions
             e.preventDefault();
-            // reset the global search box
-            $('#global_filter').val('');
-            $.fn.dataTable.tables({api: true}).search('').draw();
+
+            // clear search result
+            // $('#global_filter').val('');
+            // $.fn.dataTable.tables({api: true}).search('').draw();
+
             // update table
             const tableId = e.currentTarget.id;
             const tables = $('.dataTable').DataTable();
