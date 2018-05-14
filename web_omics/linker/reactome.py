@@ -61,6 +61,7 @@ def ensembl_to_uniprot(ensembl_ids, species):
             (rs:ReferenceSequence)-[:species]->(s:Species)
         WHERE
             rs.identifier IN {ensembl_ids} AND
+            rs.databaseName = 'ENSEMBL' AND            
             s.displayName = {species}
         RETURN DISTINCT
             rs.identifier AS gene_id,
@@ -93,6 +94,51 @@ def ensembl_to_uniprot(ensembl_ids, species):
 ################################################################################
 ### Protein-related functions                                                ###
 ################################################################################
+
+
+def uniprot_to_ensembl(uniprot_ids, species):
+
+    id_to_names = {}
+    results = defaultdict(list)
+    try:
+
+        driver = GraphDatabase.driver("bolt://localhost:7687",
+                                      auth=basic_auth("neo4j", "neo4j"))
+        session = driver.session()
+        query = """
+        MATCH
+            (rg:ReferenceGeneProduct)-[:referenceGene]->
+            (rs:ReferenceSequence)-[:species]->(s:Species)
+        WHERE
+            rg.identifier IN {uniprot_ids} AND
+            rs.databaseName = 'ENSEMBL' AND
+            s.displayName = {species}
+        RETURN DISTINCT
+            rs.identifier AS gene_id,
+            rs.databaseName AS gene_db,
+            rg.identifier AS protein_id,
+            rg.databaseName AS protein_db,
+            rg.url as URL
+        """
+        params = {
+            'uniprot_ids': uniprot_ids,
+            'species': species
+        }
+        query_res = session.run(query, params)
+
+        results = defaultdict(list)
+        for record in query_res:
+            gene_id = record['gene_id']
+            protein_id = record['protein_id']
+            results[protein_id].append(gene_id)
+
+    except Exception as e:
+        print(e)
+
+    finally:
+        session.close()
+
+    return dict(results), id_to_names
 
 
 def uniprot_to_reaction(uniprot_ids, species):

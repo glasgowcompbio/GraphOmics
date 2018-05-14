@@ -15,12 +15,41 @@ const myLinker = (function () {
                     render: $.fn.dataTable.render.ellipsis(50, false)
                 }],
                 "order": [[1, "asc"]],
-                buttons: [
+                'buttons': [
                     {
                         extend: 'colvis',
                         columns: ':gt(1)'
                     }
                 ],
+                'rowCallback': function(row, data, index) {
+                    const colNames = Object.keys(data);
+                    const filtered = colNames.filter(x => x.indexOf('pvalue')>-1);
+                    const filteredIdx = filtered.map(x => {
+                        let temp = x.split('_'); // split by underscore
+                        temp.splice(-1); // remove the last item ('pvalue') from temp
+                        const toFind = temp.join('_'); // put them back together to get the column name we want
+                        return colNames.indexOf(toFind);
+                    });
+                    const filtered_pValues = filtered.map(x => data[x]);
+                    const filteredColours = filtered_pValues.map(x => {
+                       if (x > 1e-2) {
+                           return 'white';
+                       } else if (1e-4 < x && x <= 1e-2) {
+                           return 'yellow';
+                       } else if (1e-6 < x && x <= 1e-4) {
+                           return 'orange';
+                       } else if (1e-10 < x && x <= 1e-6) {
+                           return 'red';
+                       } else {
+                           return 'white';
+                       }
+                    });
+                    for (let i = 0; i < filteredIdx.length; i++) {
+                        const idx = filteredIdx[i];
+                        const colour = filteredColours[i];
+                        $(row).find(`td:eq(${idx})`).css('background-color', colour);
+                    }
+                }
                 // 'responsive': true
             };
 
@@ -126,7 +155,7 @@ const myLinker = (function () {
             FiRDI.init(tables, defaultDataTablesSettings);
 
             // Hide certain columns
-            const columnsToHidePerTable = [
+            let columnsToHidePerTable = [
                 {"tableName": "genes_table", "columnNames": ["gene_pk"]},
                 {"tableName": "proteins_table", "columnNames": ["protein_pk"]},
                 {"tableName": "compounds_table", "columnNames": ["compound_pk"]},
@@ -135,7 +164,13 @@ const myLinker = (function () {
             ];
 
             columnsToHidePerTable.forEach(function (tableInfo) {
-                $('#' + tableInfo['tableName']).DataTable()
+                const tableAPI = $('#' + tableInfo['tableName']).DataTable();
+                // get all column names containing the word 'pvalue' to hide as well
+                const colNames = tableAPI.settings()[0].aoColumns.map(x => x.sName);
+                const filtered = colNames.filter(x => x.indexOf('pvalue')>-1);
+                tableInfo['columnNames'] = tableInfo['columnNames'].concat(filtered);
+                // do the hiding here
+                tableAPI
                     .columns(tableInfo['columnNames'].map(columnName => columnName + ":name")) // append ":name" to each columnName for the selector
                     .visible(false);
             });
