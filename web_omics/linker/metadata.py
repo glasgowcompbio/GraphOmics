@@ -49,6 +49,7 @@ def get_gene_names(ensembl_ids, pickled_gene_names_url):
         for ensembl_id in ensembl_ids:
             try:
                 display_name = gtf_dict[ensembl_id]
+                display_name = clean_label(display_name)
                 metadata_map[ensembl_id] = {'display_name': display_name}
             except KeyError:
                 metadata_map[ensembl_id] = {'display_name': ensembl_id}
@@ -98,10 +99,9 @@ def get_single_uniprot_metadata_online(uniprot_id):
 def clean_label(w):
     results = []
     for tok in w.split(' '):
-        if 'name' not in tok.lower():
-            # filtered = re.sub(r'[^\w\s]', '', tok)
-            filtered = tok.replace("'", "")
-            results.append(filtered.strip())
+        # filtered = re.sub(r'[^\w\s]', '', tok)
+        filtered = tok.replace("'", "")
+        results.append(filtered.strip())
     return ' '.join(results)
 
 
@@ -145,15 +145,16 @@ def get_compound_metadata_online(kegg_ids):
     return metadata_map
 
 
-def get_compound_metadata_from_json(kegg_ids, json_url):
+def get_compound_metadata_from_json(compound_ids, json_url):
     metadata_map = {}
     with urllib.request.urlopen(json_url) as url:
         lookup = json.loads(url.read().decode())
-        for kegg_id in kegg_ids:
+        for compound_id in compound_ids:
             try:
-                metadata_map[kegg_id] = lookup[kegg_id]
+                display_name = clean_label(lookup[compound_id]['display_name'])
+                metadata_map[compound_id] = {'display_name': display_name}
             except KeyError:
-                metadata_map[kegg_id] = {'display_name': kegg_id}
+                metadata_map[compound_id] = {'display_name': compound_id}
     return metadata_map
 
 

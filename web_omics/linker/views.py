@@ -18,8 +18,8 @@ from linker.forms import LinkerForm
 from linker.metadata import get_compound_metadata_from_json
 from linker.metadata import get_single_ensembl_metadata_online, get_single_uniprot_metadata_online, \
     get_single_compound_metadata_online, clean_label, get_gene_names
-from linker.reactome import compound_to_reaction, reaction_to_metabolite_pathway, get_reaction_entities
-from linker.reactome import ensembl_to_uniprot, uniprot_to_ensembl, uniprot_to_reaction, get_species_dict
+from linker.reactome import ensembl_to_uniprot, uniprot_to_ensembl, uniprot_to_reaction, compound_to_reaction, get_species_dict
+from linker.reactome import reaction_to_metabolite_pathway, get_reaction_entities, reaction_to_compound, reaction_to_uniprot
 
 Relation = collections.namedtuple('Relation', 'keys values mapping_list')
 NA = '-'  # this should be something that will appear first in the table when sorted alphabetically
@@ -47,6 +47,7 @@ class LinkerView(FormView):
         species = species_dict[species_key]
 
         ### all the ids that we have from the user ###
+        
         observed_gene_df = csv_to_dataframe(genes_str)
         observed_protein_df = csv_to_dataframe(proteins_str)
         observed_compound_df = csv_to_dataframe(compounds_str)
@@ -54,37 +55,53 @@ class LinkerView(FormView):
         observed_protein_ids = get_ids_from_dataframe(observed_protein_df)
         observed_compound_ids = get_ids_from_dataframe(observed_compound_df)
 
-        ### map proteins -> genes using Reactome ###
-
-        mapping, id_to_names = uniprot_to_ensembl(observed_protein_ids, species)
-        protein_2_genes = make_relations(mapping, PROTEIN_PK, GENE_PK, value_key=None)
-        inferred_gene_ids = protein_2_genes.values
-        gene_ids = list(set(observed_gene_ids + inferred_gene_ids))
-
-        ### map genes -> proteins using Reactome ###
+        ### map genes -> proteins ###
 
         mapping, id_to_names = ensembl_to_uniprot(observed_gene_ids, species)
         gene_2_proteins = make_relations(mapping, GENE_PK, PROTEIN_PK, value_key=None)
-        gene_2_proteins = merge(gene_2_proteins, reverse(protein_2_genes))
 
-        ### maps proteins -> reactions using Reactome ###
+        ### maps proteins -> reactions ###
 
-        inferred_protein_ids = gene_2_proteins.values
-        protein_ids = list(set(observed_protein_ids + inferred_protein_ids))
+        protein_ids_from_genes = gene_2_proteins.values
+        protein_ids = list(set(observed_protein_ids + protein_ids_from_genes))
         mapping, id_to_names = uniprot_to_reaction(protein_ids, species)
         protein_2_reactions = make_relations(mapping, PROTEIN_PK, REACTION_PK, value_key='reaction_id')
 
-        ### maps compounds -> reactions using Reactome ###
+        ### maps compounds -> reactions ###
 
-        compound_ids = observed_compound_ids
-        mapping, id_to_names = compound_to_reaction(compound_ids, species)
+        mapping, id_to_names = compound_to_reaction(observed_compound_ids, species)
         compound_2_reactions = make_relations(mapping, COMPOUND_PK, REACTION_PK, value_key='reaction_id')
 
-        ### maps reactions -> pathways using Reactome ###
+        ### maps reactions -> metabolite pathways ###
 
-        reaction_ids = list(set(protein_2_reactions.values + compound_2_reactions.values))
-        mapping, id_to_names = reaction_to_metabolite_pathway(reaction_ids, species)
+        reaction_ids_from_proteins = protein_2_reactions.values
+        reaction_ids_from_compounds = compound_2_reactions.values
+        reaction_ids = list(set(reaction_ids_from_proteins + reaction_ids_from_compounds))
+        mapping, reaction_2_metabolite_pathways_id_to_names = reaction_to_metabolite_pathway(reaction_ids, species)
         reaction_2_pathways = make_relations(mapping, REACTION_PK, PATHWAY_PK, value_key='pathway_id')
+        reaction_ids = reaction_2_pathways.keys # keep only reactions in metabolic pathways
+
+        ### maps reactions -> proteins ###
+
+        mapping, id_to_names = reaction_to_uniprot(reaction_ids, species)
+        reaction_2_proteins = make_relations(mapping, REACTION_PK, PROTEIN_PK, value_key=None)
+        protein_2_reactions = reverse(reaction_2_proteins)
+        protein_ids = protein_2_reactions.keys
+
+        ### maps reactions -> compounds ###
+
+        mapping, id_to_names = reaction_to_compound(reaction_ids, species)
+        reaction_2_compounds = make_relations(mapping, REACTION_PK, COMPOUND_PK, value_key=None)
+        compound_2_reactions = reverse(reaction_2_compounds)
+        compound_ids = compound_2_reactions.keys
+
+        ### map proteins -> genes ###
+
+        mapping, id_to_names = uniprot_to_ensembl(protein_ids, species)
+        protein_2_genes = make_relations(mapping, PROTEIN_PK, GENE_PK, value_key=None)
+        gene_2_proteins = merge(gene_2_proteins, reverse(protein_2_genes))
+        inferred_gene_ids = protein_2_genes.values
+        gene_ids = list(set(observed_gene_ids + inferred_gene_ids))
 
         ### add links ###
 
@@ -97,6 +114,10 @@ class LinkerView(FormView):
         # map genes that have no proteins to NA
         gene_pk_list = [x for x in gene_ids if x not in gene_2_proteins.keys]
         gene_2_proteins = add_links(gene_2_proteins, GENE_PK, PROTEIN_PK, gene_pk_list, [NA])
+
+        # map proteins that have no genes to NA
+        protein_pk_list = [x for x in protein_ids if x not in gene_2_proteins.values]
+        gene_2_proteins = add_links(gene_2_proteins, GENE_PK, PROTEIN_PK, [NA], protein_pk_list)
 
         # map proteins that have no reactions to NA
         protein_pk_list = [x for x in protein_ids if x not in protein_2_reactions.keys]
@@ -139,8 +160,8 @@ class LinkerView(FormView):
         compounds_json = pk_to_json('compound_pk', 'compound_id', compound_ids, metadata_map, observed_compound_df)
 
         metadata_map = {}
-        for name in id_to_names:
-            tok = id_to_names[name]
+        for name in reaction_2_metabolite_pathways_id_to_names:
+            tok = reaction_2_metabolite_pathways_id_to_names[name]
             filtered = clean_label(tok)
             metadata_map[name] = {'display_name': filtered}
 

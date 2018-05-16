@@ -21,6 +21,7 @@ def get_species_list():
         MATCH (n:Species) RETURN n.displayName AS name order by name        
         """
         query_res = session.run(query)
+        print(query)
         for record in query_res:
             results.append(record['name'])
 
@@ -75,8 +76,8 @@ def ensembl_to_uniprot(ensembl_ids, species):
             'species': species
         }
         query_res = session.run(query, params)
+        print(query)
 
-        results = defaultdict(list)
         for record in query_res:
             gene_id = record['gene_id']
             protein_id = record['protein_id']
@@ -125,8 +126,8 @@ def uniprot_to_ensembl(uniprot_ids, species):
             'species': species
         }
         query_res = session.run(query, params)
+        print(query)
 
-        results = defaultdict(list)
         for record in query_res:
             gene_id = record['gene_id']
             protein_id = record['protein_id']
@@ -176,8 +177,8 @@ def uniprot_to_reaction(uniprot_ids, species):
             'species': species
         }
         query_res = session.run(query, params)
+        print(query)
 
-        results = defaultdict(list)
         for record in query_res:
             protein_id = record['protein_id']
             item = {
@@ -213,6 +214,8 @@ def get_all_compound_ids():
             di.displayName AS compound_id
         """
         query_res = session.run(query)
+        print(query)
+
         for record in query_res:
             key = record['compound_id'].split(':')  # e.g. 'COMPOUND:C00025'
             compound_id = key[1]
@@ -237,32 +240,34 @@ def compound_to_reaction(compound_ids, species):
         MATCH (rle:ReactionLikeEvent)-[:input|output|catalystActivity
               |physicalEntity|regulatedBy|regulator|hasComponent|hasMember
               |hasCandidate*]->
-              (pe:PhysicalEntity)-[:crossReference]->
-              (di:DatabaseIdentifier)
+              (pe:PhysicalEntity)-[:crossReference|:referenceEntity]->
+              (do:DatabaseObject)
         WHERE
-            di.identifier IN {compound_ids} AND
-            di.databaseName = 'COMPOUND' AND
+            do.identifier IN {compound_ids} AND
             rle.speciesName = {species}
         RETURN DISTINCT
-            di.displayName AS compound_id,
-            di.databaseName AS compound_db,
+            do.identifier AS compound_id,
+            do.displayName as display_name,
+            do.databaseName AS compound_db,
             rle.stId AS reaction_id,
-        	rle.displayName AS reaction_name
+        	rle.displayName AS reaction_name        
         """
         params = {
             'compound_ids': compound_ids,
             'species': species
         }
         query_res = session.run(query, params)
+        print(query)
 
         for record in query_res:
-            key = record['compound_id'].split(':')  # e.g. 'COMPOUND:C00025'
-            compound_id = key[1]
+            compound_id = record['compound_id']
             item = {
                 'reaction_id': record['reaction_id'],
                 'reaction_name': record['reaction_name']
             }
             results[compound_id].append(item)
+            compound_name = record['display_name']
+            id_to_names[compound_id] = compound_name
 
     finally:
         session.close()
@@ -314,6 +319,8 @@ def get_reaction_entities(reaction_ids, species):
             'species': species
         }
         query_res = session.run(query, params)
+        print(query)
+
         for record in query_res:
             reaction_id = record['reaction_id']
             entity_id = record['entity_id']
@@ -327,6 +334,98 @@ def get_reaction_entities(reaction_ids, species):
         session.close()
 
     return results
+
+
+def reaction_to_uniprot(reaction_ids, species):
+
+    id_to_names = {}
+    results = defaultdict(list)
+    try:
+
+        driver = GraphDatabase.driver("bolt://localhost:7687",
+                                      auth=basic_auth("neo4j", "neo4j"))
+        session = driver.session()
+
+        # note that using hasComponent|hasMember|hasCandidate below will
+        # retrieve all the sub-complexes too
+        query = """
+        MATCH (rle:ReactionLikeEvent)-[:input|output|catalystActivity
+              |physicalEntity|regulatedBy|regulator|hasComponent|hasMember
+              |hasCandidate*]->
+              (pe:PhysicalEntity)-[:referenceEntity]->
+              (re:ReferenceEntity)-[:referenceDatabase]->
+              (rd:ReferenceDatabase)
+        WHERE
+            rle.stId IN {reaction_ids} AND
+            rd.displayName = 'UniProt' AND
+            rle.speciesName = {species}
+        RETURN DISTINCT
+            re.identifier AS protein_id,
+            re.description AS description,
+            rd.displayName AS protein_db,
+            rle.stId AS reaction_id,
+            rle.displayName AS reaction_name
+        """
+        params = {
+            'reaction_ids': reaction_ids,
+            'species': species
+        }
+        query_res = session.run(query, params)
+        print(query)
+
+        for record in query_res:
+            protein_id = record['protein_id']
+            reaction_id = record['reaction_id']
+            results[reaction_id].append(protein_id)
+
+    finally:
+        session.close()
+
+    return dict(results), id_to_names
+
+
+def reaction_to_compound(reaction_ids, species):
+
+    id_to_names = {}
+    results = defaultdict(list)
+    try:
+
+        driver = GraphDatabase.driver("bolt://localhost:7687",
+                                      auth=basic_auth("neo4j", "neo4j"))
+        session = driver.session()
+        query = """
+        MATCH (rle:ReactionLikeEvent)-[:input|output|catalystActivity
+              |physicalEntity|regulatedBy|regulator|hasComponent|hasMember
+              |hasCandidate*]->
+              (pe:PhysicalEntity)-[:crossReference|:referenceEntity]->
+              (do:DatabaseObject)
+        WHERE
+            rle.stId IN {reaction_ids} AND        
+            (do.databaseName = 'COMPOUND' OR do.databaseName = 'ChEBI') AND
+            rle.speciesName = {species}
+        RETURN DISTINCT
+            do.identifier as compound_id,
+            do.displayName as display_name,            
+            do.databaseName AS compound_db,
+            rle.stId AS reaction_id,
+        	rle.displayName AS reaction_name
+        """
+        params = {
+            'reaction_ids': reaction_ids,
+            'species': species
+        }
+        query_res = session.run(query, params)
+        print(query)
+
+        for record in query_res:
+            reaction_id = record['reaction_id']
+            compound_id = record['compound_id']
+            results[reaction_id].append(compound_id)
+
+    finally:
+        session.close()
+
+    return dict(results), id_to_names
 
 
 def reaction_to_metabolite_pathway(reaction_ids, species,
@@ -377,6 +476,7 @@ def reaction_to_metabolite_pathway(reaction_ids, species,
             'species': species
         }
         query_res = session.run(query, params)
+        print(query)
 
         for record in query_res:
             reaction_id = record['reaction_id']
@@ -450,6 +550,7 @@ def get_all_pathways_formulae(species):
             'species': species
         }
         query_res = session.run(query, params)
+        print(query)
 
         i = 0
         retrieved = {}
