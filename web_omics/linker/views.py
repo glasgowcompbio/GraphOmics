@@ -342,7 +342,7 @@ def get_ensembl_gene_info(request):
         metadata = get_single_ensembl_metadata_online(ensembl_id)
 
         infos = []
-        selected = ['description', 'biotype', 'species']
+        selected = ['description', 'species', 'biotype', 'db_type', 'strand', 'start', 'end']
         for key in selected:
             value = metadata[key]
             infos.append({'key': key, 'value': value})
