@@ -277,7 +277,27 @@ const myLinker = (function () {
                     // loop over additional information
                     let infos = data['infos'];
                     for (let item of infos) {
-                        infoDiv.append(`<p><strong>${item.key}</strong>: ${item.value}</p>`);
+                        const key = item.key;
+                        const val = item.value + ''; // ensure that val is always a string
+                        const url = item.url;
+                        if (val.includes((';'))) {
+                            let html = `<p><strong>${key}</strong>:</p><ul>`;
+                            const tokens = val.split(';').map(x => x.trim());
+                            if (url) {
+                                const links = url.split(';').map(x => x.trim());
+                                for (let i = 0; i < tokens.length; i++) {
+                                    html += `<li><a href="${links[i]}" target="_blank">${tokens[i]}</a></li>`;
+                                }
+                            } else { // no url
+                                for (let w of tokens) {
+                                    html += `<li>${w}</li>`;
+                                }
+                            }
+                            html += '</ul>';
+                            infoDiv.append(html);
+                        } else {
+                            infoDiv.append(`<p><strong>${key}</strong>: ${val}</p>`);
+                        }
                     }
 
                     // loop over external links

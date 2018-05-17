@@ -197,6 +197,13 @@ def get_single_compound_metadata_online(compound_id):
 ################################################################################
 
 
+def get_reactome_content_service(reactome_id):
+    json_url = 'https://reactome.org/ContentService/data/query/' + reactome_id
+    with urllib.request.urlopen(json_url) as url:
+        lookup = json.loads(url.read().decode())
+        return lookup
+
+
 ################################################################################
 ### Pathway-related functions                                                ###
 ################################################################################

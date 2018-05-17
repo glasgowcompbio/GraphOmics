@@ -507,9 +507,103 @@ def reaction_to_metabolite_pathway(reaction_ids, species,
 ################################################################################
 
 
-# def get_metabolite_pathways(reaction_ids, species,
-#                             show_progress_bar=False,
-#                             leaf=True):
+def pathway_to_reactions(pathway_ids, species):
+
+    id_to_names = {}
+    results = defaultdict(list)
+    try:
+
+        driver = GraphDatabase.driver("bolt://localhost:7687",
+                                      auth=basic_auth("neo4j", "neo4j"))
+        session = driver.session()
+
+        # retrieve only the leaf nodes in the pathway hierarchy
+        query = """
+        MATCH (p:Pathway)-[:hasEvent*]->(rle:ReactionLikeEvent)
+        WHERE
+            p.stId IN {pathway_ids} AND
+            (p)-[:hasEvent]->(rle)
+        RETURN
+            rle.stId AS reaction_id,
+            rle.displayName AS reaction_name,
+            p.stId AS pathway_id,
+            p.displayName AS pathway_name
+        """
+        params = {
+            'pathway_ids': pathway_ids,
+            'species': species
+        }
+        query_res = session.run(query, params)
+        print(query)
+
+        for record in query_res:
+            reaction_id = record['reaction_id']
+            reaction_name = record['reaction_name']
+            pathway_id = record['pathway_id']
+            pathway_name = record['pathway_name']
+            results[pathway_id].append(reaction_id)
+            id_to_names[reaction_id] = reaction_name
+            id_to_names[pathway_id] = pathway_name
+
+    finally:
+        session.close()
+
+    return dict(results), id_to_names
+
+
+def get_reactome_description(reactome_id, from_parent=False):
+
+    results = []
+    try:
+
+        driver = GraphDatabase.driver("bolt://localhost:7687",
+                                      auth=basic_auth("neo4j", "neo4j"))
+        session = driver.session()
+
+        if from_parent:
+            query = """
+            MATCH (dbo1:DatabaseObject)<-[:inferredTo*]-(dbo2:DatabaseObject)-[:summation|:literatureReference]-(ss)
+                    WHERE
+                        dbo1.stId = {reactome_id} AND
+                        dbo2.isInferred = False
+                    RETURN
+                        dbo2.stId as reactome_id,
+                        dbo2.speciesName as species,
+                        dbo2.isInferred as inferred,
+                        ss.displayName as display_name,
+                        ss.text as summary_text,
+                        ss.schemaClass as summary_type,
+                        properties(ss) as summary
+            """
+        else:
+            query = """
+            MATCH (dbo:DatabaseObject)-[:summation|:literatureReference]-(ss)
+                    WHERE
+                        dbo.stId = {reactome_id}
+                    RETURN
+                        dbo.stId as reactome_id,
+                        dbo.speciesName as species,
+                        dbo.isInferred as inferred,
+                        ss.displayName as display_name,
+                        ss.text as summary_text,
+                        ss.schemaClass as summary_type,
+                        properties(ss) as summary_props
+            """
+        params = {
+            'reactome_id': reactome_id,
+        }
+        query_res = session.run(query, params)
+        print(query)
+        record_list = list(query_res.records())
+        results = list(map(lambda x: x.data(), record_list))
+        first_data = results[0]
+        is_inferred = first_data['inferred']
+
+    finally:
+        session.close()
+
+    return results, is_inferred
+
 
 def retrieve_kegg_formula(reactome_compound_name):
     k = KEGG()

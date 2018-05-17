@@ -7,6 +7,7 @@ import collections
 
 import pandas as pd
 import numpy as np
+import wikipedia
 
 from django.http import HttpResponse
 from django.http import JsonResponse
@@ -17,14 +18,14 @@ from django.views.generic.edit import FormView
 from linker.forms import LinkerForm
 from linker.metadata import get_compound_metadata
 from linker.metadata import get_single_ensembl_metadata_online, get_single_uniprot_metadata_online, \
-    get_single_compound_metadata_online, clean_label, get_gene_names, kegg_to_chebi
-from linker.reactome import ensembl_to_uniprot, uniprot_to_ensembl, uniprot_to_reaction, compound_to_reaction, get_species_dict
-from linker.reactome import reaction_to_metabolite_pathway, get_reaction_entities, reaction_to_compound, reaction_to_uniprot
+    get_single_compound_metadata_online, clean_label, get_gene_names, kegg_to_chebi, get_reactome_content_service
+from linker.reactome import ensembl_to_uniprot, uniprot_to_ensembl, uniprot_to_reaction, compound_to_reaction, get_species_dict, get_reactome_description
+from linker.reactome import reaction_to_metabolite_pathway, get_reaction_entities, reaction_to_compound, reaction_to_uniprot, pathway_to_reactions
 
 Relation = collections.namedtuple('Relation', 'keys values mapping_list')
 NA = '-'  # this should be something that will appear first in the table when sorted alphabetically
 
-TRUNCATE_LIMIT = 200
+TRUNCATE_LIMIT = 400
 
 GENE_PK = 'gene_pk'
 PROTEIN_PK = 'protein_pk'
@@ -342,16 +343,33 @@ def get_ensembl_gene_info(request):
         metadata = get_single_ensembl_metadata_online(ensembl_id)
 
         infos = []
-        selected = ['description', 'species', 'biotype', 'db_type', 'strand', 'start', 'end']
+        # selected = ['description', 'species', 'biotype', 'db_type', 'logic_name', 'strand', 'start', 'end']
+        selected = ['description', 'species']
         for key in selected:
             value = metadata[key]
-            infos.append({'key': key, 'value': value})
+            if key == 'description':
+                value = value[0:value.index('[')] # remove e.g. '[xxx]' from 'abhydrolase [xxx]'
+            infos.append({'key': key.title(), 'value': value})
+
+        display_name = metadata['display_name']
+        try:
+            summary = wikipedia.summary(display_name)
+            if 'gene' in summary.lower() or 'protein' in summary.lower():
+                infos.append({'key': 'Summary', 'value': truncate(summary)})
+        except wikipedia.exceptions.DisambiguationError:
+            pass
+        except ValueError:
+            pass
 
         images = []
         links = [
             {
                 'text': 'Link to Ensembl',
                 'href': 'https://www.ensembl.org/id/' + ensembl_id
+            },
+            {
+                'text': 'Link to GeneCard',
+                'href': 'https://www.genecards.org/cgi-bin/carddisp.pl?gene=' + display_name
             }
         ]
         # for x in metadata['Transcript']:
@@ -396,28 +414,31 @@ def get_uniprot_protein_info(request):
             pass
 
         # get comments
-        selected = ['function', 'catalytic activity', 'subunit']
+        selected = ['function', 'catalytic activity', 'enzyme regulation', 'subunit', 'pathway', 'miscellaneous', 'domain']
         for child in metadata.soup.find_all('comment'):
             try:
                 if child['type'] in selected:
-                    infos.append({'key': child['type'], 'value': truncate(child.text)})
+                    key = child['type'].title()
+                    if key == 'Function': # quick-hack
+                        key = 'Summary'
+                    infos.append({'key': key, 'value': truncate(child.text)})
             except KeyError:
                 continue
 
         # gene ontologies
-        # go = []
-        # for child in metadata.soup.find_all('dbreference'):
-        #     try:
-        #         if child['type'] == 'GO':
-        #             props = child.find_all('property')
-        #             for prop in props:
-        #                 if prop['type'] == 'term':
-        #                     go.append(prop['value'])
-        #     except KeyError:
-        #         continue
-        # go_str = '; '.join(go)
-        # go_str = truncate(go_str)
-        # infos.append({'key': 'gene_ontologies', 'value': go_str})
+        go = []
+        for child in metadata.soup.find_all('dbreference'):
+            try:
+                if child['type'] == 'GO':
+                    props = child.find_all('property')
+                    for prop in props:
+                        if prop['type'] == 'term':
+                            go.append(prop['value'].split(':')[1])
+            except KeyError:
+                continue
+        go_str = '; '.join(sorted(go))
+        go_str = truncate(go_str)
+        infos.append({'key': 'Gene_ontologies', 'value': go_str})
 
         images = []
         # with urllib.request.urlopen('https://swissmodel.expasy.org/repository/uniprot/' + uniprot_id + '.json') as url:
@@ -499,7 +520,8 @@ def get_kegg_metabolite_info(request):
             ]
             for key, attribute in selected:
                 value = get_attribute(metadata, attribute)
-                infos.append({'key': key, 'value': value})
+                if value is not None:
+                    infos.append({'key': key, 'value': value})
 
             images = ['http://www.ebi.ac.uk/chebi/displayImage.do?defaultImage=true&imageIndex=0&chebiId=' + compound_id]
             links = [
@@ -508,13 +530,16 @@ def get_kegg_metabolite_info(request):
                     'href': 'https://www.ebi.ac.uk/chebi/searchId.do?chebiId=CHEBI:' + compound_id
                 }
             ]
-            for db_link in metadata.DatabaseLinks:
-                if 'KEGG COMPOUND' in str(db_link.type):
-                    kegg_id = db_link.data
-                    links.append({
-                        'text': 'Link to KEGG COMPOUND database',
-                        'href': 'http://www.genome.jp/dbget-bin/www_bget?cpd:' + kegg_id
-                    })
+            try:
+                for db_link in metadata.DatabaseLinks:
+                    if 'KEGG COMPOUND' in str(db_link.type):
+                        kegg_id = db_link.data
+                        links.append({
+                            'text': 'Link to KEGG COMPOUND database',
+                            'href': 'http://www.genome.jp/dbget-bin/www_bget?cpd:' + kegg_id
+                        })
+            except AttributeError:
+                pass
 
         data = {
             'infos': infos,
@@ -524,22 +549,55 @@ def get_kegg_metabolite_info(request):
         return JsonResponse(data)
 
 
+def get_summary_string(reactome_id):
+    desc, is_inferred = get_reactome_description(reactome_id, from_parent=False)
+    if is_inferred:
+        desc, _ = get_reactome_description(reactome_id, from_parent=True)
+
+    summary_list = []
+    for s in desc:
+        if s['summary_text'] is None:
+            continue
+        st = s['summary_text'].replace(';', ',')
+        summary_list.append(truncate(st))
+    summary_str = ';'.join(summary_list)
+    return summary_str, is_inferred, desc[0]['species']
+
+
 def get_reactome_reaction_info(request):
     if request.is_ajax():
         reactome_id = request.GET['id']
         species = urllib.parse.unquote(request.GET['species'])
 
         infos = []
+
+        # res = get_reactome_content_service(reactome_id)
+        # summary_str = res['summation'][0]['text']
+        summary_str, is_inferred, inferred_species = get_summary_string(reactome_id)
+        infos.append({'key': 'Summary', 'value': summary_str})
+
+        if is_inferred:
+            inferred = 'Inferred from %s' % inferred_species
+            infos.append({'key': 'Inferred', 'value': inferred})
+
+        # get all the participants
         temp = collections.defaultdict(list)
         results = get_reaction_entities([reactome_id], species)[reactome_id]
         for res in results:
+            entity_id = res[1]
             display_name = res[2]
             relationship_types = res[3]
             if len(relationship_types) == 1:  # ignore the sub-complexes
                 rel = relationship_types[0]
-                temp[rel].append(display_name)
+                temp[rel].append((display_name, entity_id,))
+
         for k, v in temp.items():
-            infos.append({'key': k, 'value': '; '.join(v)})
+            name_list, url_list = zip(*v) # https://stackoverflow.com/questions/12974474/how-to-unzip-a-list-of-tuples-into-individual-lists
+            url_list = map(lambda x: 'https://reactome.org/content/detail/' + x if x is not None else '', url_list)
+
+            name_str = ';'.join(name_list)
+            url_str = ';'.join(url_list)
+            infos.append({'key': k.title(), 'value': name_str, 'url': url_str})
 
         images = [
             'https://reactome.org/ContentService/exporter/diagram/' + reactome_id + '.jpg?sel=' + reactome_id + "&quality=7"
@@ -560,8 +618,28 @@ def get_reactome_reaction_info(request):
 
 def get_reactome_pathway_info(request):
     if request.is_ajax():
+
         pathway_id = request.GET['id']
-        infos = []
+        species = urllib.parse.unquote(request.GET['species'])
+        mapping, id_to_names = pathway_to_reactions([pathway_id], species)
+        pathway_reactions = mapping[pathway_id]
+
+        reaction_list = map(lambda x: id_to_names[x], pathway_reactions)
+        reaction_str = ';'.join(sorted(reaction_list))
+
+        url_list = map(lambda x: 'https://reactome.org/content/detail/' + x, pathway_reactions)
+        url_str = ';'.join(sorted(url_list))
+
+        # res = get_reactome_content_service(pathway_id)
+        # summary_str = res['summation'][0]['text']
+        summary_str, is_inferred, inferred_species = get_summary_string(pathway_id)
+
+        infos = [{'key': 'Summary', 'value': summary_str}]
+        if is_inferred:
+            inferred = 'Inferred from %s' % inferred_species
+            infos.append({'key': 'Inferred', 'value': inferred})
+        infos.append({'key': 'Reactions', 'value': reaction_str, 'url': url_str})
+
         images = [
             'https://reactome.org/ContentService/exporter/diagram/' + pathway_id + '.jpg?sel=' + pathway_id
         ]
