@@ -420,7 +420,13 @@ def reaction_to_compound(reaction_ids, species):
         for record in query_res:
             reaction_id = record['reaction_id']
             compound_id = record['compound_id']
+            display_name = record['display_name']
+            database_name = record['compound_db']
+            # TODO: find better ways to remove duplicates between KEGG and ChEBI
+            if database_name == 'COMPOUND':
+                continue
             results[reaction_id].append(compound_id)
+            id_to_names[compound_id] = display_name
 
     finally:
         session.close()

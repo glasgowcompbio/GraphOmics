@@ -15,9 +15,9 @@ from django.templatetags.static import static
 from django.views.generic.edit import FormView
 
 from linker.forms import LinkerForm
-from linker.metadata import get_compound_metadata_from_json
+from linker.metadata import get_compound_metadata
 from linker.metadata import get_single_ensembl_metadata_online, get_single_uniprot_metadata_online, \
-    get_single_compound_metadata_online, clean_label, get_gene_names
+    get_single_compound_metadata_online, clean_label, get_gene_names, kegg_to_chebi
 from linker.reactome import ensembl_to_uniprot, uniprot_to_ensembl, uniprot_to_reaction, compound_to_reaction, get_species_dict
 from linker.reactome import reaction_to_metabolite_pathway, get_reaction_entities, reaction_to_compound, reaction_to_uniprot
 
@@ -53,6 +53,11 @@ class LinkerView(FormView):
         observed_compound_df = csv_to_dataframe(compounds_str)
         observed_gene_ids = get_ids_from_dataframe(observed_gene_df)
         observed_protein_ids = get_ids_from_dataframe(observed_protein_df)
+
+        # try to convert all kegg ids to chebi ids, if possible
+        observed_compound_ids = get_ids_from_dataframe(observed_compound_df)
+        kegg_2_chebi = kegg_to_chebi(observed_compound_ids)
+        observed_compound_df.iloc[:, 0] = observed_compound_df.iloc[:, 0].map(kegg_2_chebi) # assume 1st column is id
         observed_compound_ids = get_ids_from_dataframe(observed_compound_df)
 
         ### map genes -> proteins ###
@@ -90,7 +95,7 @@ class LinkerView(FormView):
 
         ### maps reactions -> compounds ###
 
-        mapping, id_to_names = reaction_to_compound(reaction_ids, species)
+        mapping, reaction_to_compound_id_to_names = reaction_to_compound(reaction_ids, species)
         reaction_2_compounds = make_relations(mapping, REACTION_PK, COMPOUND_PK, value_key=None)
         compound_2_reactions = reverse(reaction_2_compounds)
         compound_ids = compound_2_reactions.keys
@@ -156,7 +161,7 @@ class LinkerView(FormView):
 
         rel_path = static('data/compound_names.json')
         json_url = self.request.build_absolute_uri(rel_path)
-        metadata_map = get_compound_metadata_from_json(compound_ids, json_url)
+        metadata_map = get_compound_metadata(compound_ids, json_url, reaction_to_compound_id_to_names)
         compounds_json = pk_to_json('compound_pk', 'compound_id', compound_ids, metadata_map, observed_compound_df)
 
         metadata_map = {}
@@ -448,27 +453,69 @@ def get_swissmodel_protein_pdb(request):
 
 def get_kegg_metabolite_info(request):
     if request.is_ajax():
-        kegg_id = request.GET['id']
-        metadata = get_single_compound_metadata_online(kegg_id)
 
-        infos = []
-        selected = ['FORMULA']
-        for key in selected:
-            value = metadata[key]
-            infos.append({'key': key, 'value': str(value)})
+        compound_id = request.GET['id']
+        metadata = get_single_compound_metadata_online(compound_id)
 
-        # get pathways
-        # pathway_str = '; '.join(metadata['PATHWAY'].values())
-        # pathway_str = truncate(pathway_str)
-        # infos.append({'key': 'KEGG PATHWAY', 'value': pathway_str})
+        if compound_id.upper().startswith('C'): # assume it's kegg
 
-        images = ['http://www.kegg.jp/Fig/compound/' + kegg_id + '.gif']
-        links = [
-            {
-                'text': 'Link to KEGG compound database',
-                'href': 'http://www.genome.jp/dbget-bin/www_bget?cpd:' + kegg_id
-            }
-        ]
+            # TODO: no longer used??!!
+
+            infos = []
+            selected = ['FORMULA']
+            for key in selected:
+                value = metadata[key]
+                infos.append({'key': key, 'value': str(value)})
+
+            images = ['http://www.kegg.jp/Fig/compound/' + compound_id + '.gif']
+            links = [
+                {
+                    'text': 'Link to KEGG COMPOUND database',
+                    'href': 'http://www.genome.jp/dbget-bin/www_bget?cpd:' + compound_id
+                }
+            ]
+
+        else: # assume it's ChEBI
+
+            def get_attribute(metadata, attrname):
+                try:
+                    attr_val = getattr(metadata, attrname)
+                except AttributeError:
+                    attr_val = ''
+                return attr_val
+
+            infos = []
+            try:
+                infos.append({'key': 'FORMULA', 'value': metadata.Formulae[0].data})
+            except AttributeError:
+                pass
+            selected = [
+                ('ChEBI ID', 'chebiId'),
+                ('Definition', 'definition'),
+                ('Monoisotopic Mass', 'monoisotopicMass'),
+                ('SMILES', 'smiles'),
+                # ('Inchi', 'inchi'),
+                # ('InchiKey', 'inchikey'),
+            ]
+            for key, attribute in selected:
+                value = get_attribute(metadata, attribute)
+                infos.append({'key': key, 'value': value})
+
+            images = ['http://www.ebi.ac.uk/chebi/displayImage.do?defaultImage=true&imageIndex=0&chebiId=' + compound_id]
+            links = [
+                {
+                    'text': 'Link to ChEBI database',
+                    'href': 'https://www.ebi.ac.uk/chebi/searchId.do?chebiId=CHEBI:' + compound_id
+                }
+            ]
+            for db_link in metadata.DatabaseLinks:
+                if 'KEGG COMPOUND' in str(db_link.type):
+                    kegg_id = db_link.data
+                    links.append({
+                        'text': 'Link to KEGG COMPOUND database',
+                        'href': 'http://www.genome.jp/dbget-bin/www_bget?cpd:' + kegg_id
+                    })
+
         data = {
             'infos': infos,
             'images': images,

@@ -1,6 +1,7 @@
 from bioservices.kegg import KEGG
 from bioservices import Ensembl
 from bioservices import UniProt
+from bioservices import ChEBI
 import json
 import urllib.request
 import pickle
@@ -126,6 +127,22 @@ def get_uniprot_metadata_reactome(uniprot_ids):
 ### Compound-related functions                                               ###
 ################################################################################
 
+def kegg_to_chebi(kegg_ids):
+    results = {}
+    ch = ChEBI()
+    for kegg_id in kegg_ids:
+        res = ch.getLiteEntity(kegg_id)
+        if len(res) > 0:
+            le = res[0]
+            chebi_number = le.chebiId.split(':')[1]
+            print('KEGG %s --> ChEBI %s' % (kegg_id, chebi_number))
+            results[kegg_id] = chebi_number
+        else:
+            print('KEGG %s --> KEGG %s' % (kegg_id, kegg_id))
+            results[kegg_id] = kegg_id
+    return results
+
+
 def get_compound_metadata_online(kegg_ids):
 
     s = KEGG()
@@ -145,25 +162,35 @@ def get_compound_metadata_online(kegg_ids):
     return metadata_map
 
 
-def get_compound_metadata_from_json(compound_ids, json_url):
+def get_compound_metadata(compound_ids, json_url, id_to_names):
     metadata_map = {}
     with urllib.request.urlopen(json_url) as url:
         lookup = json.loads(url.read().decode())
         for compound_id in compound_ids:
             try:
                 display_name = clean_label(lookup[compound_id]['display_name'])
-                metadata_map[compound_id] = {'display_name': display_name}
             except KeyError:
-                metadata_map[compound_id] = {'display_name': compound_id}
+                try:
+                    display_name = clean_label(id_to_names[compound_id])
+                    idx = display_name.find('[ChEBI') # remove [ChEBI ...]
+                    display_name = display_name[0:idx].strip()
+                except KeyError:
+                    display_name = compound_id
+            metadata_map[compound_id] = {'display_name': display_name}
     return metadata_map
 
 
-def get_single_compound_metadata_online(kegg_id):
+def get_single_compound_metadata_online(compound_id):
 
-    s = KEGG()
-    res = s.get(kegg_id)
-    d = s.parse(res)
-    return d
+    if compound_id.upper().startswith('C'):
+        s = KEGG()
+        res = s.get(compound_id)
+        return s.parse(res)
+    else:
+        ch = ChEBI()
+        res = ch.getCompleteEntity('CHEBI:'+compound_id)
+        return res
+
 
 ################################################################################
 ### Reaction-related functions                                               ###

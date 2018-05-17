@@ -294,7 +294,7 @@ const myLinker = (function () {
 
                     // loop over images
                     function isImageUrl(url) {
-                        return (url.match(/\.(jpeg|jpg|gif|png)$/) != null);
+                        return (url.match(/\.(jpeg|jpg|gif|png)$/) != null) || url.includes('chebi');
                     }
 
                     let images = data['images'];
