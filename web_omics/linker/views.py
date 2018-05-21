@@ -4,6 +4,7 @@ import urllib.request
 from urllib.parse import urlparse
 from io import StringIO
 import collections
+import copy
 
 import pandas as pd
 import numpy as np
@@ -20,7 +21,7 @@ from linker.metadata import get_compound_metadata
 from linker.metadata import get_single_ensembl_metadata_online, get_single_uniprot_metadata_online, \
     get_single_compound_metadata_online, clean_label, get_gene_names, kegg_to_chebi, get_reactome_content_service
 from linker.reactome import ensembl_to_uniprot, uniprot_to_ensembl, uniprot_to_reaction, compound_to_reaction, get_species_dict, get_reactome_description
-from linker.reactome import reaction_to_metabolite_pathway, get_reaction_entities, reaction_to_compound, reaction_to_uniprot, pathway_to_reactions
+from linker.reactome import reaction_to_metabolite_pathway, get_reaction_entities, reaction_to_compound, reaction_to_uniprot, pathway_to_reactions, get_reaction_df
 
 Relation = collections.namedtuple('Relation', 'keys values mapping_list')
 NA = '-'  # this should be something that will appear first in the table when sorted alphabetically
@@ -63,47 +64,47 @@ class LinkerView(FormView):
 
         ### map genes -> proteins ###
 
-        mapping, id_to_names = ensembl_to_uniprot(observed_gene_ids, species)
-        gene_2_proteins = make_relations(mapping, GENE_PK, PROTEIN_PK, value_key=None)
+        gene_2_proteins_mapping, _ = ensembl_to_uniprot(observed_gene_ids, species)
+        gene_2_proteins = make_relations(gene_2_proteins_mapping, GENE_PK, PROTEIN_PK, value_key=None)
 
         ### maps proteins -> reactions ###
 
         protein_ids_from_genes = gene_2_proteins.values
-        protein_ids = list(set(observed_protein_ids + protein_ids_from_genes))
-        mapping, id_to_names = uniprot_to_reaction(protein_ids, species)
-        protein_2_reactions = make_relations(mapping, PROTEIN_PK, REACTION_PK, value_key='reaction_id')
+        known_protein_ids = list(set(observed_protein_ids + protein_ids_from_genes))
+        protein_2_reactions_mapping, _ = uniprot_to_reaction(known_protein_ids, species)
+        protein_2_reactions = make_relations(protein_2_reactions_mapping, PROTEIN_PK, REACTION_PK, value_key='reaction_id')
 
         ### maps compounds -> reactions ###
 
-        mapping, id_to_names = compound_to_reaction(observed_compound_ids, species)
-        compound_2_reactions = make_relations(mapping, COMPOUND_PK, REACTION_PK, value_key='reaction_id')
+        compound_2_reactions_mapping, _ = compound_to_reaction(observed_compound_ids, species)
+        compound_2_reactions = make_relations(compound_2_reactions_mapping, COMPOUND_PK, REACTION_PK, value_key='reaction_id')
 
         ### maps reactions -> metabolite pathways ###
 
         reaction_ids_from_proteins = protein_2_reactions.values
         reaction_ids_from_compounds = compound_2_reactions.values
         reaction_ids = list(set(reaction_ids_from_proteins + reaction_ids_from_compounds))
-        mapping, reaction_2_metabolite_pathways_id_to_names = reaction_to_metabolite_pathway(reaction_ids, species)
-        reaction_2_pathways = make_relations(mapping, REACTION_PK, PATHWAY_PK, value_key='pathway_id')
+        reaction_2_pathways_mapping, reaction_2_pathways_id_to_names = reaction_to_metabolite_pathway(reaction_ids, species)
+        reaction_2_pathways = make_relations(reaction_2_pathways_mapping, REACTION_PK, PATHWAY_PK, value_key='pathway_id')
         reaction_ids = reaction_2_pathways.keys # keep only reactions in metabolic pathways
 
         ### maps reactions -> proteins ###
 
-        mapping, id_to_names = reaction_to_uniprot(reaction_ids, species)
+        mapping, _ = reaction_to_uniprot(reaction_ids, species)
         reaction_2_proteins = make_relations(mapping, REACTION_PK, PROTEIN_PK, value_key=None)
         protein_2_reactions = reverse(reaction_2_proteins)
         protein_ids = protein_2_reactions.keys
 
         ### maps reactions -> compounds ###
 
-        mapping, reaction_to_compound_id_to_names = reaction_to_compound(reaction_ids, species)
-        reaction_2_compounds = make_relations(mapping, REACTION_PK, COMPOUND_PK, value_key=None)
+        reaction_2_compounds_mapping, reaction_to_compound_id_to_names = reaction_to_compound(reaction_ids, species)
+        reaction_2_compounds = make_relations(reaction_2_compounds_mapping, REACTION_PK, COMPOUND_PK, value_key=None)
         compound_2_reactions = reverse(reaction_2_compounds)
         compound_ids = compound_2_reactions.keys
 
         ### map proteins -> genes ###
 
-        mapping, id_to_names = uniprot_to_ensembl(protein_ids, species)
+        mapping, _ = uniprot_to_ensembl(protein_ids, species)
         protein_2_genes = make_relations(mapping, PROTEIN_PK, GENE_PK, value_key=None)
         gene_2_proteins = merge(gene_2_proteins, reverse(protein_2_genes))
         inferred_gene_ids = protein_2_genes.values
@@ -166,14 +167,56 @@ class LinkerView(FormView):
         compounds_json = pk_to_json('compound_pk', 'compound_id', compound_ids, metadata_map, observed_compound_df)
 
         metadata_map = {}
-        for name in reaction_2_metabolite_pathways_id_to_names:
-            tok = reaction_2_metabolite_pathways_id_to_names[name]
+        for name in reaction_2_pathways_id_to_names:
+            tok = reaction_2_pathways_id_to_names[name]
             filtered = clean_label(tok)
             metadata_map[name] = {'display_name': filtered}
 
+        protein_reactions_df = pd.read_json(protein_2_reactions_json)
+        compound_reactions_df = pd.read_json(compound_2_reactions_json)
+        reaction_pathways_df = pd.read_json(reaction_2_pathways_json)
+
+        # prepare reaction df
+
+        count_df = get_reaction_df(gene_2_proteins_mapping,
+                                   protein_2_reactions_mapping,
+                                   compound_2_reactions_mapping,
+                                   reaction_2_pathways_mapping,
+                                   species)
+        count_df = count_df.rename({
+            'reaction_id': 'reaction_pk',
+            'observed_protein_count': 'R_E',
+            'observed_compound_count': 'R_C'
+        }, axis='columns')
+        count_df = count_df.drop([
+            'reaction_name',
+            'protein_coverage',
+            'compound_coverage',
+            'all_coverage',
+            'protein',
+            'all_protein_count',
+            'compound',
+            'all_compound_count',
+            'pathway_ids',
+            'pathway_names'
+        ], axis=1)
         pathway_ids = reaction_2_pathways.values
-        reactions_json = pk_to_json('reaction_pk', 'reaction_id', reaction_ids, metadata_map, None)
-        pathways_json = pk_to_json('pathway_pk', 'pathway_id', pathway_ids, metadata_map, None)
+        reactions_json = pk_to_json('reaction_pk', 'reaction_id', reaction_ids, metadata_map, count_df)
+
+        # prepare pathway df
+
+        merged_df = pd.merge(reaction_pathways_df, protein_reactions_df, on='reaction_pk', how='inner')
+        merged_df = merged_df[merged_df['protein_pk'].isin(known_protein_ids)]
+        count_df1 = merged_df.groupby(['pathway_pk'])['protein_pk'].size().reset_index()
+        count_df1 = count_df1.rename({'protein_pk': 'P_E'}, axis='columns')
+
+        merged_df = pd.merge(reaction_pathways_df, compound_reactions_df, on='reaction_pk', how='inner')
+        merged_df = merged_df[merged_df['compound_pk'].isin(observed_compound_ids)]
+        count_df2 = merged_df.groupby(['pathway_pk'])['compound_pk'].size().reset_index()
+        count_df2 = count_df2.rename({'compound_pk': 'P_C'}, axis='columns')
+
+        count_df = pd.merge(count_df1, count_df2, on='pathway_pk', how='outer')
+        pathways_json = pk_to_json('pathway_pk', 'pathway_id', pathway_ids, metadata_map, count_df)
 
         data = {
             'genes_json': genes_json,
@@ -189,8 +232,8 @@ class LinkerView(FormView):
         }
         context = {'data': data}
 
-        # for k, v in data.items():
-        #     save_json_string(v, 'static/data/' + k + '.json')
+        for k, v in data.items():
+            save_json_string(v, 'static/data/' + k + '.json')
 
         return render(self.request, self.success_url, context)
 
@@ -505,7 +548,27 @@ def get_kegg_metabolite_info(request):
                     attr_val = ''
                 return attr_val
 
+            images = ['http://www.ebi.ac.uk/chebi/displayImage.do?defaultImage=true&imageIndex=0&chebiId=' + compound_id]
+            links = [
+                {
+                    'text': 'Link to ChEBI database',
+                    'href': 'https://www.ebi.ac.uk/chebi/searchId.do?chebiId=CHEBI:' + compound_id
+                }
+            ]
+
             infos = []
+            try:
+                for db_link in metadata.DatabaseLinks:
+                    if 'KEGG COMPOUND' in str(db_link.type):
+                        kegg_id = db_link.data
+                        infos.append({'key': 'KEGG ID', 'value': kegg_id})
+                        links.append({
+                            'text': 'Link to KEGG COMPOUND database',
+                            'href': 'http://www.genome.jp/dbget-bin/www_bget?cpd:' + kegg_id
+                        })
+            except AttributeError:
+                pass
+
             try:
                 infos.append({'key': 'FORMULA', 'value': metadata.Formulae[0].data})
             except AttributeError:
@@ -523,23 +586,6 @@ def get_kegg_metabolite_info(request):
                 if value is not None:
                     infos.append({'key': key, 'value': value})
 
-            images = ['http://www.ebi.ac.uk/chebi/displayImage.do?defaultImage=true&imageIndex=0&chebiId=' + compound_id]
-            links = [
-                {
-                    'text': 'Link to ChEBI database',
-                    'href': 'https://www.ebi.ac.uk/chebi/searchId.do?chebiId=CHEBI:' + compound_id
-                }
-            ]
-            try:
-                for db_link in metadata.DatabaseLinks:
-                    if 'KEGG COMPOUND' in str(db_link.type):
-                        kegg_id = db_link.data
-                        links.append({
-                            'text': 'Link to KEGG COMPOUND database',
-                            'href': 'http://www.genome.jp/dbget-bin/www_bget?cpd:' + kegg_id
-                        })
-            except AttributeError:
-                pass
 
         data = {
             'infos': infos,
