@@ -32,7 +32,7 @@ DJANGO_TEMPLATE_DEBUG='yes'
 
 Install the virtual environment using `pipenv` and start the WebOmics Django app:
 ```
-$ pipenv install -dev
+$ pipenv install --dev
 $ pipenv shell
 $ python manage.py migrate
 $ python manage.py runserver
