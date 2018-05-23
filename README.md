@@ -13,6 +13,8 @@ See https://reactome.org/dev/graph-database
 
 ### 2. Install Django
 
+Note: Django 2.0 requires Python 3.
+
 ```
 $ pip install pipenv
 $ git clone https://github.com/joewandy/omics_integration.git
