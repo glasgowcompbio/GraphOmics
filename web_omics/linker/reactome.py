@@ -8,6 +8,7 @@ import pandas as pd
 from bioservices.kegg import KEGG
 from bioservices.reactome import Reactome
 
+NEO4J_PASSWORD='neo4j'
 
 def get_species_list():
 
@@ -15,7 +16,7 @@ def get_species_list():
     try:
 
         driver = GraphDatabase.driver("bolt://localhost:7687",
-                                      auth=basic_auth("neo4j", "neo4j"))
+                                      auth=basic_auth("neo4j", NEO4J_PASSWORD))
         session = driver.session()
         query = """
         MATCH (n:Species) RETURN n.displayName AS name order by name        
@@ -54,7 +55,7 @@ def ensembl_to_uniprot(ensembl_ids, species):
     try:
 
         driver = GraphDatabase.driver("bolt://localhost:7687",
-                                      auth=basic_auth("neo4j", "neo4j"))
+                                      auth=basic_auth("neo4j", NEO4J_PASSWORD))
         session = driver.session()
         query = """
         MATCH
@@ -104,7 +105,7 @@ def uniprot_to_ensembl(uniprot_ids, species):
     try:
 
         driver = GraphDatabase.driver("bolt://localhost:7687",
-                                      auth=basic_auth("neo4j", "neo4j"))
+                                      auth=basic_auth("neo4j", NEO4J_PASSWORD))
         session = driver.session()
         query = """
         MATCH
@@ -149,7 +150,7 @@ def uniprot_to_reaction(uniprot_ids, species):
     try:
 
         driver = GraphDatabase.driver("bolt://localhost:7687",
-                                      auth=basic_auth("neo4j", "neo4j"))
+                                      auth=basic_auth("neo4j", NEO4J_PASSWORD))
         session = driver.session()
 
         # note that using hasComponent|hasMember|hasCandidate below will
@@ -204,7 +205,7 @@ def get_all_compound_ids():
     try:
 
         driver = GraphDatabase.driver("bolt://localhost:7687",
-                                      auth=basic_auth("neo4j", "neo4j"))
+                                      auth=basic_auth("neo4j", NEO4J_PASSWORD))
         session = driver.session()
         query = """
         MATCH (di:DatabaseIdentifier)
@@ -234,7 +235,7 @@ def compound_to_reaction(compound_ids, species):
     try:
 
         driver = GraphDatabase.driver("bolt://localhost:7687",
-                                      auth=basic_auth("neo4j", "neo4j"))
+                                      auth=basic_auth("neo4j", NEO4J_PASSWORD))
         session = driver.session()
         query = """
         MATCH (rle:ReactionLikeEvent)-[:input|output|catalystActivity
@@ -298,7 +299,7 @@ def get_reaction_entities(reaction_ids, species):
     try:
 
         driver = GraphDatabase.driver("bolt://localhost:7687",
-                                      auth=basic_auth("neo4j", "neo4j"))
+                                      auth=basic_auth("neo4j", NEO4J_PASSWORD))
         session = driver.session()
         query = """
         MATCH (rle:ReactionLikeEvent)-[rr:input|output|catalystActivity
@@ -343,7 +344,7 @@ def reaction_to_uniprot(reaction_ids, species):
     try:
 
         driver = GraphDatabase.driver("bolt://localhost:7687",
-                                      auth=basic_auth("neo4j", "neo4j"))
+                                      auth=basic_auth("neo4j", NEO4J_PASSWORD))
         session = driver.session()
 
         # note that using hasComponent|hasMember|hasCandidate below will
@@ -391,7 +392,7 @@ def reaction_to_compound(reaction_ids, species):
     try:
 
         driver = GraphDatabase.driver("bolt://localhost:7687",
-                                      auth=basic_auth("neo4j", "neo4j"))
+                                      auth=basic_auth("neo4j", NEO4J_PASSWORD))
         session = driver.session()
         query = """
         MATCH (rle:ReactionLikeEvent)-[:input|output|catalystActivity
@@ -442,7 +443,7 @@ def reaction_to_metabolite_pathway(reaction_ids, species,
     try:
 
         driver = GraphDatabase.driver("bolt://localhost:7687",
-                                      auth=basic_auth("neo4j", "neo4j"))
+                                      auth=basic_auth("neo4j", NEO4J_PASSWORD))
         session = driver.session()
 
         if leaf:
@@ -514,7 +515,7 @@ def pathway_to_reactions(pathway_ids, species):
     try:
 
         driver = GraphDatabase.driver("bolt://localhost:7687",
-                                      auth=basic_auth("neo4j", "neo4j"))
+                                      auth=basic_auth("neo4j", NEO4J_PASSWORD))
         session = driver.session()
 
         # retrieve only the leaf nodes in the pathway hierarchy
@@ -557,7 +558,7 @@ def get_reactome_description(reactome_id, from_parent=False):
     try:
 
         driver = GraphDatabase.driver("bolt://localhost:7687",
-                                      auth=basic_auth("neo4j", "neo4j"))
+                                      auth=basic_auth("neo4j", NEO4J_PASSWORD))
         session = driver.session()
 
         if from_parent:
@@ -623,7 +624,7 @@ def get_all_pathways_formulae(species):
     try:
 
         driver = GraphDatabase.driver("bolt://localhost:7687",
-                                      auth=basic_auth("neo4j", "neo4j"))
+                                      auth=basic_auth("neo4j", NEO4J_PASSWORD))
         session = driver.session()
 
         # TODO: retrieve only the leaf nodes in the pathway hierarchy
