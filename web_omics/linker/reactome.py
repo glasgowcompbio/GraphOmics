@@ -733,6 +733,9 @@ def get_reaction_df(transcript_mapping, protein_mapping, compound_mapping,
     reaction_names = merge_two_dicts(r_name_1, r_name_2)
     protein_to_gene = get_protein_to_gene(transcript_mapping)
 
+    pathway_compound_counts = defaultdict(int)
+    pathway_protein_counts = defaultdict(int)
+
     reaction_ids = set(list(r_members_1.keys()) + list(r_members_2.keys()))
     reaction_entities = get_reaction_entities(list(reaction_ids), species)
     rows = []
@@ -797,6 +800,11 @@ def get_reaction_df(transcript_mapping, protein_mapping, compound_mapping,
                    pathway_name_str)
             rows.append(row)
 
+            # accumulate the count for pathways too
+            for x in pathway_mapping[reaction_id]:
+                pathway_compound_counts[x['pathway_id']] += observed_compound_count
+                pathway_protein_counts[x['pathway_id']] += observed_protein_count
+
     df = pd.DataFrame(rows, columns=['reaction_id',
                                      'reaction_name',
                                      'protein_coverage',
@@ -810,4 +818,4 @@ def get_reaction_df(transcript_mapping, protein_mapping, compound_mapping,
                                      'all_compound_count',
                                      'pathway_ids',
                                      'pathway_names'])
-    return df
+    return df, pathway_compound_counts, pathway_protein_counts

@@ -33,7 +33,7 @@ for idx, s in enumerate(species_list):
 class LinkerForm(forms.Form):
     genes = forms.CharField(required = False,
                                widget = forms.Textarea(attrs={'rows': 10, 'cols': 120}),
-                               initial = example_genes)
+                               initial = example_genes, label="Genes/Transcripts")
     proteins = forms.CharField(required = False,
                                widget = forms.Textarea(attrs={'rows': 10, 'cols': 120}),
                                initial = example_proteins)

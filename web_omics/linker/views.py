@@ -178,17 +178,18 @@ class LinkerView(FormView):
 
         # prepare reaction df
 
-        count_df = get_reaction_df(gene_2_proteins_mapping,
-                                   protein_2_reactions_mapping,
-                                   compound_2_reactions_mapping,
-                                   reaction_2_pathways_mapping,
-                                   species)
-        count_df = count_df.rename({
+        count_df, pathway_compound_counts, pathway_protein_counts = get_reaction_df(
+            gene_2_proteins_mapping,
+            protein_2_reactions_mapping,
+            compound_2_reactions_mapping,
+            reaction_2_pathways_mapping,
+            species)
+        reaction_count_df = count_df.rename({
             'reaction_id': 'reaction_pk',
             'observed_protein_count': 'R_E',
             'observed_compound_count': 'R_C'
         }, axis='columns')
-        count_df = count_df.drop([
+        reaction_count_df = reaction_count_df.drop([
             'reaction_name',
             'protein_coverage',
             'compound_coverage',
@@ -201,7 +202,7 @@ class LinkerView(FormView):
             'pathway_names'
         ], axis=1)
         pathway_ids = reaction_2_pathways.values
-        reactions_json = pk_to_json('reaction_pk', 'reaction_id', reaction_ids, metadata_map, count_df)
+        reactions_json = pk_to_json('reaction_pk', 'reaction_id', reaction_ids, metadata_map, reaction_count_df)
 
         # prepare pathway df
 
@@ -216,7 +217,22 @@ class LinkerView(FormView):
         count_df2 = count_df2.rename({'compound_pk': 'P_C'}, axis='columns')
 
         count_df = pd.merge(count_df1, count_df2, on='pathway_pk', how='outer')
-        pathways_json = pk_to_json('pathway_pk', 'pathway_id', pathway_ids, metadata_map, count_df)
+
+        pathway_pks = set(list(pathway_compound_counts.keys()) + list(pathway_protein_counts.keys()))
+        data = []
+        for pathway_pk in pathway_pks:
+            try:
+                p_e = pathway_protein_counts[pathway_pk]
+            except KeyError:
+                p_e = 0
+            try:
+                p_c = pathway_compound_counts[pathway_pk]
+            except KeyError:
+                p_c = 0
+            data.append((pathway_pk, p_e, p_c))
+        pathway_count_df = pd.DataFrame(data, columns=['pathway_pk', 'P_E', 'P_C'])
+
+        pathways_json = pk_to_json('pathway_pk', 'pathway_id', pathway_ids, metadata_map, pathway_count_df)
 
         data = {
             'genes_json': genes_json,
