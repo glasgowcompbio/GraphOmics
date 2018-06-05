@@ -8,16 +8,26 @@ import pandas as pd
 from bioservices.kegg import KEGG
 from bioservices.reactome import Reactome
 
+
+NEO4J_SERVER='bolt://localhost:7687'
+NEO4J_USER='neo4j'
 NEO4J_PASSWORD='neo4j'
+driver = GraphDatabase.driver(NEO4J_SERVER,
+                              auth=basic_auth(NEO4J_USER, NEO4J_PASSWORD))
+
+def get_neo4j_session():
+    session = None
+    try:
+        session = driver.session()
+    except Exception:
+        raise
+    return session
+
 
 def get_species_list():
-
     results = []
     try:
-
-        driver = GraphDatabase.driver("bolt://localhost:7687",
-                                      auth=basic_auth("neo4j", NEO4J_PASSWORD))
-        session = driver.session()
+        session = get_neo4j_session()
         query = """
         MATCH (n:Species) RETURN n.displayName AS name order by name        
         """
@@ -25,13 +35,8 @@ def get_species_list():
         print(query)
         for record in query_res:
             results.append(record['name'])
-
-    except Exception as e:
-        print(e)
-
     finally:
-        session.close()
-
+        if session is not None: session.close()
     return results
 
 
@@ -49,14 +54,10 @@ def get_species_dict():
 
 
 def ensembl_to_uniprot(ensembl_ids, species):
-
     id_to_names = {}
     results = defaultdict(list)
     try:
-
-        driver = GraphDatabase.driver("bolt://localhost:7687",
-                                      auth=basic_auth("neo4j", NEO4J_PASSWORD))
-        session = driver.session()
+        session = get_neo4j_session()
         query = """
         MATCH
             (rg:ReferenceGeneProduct)-[:referenceGene]->
@@ -84,12 +85,8 @@ def ensembl_to_uniprot(ensembl_ids, species):
             protein_id = record['protein_id']
             results[gene_id].append(protein_id)
 
-    except Exception as e:
-        print(e)
-
     finally:
-        session.close()
-
+        if session is not None: session.close()
     return dict(results), id_to_names
 
 
@@ -99,14 +96,10 @@ def ensembl_to_uniprot(ensembl_ids, species):
 
 
 def uniprot_to_ensembl(uniprot_ids, species):
-
     id_to_names = {}
     results = defaultdict(list)
     try:
-
-        driver = GraphDatabase.driver("bolt://localhost:7687",
-                                      auth=basic_auth("neo4j", NEO4J_PASSWORD))
-        session = driver.session()
+        session = get_neo4j_session()
         query = """
         MATCH
             (rg:ReferenceGeneProduct)-[:referenceGene]->
@@ -134,24 +127,16 @@ def uniprot_to_ensembl(uniprot_ids, species):
             protein_id = record['protein_id']
             results[protein_id].append(gene_id)
 
-    except Exception as e:
-        print(e)
-
     finally:
-        session.close()
-
+        if session is not None: session.close()
     return dict(results), id_to_names
 
 
 def uniprot_to_reaction(uniprot_ids, species):
-
     id_to_names = {}
     results = defaultdict(list)
     try:
-
-        driver = GraphDatabase.driver("bolt://localhost:7687",
-                                      auth=basic_auth("neo4j", NEO4J_PASSWORD))
-        session = driver.session()
+        session = get_neo4j_session()
 
         # note that using hasComponent|hasMember|hasCandidate below will
         # retrieve all the sub-complexes too
@@ -187,10 +172,8 @@ def uniprot_to_reaction(uniprot_ids, species):
                 'reaction_name': record['reaction_name']
             }
             results[protein_id].append(item)
-
     finally:
-        session.close()
-
+        if session is not None: session.close()
     return dict(results), id_to_names
 
 
@@ -200,13 +183,9 @@ def uniprot_to_reaction(uniprot_ids, species):
 
 
 def get_all_compound_ids():
-
     results = []
     try:
-
-        driver = GraphDatabase.driver("bolt://localhost:7687",
-                                      auth=basic_auth("neo4j", NEO4J_PASSWORD))
-        session = driver.session()
+        session = get_neo4j_session()
         query = """
         MATCH (di:DatabaseIdentifier)
         WHERE
@@ -221,22 +200,16 @@ def get_all_compound_ids():
             key = record['compound_id'].split(':')  # e.g. 'COMPOUND:C00025'
             compound_id = key[1]
             results.append(compound_id)
-
     finally:
-        session.close()
-
+        if session is not None: session.close()
     return results
 
 
 def compound_to_reaction(compound_ids, species):
-
     id_to_names = {}
     results = defaultdict(list)
     try:
-
-        driver = GraphDatabase.driver("bolt://localhost:7687",
-                                      auth=basic_auth("neo4j", NEO4J_PASSWORD))
-        session = driver.session()
+        session = get_neo4j_session()
         query = """
         MATCH (rle:ReactionLikeEvent)-[:input|output|catalystActivity
               |physicalEntity|regulatedBy|regulator|hasComponent|hasMember
@@ -269,15 +242,12 @@ def compound_to_reaction(compound_ids, species):
             results[compound_id].append(item)
             compound_name = record['display_name']
             id_to_names[compound_id] = compound_name
-
     finally:
-        session.close()
-
+        if session is not None: session.close()
     return dict(results), id_to_names
 
 
 def produce_kegg_dict(kegg_location, param):
-
     with open(kegg_location) as kegg_cmpd_file:
         cmpd_dict = xmltodict.parse(kegg_cmpd_file.read())
 
@@ -294,13 +264,9 @@ def produce_kegg_dict(kegg_location, param):
 
 # get all the entities involved in a reaction
 def get_reaction_entities(reaction_ids, species):
-
     results = defaultdict(list)
     try:
-
-        driver = GraphDatabase.driver("bolt://localhost:7687",
-                                      auth=basic_auth("neo4j", NEO4J_PASSWORD))
-        session = driver.session()
+        session = get_neo4j_session()
         query = """
         MATCH (rle:ReactionLikeEvent)-[rr:input|output|catalystActivity
               |physicalEntity|regulatedBy|regulator|hasComponent|hasMember
@@ -330,22 +296,16 @@ def get_reaction_entities(reaction_ids, species):
             relationship_types = record['types']
             item = (schema_class, entity_id, display_name, relationship_types)
             results[reaction_id].append(item)
-
     finally:
-        session.close()
-
+        if session is not None: session.close()
     return results
 
 
 def reaction_to_uniprot(reaction_ids, species):
-
     id_to_names = {}
     results = defaultdict(list)
     try:
-
-        driver = GraphDatabase.driver("bolt://localhost:7687",
-                                      auth=basic_auth("neo4j", NEO4J_PASSWORD))
-        session = driver.session()
+        session = get_neo4j_session()
 
         # note that using hasComponent|hasMember|hasCandidate below will
         # retrieve all the sub-complexes too
@@ -378,22 +338,16 @@ def reaction_to_uniprot(reaction_ids, species):
             protein_id = record['protein_id']
             reaction_id = record['reaction_id']
             results[reaction_id].append(protein_id)
-
     finally:
-        session.close()
-
+        if session is not None: session.close()
     return dict(results), id_to_names
 
 
 def reaction_to_compound(reaction_ids, species):
-
     id_to_names = {}
     results = defaultdict(list)
     try:
-
-        driver = GraphDatabase.driver("bolt://localhost:7687",
-                                      auth=basic_auth("neo4j", NEO4J_PASSWORD))
-        session = driver.session()
+        session = get_neo4j_session()
         query = """
         MATCH (rle:ReactionLikeEvent)-[:input|output|catalystActivity
               |physicalEntity|regulatedBy|regulator|hasComponent|hasMember
@@ -428,24 +382,17 @@ def reaction_to_compound(reaction_ids, species):
                 continue
             results[reaction_id].append(compound_id)
             id_to_names[compound_id] = display_name
-
     finally:
-        session.close()
-
+        if session is not None: session.close()
     return dict(results), id_to_names
 
 
 def reaction_to_metabolite_pathway(reaction_ids, species,
                                    leaf=True):
-
     id_to_names = {}
     results = defaultdict(list)
     try:
-
-        driver = GraphDatabase.driver("bolt://localhost:7687",
-                                      auth=basic_auth("neo4j", NEO4J_PASSWORD))
-        session = driver.session()
-
+        session = get_neo4j_session()
         if leaf:
             # retrieve only the leaf nodes in the pathway hierarchy
             query = """
@@ -497,11 +444,10 @@ def reaction_to_metabolite_pathway(reaction_ids, species,
             results[reaction_id].append(item)
             id_to_names[reaction_id] = reaction_name
             id_to_names[pathway_id] = pathway_name
-
     finally:
-        session.close()
-
+        if session is not None: session.close()
     return dict(results), id_to_names
+
 
 ################################################################################
 ### Pathway-related functions                                                ###
@@ -509,15 +455,10 @@ def reaction_to_metabolite_pathway(reaction_ids, species,
 
 
 def pathway_to_reactions(pathway_ids, species):
-
     id_to_names = {}
     results = defaultdict(list)
     try:
-
-        driver = GraphDatabase.driver("bolt://localhost:7687",
-                                      auth=basic_auth("neo4j", NEO4J_PASSWORD))
-        session = driver.session()
-
+        session = get_neo4j_session()
         # retrieve only the leaf nodes in the pathway hierarchy
         query = """
         MATCH (p:Pathway)-[:hasEvent*]->(rle:ReactionLikeEvent)
@@ -545,22 +486,15 @@ def pathway_to_reactions(pathway_ids, species):
             results[pathway_id].append(reaction_id)
             id_to_names[reaction_id] = reaction_name
             id_to_names[pathway_id] = pathway_name
-
     finally:
-        session.close()
-
+        if session is not None: session.close()
     return dict(results), id_to_names
 
 
 def get_reactome_description(reactome_id, from_parent=False):
-
     results = []
     try:
-
-        driver = GraphDatabase.driver("bolt://localhost:7687",
-                                      auth=basic_auth("neo4j", NEO4J_PASSWORD))
-        session = driver.session()
-
+        session = get_neo4j_session()
         if from_parent:
             query = """
             MATCH (dbo1:DatabaseObject)<-[:inferredTo*]-(dbo2:DatabaseObject)-[:summation|:literatureReference]-(ss)
@@ -599,10 +533,8 @@ def get_reactome_description(reactome_id, from_parent=False):
         results = list(map(lambda x: x.data(), record_list))
         first_data = results[0]
         is_inferred = first_data['inferred']
-
     finally:
-        session.close()
-
+        if session is not None: session.close()
     return results, is_inferred
 
 
@@ -618,14 +550,10 @@ def retrieve_kegg_formula(reactome_compound_name):
 
 
 def get_all_pathways_formulae(species):
-
     results = defaultdict(set)
     pathway_id_to_name = {}
     try:
-
-        driver = GraphDatabase.driver("bolt://localhost:7687",
-                                      auth=basic_auth("neo4j", NEO4J_PASSWORD))
-        session = driver.session()
+        session = get_neo4j_session()
 
         # TODO: retrieve only the leaf nodes in the pathway hierarchy
         query = """
@@ -671,10 +599,8 @@ def get_all_pathways_formulae(species):
                     formula = retrieved[compound_name]
             assert formula is not None, 'Formula is missing for %s' % compound_name
             results[pathway_id].add(formula)
-
     finally:
-        session.close()
-
+        if session is not None: session.close()
     return dict(results), pathway_id_to_name
 
 ################################################################################
@@ -728,7 +654,6 @@ def get_coverage(observed_count, total_count):
 
 def get_reaction_df(transcript_mapping, protein_mapping, compound_mapping,
                     pathway_mapping, species):
-
     r_name_1, r_members_1 = get_reactions_from_mapping(protein_mapping)
     r_name_2, r_members_2 = get_reactions_from_mapping(compound_mapping)
     reaction_names = merge_two_dicts(r_name_1, r_name_2)

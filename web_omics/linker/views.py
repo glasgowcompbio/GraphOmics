@@ -249,7 +249,7 @@ class LinkerView(FormView):
         context = {'data': data}
 
         for k, v in data.items():
-            save_json_string(v, 'static/data/' + k + '.json')
+            save_json_string(v, 'static/data/debugging' + k + '.json')
 
         return render(self.request, self.success_url, context)
 
