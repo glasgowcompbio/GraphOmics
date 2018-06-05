@@ -1,13 +1,10 @@
 import json
-import re
 import urllib.request
 from urllib.parse import urlparse
 from io import StringIO
 import collections
-import copy
 
 import pandas as pd
-import numpy as np
 import wikipedia
 
 from django.http import HttpResponse
@@ -19,9 +16,11 @@ from django.views.generic.edit import FormView
 from linker.forms import LinkerForm
 from linker.metadata import get_compound_metadata
 from linker.metadata import get_single_ensembl_metadata_online, get_single_uniprot_metadata_online, \
-    get_single_compound_metadata_online, clean_label, get_gene_names, kegg_to_chebi, get_reactome_content_service
-from linker.reactome import ensembl_to_uniprot, uniprot_to_ensembl, uniprot_to_reaction, compound_to_reaction, get_species_dict, get_reactome_description
-from linker.reactome import reaction_to_metabolite_pathway, get_reaction_entities, reaction_to_compound, reaction_to_uniprot, pathway_to_reactions, get_reaction_df
+    get_single_compound_metadata_online, clean_label, get_gene_names, kegg_to_chebi
+from linker.reactome import ensembl_to_uniprot, uniprot_to_ensembl, uniprot_to_reaction, compound_to_reaction, \
+    get_species_dict, get_reactome_description
+from linker.reactome import reaction_to_metabolite_pathway, get_reaction_entities, reaction_to_compound, \
+    reaction_to_uniprot, pathway_to_reactions, get_reaction_df
 
 Relation = collections.namedtuple('Relation', 'keys values mapping_list')
 NA = '-'  # this should be something that will appear first in the table when sorted alphabetically
@@ -172,10 +171,6 @@ class LinkerView(FormView):
             filtered = clean_label(tok)
             metadata_map[name] = {'display_name': filtered}
 
-        protein_reactions_df = pd.read_json(protein_2_reactions_json)
-        compound_reactions_df = pd.read_json(compound_2_reactions_json)
-        reaction_pathways_df = pd.read_json(reaction_2_pathways_json)
-
         # prepare reaction df
 
         count_df, pathway_compound_counts, pathway_protein_counts = get_reaction_df(
@@ -206,18 +201,6 @@ class LinkerView(FormView):
 
         # prepare pathway df
 
-        merged_df = pd.merge(reaction_pathways_df, protein_reactions_df, on='reaction_pk', how='inner')
-        merged_df = merged_df[merged_df['protein_pk'].isin(known_protein_ids)]
-        count_df1 = merged_df.groupby(['pathway_pk'])['protein_pk'].size().reset_index()
-        count_df1 = count_df1.rename({'protein_pk': 'P_E'}, axis='columns')
-
-        merged_df = pd.merge(reaction_pathways_df, compound_reactions_df, on='reaction_pk', how='inner')
-        merged_df = merged_df[merged_df['compound_pk'].isin(observed_compound_ids)]
-        count_df2 = merged_df.groupby(['pathway_pk'])['compound_pk'].size().reset_index()
-        count_df2 = count_df2.rename({'compound_pk': 'P_C'}, axis='columns')
-
-        count_df = pd.merge(count_df1, count_df2, on='pathway_pk', how='outer')
-
         pathway_pks = set(list(pathway_compound_counts.keys()) + list(pathway_protein_counts.keys()))
         data = []
         for pathway_pk in pathway_pks:
@@ -231,7 +214,6 @@ class LinkerView(FormView):
                 p_c = 0
             data.append((pathway_pk, p_e, p_c))
         pathway_count_df = pd.DataFrame(data, columns=['pathway_pk', 'P_E', 'P_C'])
-
         pathways_json = pk_to_json('pathway_pk', 'pathway_id', pathway_ids, metadata_map, pathway_count_df)
 
         data = {
