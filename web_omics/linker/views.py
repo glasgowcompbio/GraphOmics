@@ -171,49 +171,11 @@ class LinkerView(FormView):
             filtered = clean_label(tok)
             metadata_map[name] = {'display_name': filtered}
 
-        # prepare reaction df
-
-        count_df, pathway_compound_counts, pathway_protein_counts = get_reaction_df(
-            gene_2_proteins_mapping,
-            protein_2_reactions_mapping,
-            compound_2_reactions_mapping,
-            reaction_2_pathways_mapping,
-            species)
-        reaction_count_df = count_df.rename({
-            'reaction_id': 'reaction_pk',
-            'observed_protein_count': 'R_E',
-            'observed_compound_count': 'R_C'
-        }, axis='columns')
-        reaction_count_df = reaction_count_df.drop([
-            'reaction_name',
-            'protein_coverage',
-            'compound_coverage',
-            'all_coverage',
-            'protein',
-            'all_protein_count',
-            'compound',
-            'all_compound_count',
-            'pathway_ids',
-            'pathway_names'
-        ], axis=1)
+        reaction_count_df, pathway_count_df = get_count_df(gene_2_proteins_mapping, protein_2_reactions_mapping,
+                                                           compound_2_reactions_mapping, reaction_2_pathways_mapping,
+                                                           species)
         pathway_ids = reaction_2_pathways.values
         reactions_json = pk_to_json('reaction_pk', 'reaction_id', reaction_ids, metadata_map, reaction_count_df)
-
-        # prepare pathway df
-
-        pathway_pks = set(list(pathway_compound_counts.keys()) + list(pathway_protein_counts.keys()))
-        data = []
-        for pathway_pk in pathway_pks:
-            try:
-                p_e = pathway_protein_counts[pathway_pk]
-            except KeyError:
-                p_e = 0
-            try:
-                p_c = pathway_compound_counts[pathway_pk]
-            except KeyError:
-                p_c = 0
-            data.append((pathway_pk, p_e, p_c))
-        pathway_count_df = pd.DataFrame(data, columns=['pathway_pk', 'P_E', 'P_C'])
         pathways_json = pk_to_json('pathway_pk', 'pathway_id', pathway_ids, metadata_map, pathway_count_df)
 
         data = {
@@ -231,9 +193,55 @@ class LinkerView(FormView):
         context = {'data': data}
 
         for k, v in data.items():
-            save_json_string(v, 'static/data/debugging' + k + '.json')
+            save_json_string(v, 'static/data/debugging/' + k + '.json')
 
         return render(self.request, self.success_url, context)
+
+
+def get_count_df(gene_2_proteins_mapping, protein_2_reactions_mapping, compound_2_reactions_mapping,
+                 reaction_2_pathways_mapping, species):
+
+    count_df, pathway_compound_counts, pathway_protein_counts = get_reaction_df(
+        gene_2_proteins_mapping,
+        protein_2_reactions_mapping,
+        compound_2_reactions_mapping,
+        reaction_2_pathways_mapping,
+        species)
+
+    reaction_count_df = count_df.rename({
+        'reaction_id': 'reaction_pk',
+        'observed_protein_count': 'R_E',
+        'observed_compound_count': 'R_C'
+    }, axis='columns')
+
+    reaction_count_df = reaction_count_df.drop([
+        'reaction_name',
+        'protein_coverage',
+        'compound_coverage',
+        'all_coverage',
+        'protein',
+        'all_protein_count',
+        'compound',
+        'all_compound_count',
+        'pathway_ids',
+        'pathway_names'
+    ], axis=1)
+
+    pathway_pks = set(list(pathway_compound_counts.keys()) + list(pathway_protein_counts.keys()))
+    data = []
+    for pathway_pk in pathway_pks:
+        try:
+            p_e = pathway_protein_counts[pathway_pk]
+        except KeyError:
+            p_e = 0
+        try:
+            p_c = pathway_compound_counts[pathway_pk]
+        except KeyError:
+            p_c = 0
+        data.append((pathway_pk, p_e, p_c))
+    pathway_count_df = pd.DataFrame(data, columns=['pathway_pk', 'P_E', 'P_C'])
+
+    return reaction_count_df, pathway_count_df
 
 
 def save_json_string(data, outfile):

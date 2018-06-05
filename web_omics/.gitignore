@@ -88,13 +88,4 @@ local_settings.py
 .env
 db.sqlite3
 
-static/data/compound_reactions_json.json
-static/data/compounds_json.json
-static/data/gene_proteins_json.json
-static/data/genes_json.json
-static/data/pathways_json.json
-static/data/protein_reactions_json.json
-static/data/proteins_json.json
-static/data/reaction_pathways_json.json
-static/data/reactions_json.json
-static/data/species.json
+static/data/debugging/*
