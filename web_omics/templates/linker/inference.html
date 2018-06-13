@@ -1,0 +1,89 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}WebOmics{% endblock %}
+
+{% block head_block %}
+    <!-- link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/v/dt/dt-1.10.16/sc-1.4.4/sl-1.2.5/datatables.min.css"/ -->
+    <link rel="stylesheet" type="text/css"
+          href="https://cdn.datatables.net/v/dt/dt-1.10.16/b-1.5.1/b-colvis-1.5.1/r-2.2.1/sc-1.4.4/sl-1.2.5/datatables.min.css"/>
+{% endblock %}
+
+{% block body_block %}
+
+    <div class="container-fluid mt-2">
+
+        <div>
+            <ul class="nav nav-tabs">
+                <li class="nav-item">
+                    <a class="nav-link" href="{% url 'explore_data' analysis_id=analysis_id %}">🔍 Explore Data</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link active" href="{% url 'inference' analysis_id=analysis_id %}">📊 Inference</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{% url 'settings' analysis_id=analysis_id %}">⚙️ Settings</a>
+                </li>
+            </ul>
+        </div>
+
+        <div class="m-1 mb-3">
+            <div class="card mb-3">
+                <div class="card card-body">
+                    <h5 class="card-title">Univariate Analysis</h5>
+                    <form id="inference_form"
+                          method="post"
+                          enctype="multipart/form-data">
+                        <div class="form-group">
+                            <label for="exampleFormControlSelect1">Comparison Type</label>
+                            <select class="form-control" id="exampleFormControlSelect1">
+                                <option>Fold change</option>
+                                <option>T-test</option>
+                                <option>Correlation</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="exampleFormControlSelect2">Control</label>
+                            <select class="form-control" id="exampleFormControlSelect2">
+                                <option>Wildtype</option>
+                                <option>Mutant</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="exampleFormControlSelect2">Condition</label>
+                            <select class="form-control" id="exampleFormControlSelect2">
+                                <option>Wildtype</option>
+                                <option>Mutant</option>
+                            </select>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Submit</button>
+                    </form>
+                </div>
+                <div class="card card-body">
+                    <h5 class="card-title">Clustering/Projection Analysis</h5>
+                    <form id="inference_form"
+                          method="post"
+                          enctype="multipart/form-data">
+                        <div class="form-group">
+                            <label for="exampleFormControlSelect1">Analysis Type</label>
+                            <select class="form-control" id="exampleFormControlSelect1">
+                                <option>Principal Component Analysis (PCA)</option>
+                                <option>Partial Least Squares - Discriminant Analysis (PLS-DA)</option>
+                                <option>Hierarchical Clustering</option>
+                                <option>K-means</option>
+                            </select>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Submit</button>
+                    </form>
+                </div>
+
+            </div>
+        </div>
+
+    </div>
+
+{% endblock %}
+
+{% block js_block %}
+
+{% endblock %}

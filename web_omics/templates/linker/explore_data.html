@@ -11,12 +11,26 @@
 
 {% block body_block %}
 
-    <div class="container-fluid">
+    <div class="container-fluid mt-2">
 
-        <div class="m-1 mb-3">
-            <h5>Data Integration Results</h5>
-            <form class="form-inline my-2 my-lg-0">
-                <input class="form-control mr-sm-2" type="search" placeholder="Search" aria-label="Search"
+        <div>
+            <ul class="nav nav-tabs">
+              <li class="nav-item">
+                <a class="nav-link active" href="{% url 'explore_data' analysis_id=analysis_id %}">🔍 Explore Data</a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" href="{% url 'inference' analysis_id=analysis_id %}">📊 Inference</a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" href="{% url 'settings' analysis_id=analysis_id %}">⚙️ Settings</a>
+              </li>
+            </ul>
+        </div>
+
+        <div class="m-1 mb-3 mt-2">
+            <p><small><strong>{{ analysis_name }}</strong>: {{ analysis_description }}</small></p>
+            <form class="form-inline">
+                <input class="form-control" type="search" placeholder="Search" aria-label="Search"
                        style="width: 600px;"
                        id="global_filter">
                 <!--button class="btn btn-success my-2 my-sm-0" type="button">Search</button-->

@@ -4,29 +4,36 @@
 
 {% block body_block %}
     <div class="container-fluid">
-        <div class="text-center" style="margin-top: 30px; margin-bottom: 30px">
-            <img src="{% static 'images/banner.png' %}" alt="Banner" width="60%"/>
-            <br/>
-            <a href="/linker" class="btn btn-primary">Create a New Data Integration Analysis</a>
-        </div>
         <div class="panel panel-default">
-            <div class="panel-body">
-                <h4>Integrated Omics Analysis</h4>
+            <div class="panel-body mt-2">
+                <h1>Analysis</h1>
                 <p>
-                    Data integration across multiple -omics is challenging. WebOmics help you view the relationship
-                    between entities
-                    across multiple omics, and visualise them as a network graph and also infer the most probable
-                    pathways given
-                    all the observed supports.
+                    The following table shows all data integration analyses that have been created.
+                    To add a new analysis, click the [Create] button below.
                 </p>
-            </div>
-        </div>
-        <div class="panel panel-default">
-            <div class="panel-body">
-                <h4>Links</h4>
+                <table border="1" width="100%">
+                    <tr>
+                        <th>Analysis Name</th>
+                        <th>Analysis Description</th>
+                        <th>Species</th>
+                        <th>Date</th>
+                    </tr>
+                    {% for analysis in object_list %}
+                        <tr>
+                            <td>
+                                <a href="{% url 'explore_data' analysis_id=analysis.pk %}">{{ analysis.name }}</a>
+                            </td>
+                            <td>{{ analysis.description }}</td>
+                            <td>{{ analysis.species }}</td>
+                            <td>{{ analysis.timestamp|date }}</td>
+                        </tr>
+                    {% endfor %}
+                </table>
+                <br/>
                 <p>
-                    The codes for this website, alongside other analysis module, can be found
-                    at <a href="https://github.com/joewandy/omics_integration">https://github.com/joewandy/omics_integration</a>
+                    <a href="{% url "create_analysis" %}" class="btn btn-primary">
+                        Create a New Data Integration Analysis
+                    </a>
                 </p>
             </div>
         </div>

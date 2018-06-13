@@ -12,8 +12,11 @@ from django.http import JsonResponse
 from django.shortcuts import render
 from django.templatetags.static import static
 from django.views.generic.edit import FormView
+from django.shortcuts import render, get_object_or_404
 
 from linker.forms import LinkerForm
+from linker.models import Analysis
+
 from linker.metadata import get_compound_metadata
 from linker.metadata import get_single_ensembl_metadata_online, get_single_uniprot_metadata_online, \
     get_single_compound_metadata_online, clean_label, get_gene_names, kegg_to_chebi
@@ -34,10 +37,49 @@ REACTION_PK = 'reaction_pk'
 PATHWAY_PK = 'pathway_pk'
 
 
-class LinkerView(FormView):
-    template_name = 'linker/linker.html'
+def explore_data(request, analysis_id):
+    analysis = get_object_or_404(Analysis, pk=analysis_id)
+    data = {
+        'genes_json': json.dumps(analysis.genes_json),
+        'proteins_json': json.dumps(analysis.proteins_json),
+        'compounds_json': json.dumps(analysis.compounds_json),
+        'reactions_json': json.dumps(analysis.reactions_json),
+        'pathways_json': json.dumps(analysis.pathways_json),
+        'gene_proteins_json': json.dumps(analysis.gene_proteins_json),
+        'protein_reactions_json': json.dumps(analysis.protein_reactions_json),
+        'compound_reactions_json': json.dumps(analysis.compound_reactions_json),
+        'reaction_pathways_json': json.dumps(analysis.reaction_pathways_json),
+        'species': analysis.species,
+    }
+    context = {
+        'data': data,
+        'analysis_id': analysis.pk,
+        'analysis_name': analysis.name,
+        'analysis_description': analysis.description
+    }
+    return render(request, 'linker/explore_data.html', context)
+
+
+def inference(request, analysis_id):
+    analysis = get_object_or_404(Analysis, pk=analysis_id)
+    context = {
+        'analysis_id': analysis.pk
+    }
+    return render(request, 'linker/inference.html', context)
+
+
+def settings(request, analysis_id):
+    analysis = get_object_or_404(Analysis, pk=analysis_id)
+    context = {
+        'analysis_id': analysis.pk
+    }
+    return render(request, 'linker/settings.html', context)
+
+
+class CreateAnalysisView(FormView):
+    template_name = 'linker/create_analysis.html'
     form_class = LinkerForm
-    success_url = 'linker/analysis.html'
+    success_url = 'linker/explore_data.html'
 
     def form_valid(self, form):
         genes_str = form.cleaned_data['genes']
@@ -191,6 +233,23 @@ class LinkerView(FormView):
             'species': species
         }
         context = {'data': data}
+
+        analysis_name = form.cleaned_data['analysis_name']
+        analysis_desc = form.cleaned_data['analysis_description']
+        analysis = Analysis.objects.create(name=analysis_name,
+                                  description=analysis_desc,
+                                  species=species,
+                                  genes_json=json.loads(genes_json),
+                                  proteins_json=json.loads(proteins_json),
+                                  compounds_json=json.loads(compounds_json),
+                                  reactions_json=json.loads(reactions_json),
+                                  pathways_json=json.loads(pathways_json),
+                                  gene_proteins_json=json.loads(gene_2_proteins_json),
+                                  protein_reactions_json=json.loads(protein_2_reactions_json),
+                                  compound_reactions_json=json.loads(compound_2_reactions_json),
+                                  reaction_pathways_json=json.loads(reaction_2_pathways_json))
+        analysis.save()
+        context['analysis_id'] = analysis.pk
 
         for k, v in data.items():
             save_json_string(v, 'static/data/debugging/' + k + '.json')

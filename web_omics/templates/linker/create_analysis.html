@@ -1,0 +1,71 @@
+{% extends 'base.html' %}
+
+{% load static %}
+
+{% block head_block %}
+{% endblock %}
+
+{% block body_block %}
+    <div class="container-fluid m-2 mb-5">
+        <h1>Create a New Data Integration Analysis</h1>
+            <p>
+                Enter your details below to create your a new integration analysis.
+                The Analysis Name and Description fields below are optional and can be left blank.
+                Other fields for the different -omics data should be provided in a comma-separated
+                format with the first row being the header. The first column is always used as the
+                identifier column, while other columns are taken as the samples.
+            </p>
+            <p>
+                Glasgow Polyomics users can also import their genomics/transcriptomics data from Galaxy,
+                and their metabolomics data from PiMP by clicking the <strong>[Import from Galaxy]</strong> and <strong>
+                [Import from PiMP]</strong> buttons.
+            </p>
+            <p>
+                To see an example data, click the <strong>[Load Example Data]</strong> button.
+            </p>
+            <p>
+                <input type="button" value="Import from Galaxy" class="btn btn-success"/>
+                <input type="button" value="Import from PiMP" class="btn btn-success"/>
+                <input type="button" onClick="showExample();" value="Load Example Data" class="btn btn-light"/>
+            </p>
+        <form id="analysis_form"
+              method="post"
+              action="{% url "create_analysis" %}"
+              enctype="multipart/form-data">
+            {% csrf_token %}
+            <table>
+                {{ form.as_table }}
+            </table>
+            <br/>
+            <input type="submit" name="submit" value="Submit Your Analysis" class="btn btn-primary"/>
+        </form>
+    </div>
+{% endblock %}
+
+{% block js_block %}
+    <script type='text/javascript'>
+        const name = $('#id_analysis_name');
+        const description = $('#id_analysis_description');
+        const genes = $('#id_genes');
+        const proteins = $('#id_proteins');
+        const compounds = $('#id_compounds');
+        const species = $('#id_species');
+        const exampleGenes = genes.val();
+        const exampleProteins = proteins.val();
+        const exampleCompounds = compounds.val();
+        const exampleSpecies = species.val();
+        genes.val('');
+        proteins.val('');
+        compounds.val('');
+        species.val('');
+
+        function showExample() {
+            name.val('Example analysis');
+            description.val('Mouse data subjected to Leishmania parasites in different sorted/unsorted treatment.')
+            genes.val(exampleGenes);
+            proteins.val(exampleProteins);
+            compounds.val(exampleCompounds);
+            species.val(exampleSpecies);
+        }
+    </script>
+{% endblock %}

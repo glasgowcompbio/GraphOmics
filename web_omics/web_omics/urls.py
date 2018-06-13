@@ -4,7 +4,7 @@ from django.urls import include, path
 import web_omics.views as views
 
 urlpatterns = [
-    path('', views.home),
+    path('', views.ExperimentListView.as_view(), name='experiment_list_view'),
     path('linker/', include('linker.urls')),
     path('admin/', admin.site.urls),
 ]

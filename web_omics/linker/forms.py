@@ -31,14 +31,18 @@ for idx, s in enumerate(species_list):
         mus_musculus = (idx, s, )
 
 class LinkerForm(forms.Form):
+
+    analysis_name = forms.CharField(required = True, widget=forms.TextInput(attrs={'size':100}))
+    analysis_description = forms.CharField(required = False,
+                               widget = forms.Textarea(attrs={'rows': 3, 'cols': 100}))
     genes = forms.CharField(required = False,
-                               widget = forms.Textarea(attrs={'rows': 10, 'cols': 120}),
-                               initial = example_genes, label="Genes/Transcripts")
+                               widget = forms.Textarea(attrs={'rows': 6, 'cols': 100}),
+                               initial = example_genes, label='Genes/Transcripts')
     proteins = forms.CharField(required = False,
-                               widget = forms.Textarea(attrs={'rows': 10, 'cols': 120}),
+                               widget = forms.Textarea(attrs={'rows': 6, 'cols': 100}),
                                initial = example_proteins)
     compounds = forms.CharField(required = False,
-                               widget = forms.Textarea(attrs={'rows': 10, 'cols': 120}),
+                               widget = forms.Textarea(attrs={'rows': 6, 'cols': 100}),
                                initial = example_compounds)
 
     def __init__(self, *args, **kwargs):
