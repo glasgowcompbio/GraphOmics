@@ -30,53 +30,62 @@
         <div class="m-1 mb-3">
             <div class="card mb-3">
                 <div class="card card-body">
-                    <h5 class="card-title">Univariate Analysis</h5>
-                    <form id="inference_form"
-                          method="post"
-                          enctype="multipart/form-data">
-                        <div class="form-group">
-                            <label for="exampleFormControlSelect1">Comparison Type</label>
-                            <select class="form-control" id="exampleFormControlSelect1">
-                                <option>Fold change</option>
-                                <option>T-test</option>
-                                <option>Correlation</option>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label for="exampleFormControlSelect2">Control</label>
-                            <select class="form-control" id="exampleFormControlSelect2">
-                                <option>Wildtype</option>
-                                <option>Mutant</option>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label for="exampleFormControlSelect2">Condition</label>
-                            <select class="form-control" id="exampleFormControlSelect2">
-                                <option>Wildtype</option>
-                                <option>Mutant</option>
-                            </select>
-                        </div>
-                        <button type="submit" class="btn btn-primary">Submit</button>
-                    </form>
+                    <h5 class="card-title" data-toggle="collapse" href="#collapseExample"
+                        aria-expanded="false" aria-controls="collapseExample" style="cursor: pointer;">
+                        Univariate Analysis
+                    </h5>
+                    <div class="collapse" id="collapseExample">
+                        <form id="inference_form"
+                              method="post"
+                              enctype="multipart/form-data">
+                            <div class="form-group">
+                                <label for="exampleFormControlSelect1">Comparison Type</label>
+                                <select class="form-control" id="exampleFormControlSelect1">
+                                    <option>Fold change</option>
+                                    <option>T-test</option>
+                                    <option>Correlation</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="exampleFormControlSelect2">Control</label>
+                                <select class="form-control" id="exampleFormControlSelect2">
+                                    <option>Wildtype</option>
+                                    <option>Mutant</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="exampleFormControlSelect2">Condition</label>
+                                <select class="form-control" id="exampleFormControlSelect2">
+                                    <option>Wildtype</option>
+                                    <option>Mutant</option>
+                                </select>
+                            </div>
+                            <button type="submit" class="btn btn-primary">Submit</button>
+                        </form>
+                    </div>
                 </div>
                 <div class="card card-body">
-                    <h5 class="card-title">Clustering/Projection Analysis</h5>
-                    <form id="inference_form"
-                          method="post"
-                          enctype="multipart/form-data">
-                        <div class="form-group">
-                            <label for="exampleFormControlSelect1">Analysis Type</label>
-                            <select class="form-control" id="exampleFormControlSelect1">
-                                <option>Principal Component Analysis (PCA)</option>
-                                <option>Partial Least Squares - Discriminant Analysis (PLS-DA)</option>
-                                <option>Hierarchical Clustering</option>
-                                <option>K-means</option>
-                            </select>
-                        </div>
-                        <button type="submit" class="btn btn-primary">Submit</button>
-                    </form>
+                    <h5 class="card-title" data-toggle="collapse" href="#collapseExample2"
+                        role="button" aria-expanded="false" aria-controls="collapseExample2" style="cursor: pointer;">
+                        Clustering/Projection Analysis
+                    </h5>
+                    <div class="collapse" id="collapseExample2">
+                        <form id="inference_form"
+                              method="post"
+                              enctype="multipart/form-data">
+                            <div class="form-group">
+                                <label for="exampleFormControlSelect1">Analysis Type</label>
+                                <select class="form-control" id="exampleFormControlSelect1">
+                                    <option>Principal Component Analysis (PCA)</option>
+                                    <option>Partial Least Squares - Discriminant Analysis (PLS-DA)</option>
+                                    <option>Hierarchical Clustering</option>
+                                    <option>K-means</option>
+                                </select>
+                            </div>
+                            <button type="submit" class="btn btn-primary">Submit</button>
+                        </form>
+                    </div>
                 </div>
-
             </div>
         </div>
 
