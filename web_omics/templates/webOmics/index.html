@@ -25,7 +25,7 @@
                             </td>
                             <td>{{ analysis.description }}</td>
                             <td>{{ analysis.species }}</td>
-                            <td>{{ analysis.timestamp|date }}</td>
+                            <td>{{ analysis.timestamp|date:"jS F Y H:i" }}</td>
                         </tr>
                     {% endfor %}
                 </table>
