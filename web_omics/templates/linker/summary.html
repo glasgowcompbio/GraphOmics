@@ -1,0 +1,57 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}WebOmics{% endblock %}
+
+{% block head_block %}
+    <!-- link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/v/dt/dt-1.10.16/sc-1.4.4/sl-1.2.5/datatables.min.css"/ -->
+    <link rel="stylesheet" type="text/css"
+          href="https://cdn.datatables.net/v/dt/dt-1.10.16/b-1.5.1/b-colvis-1.5.1/r-2.2.1/sc-1.4.4/sl-1.2.5/datatables.min.css"/>
+{% endblock %}
+
+{% block body_block %}
+
+    <div class="container-fluid mt-2">
+
+        <div>
+            <ul class="nav nav-tabs">
+                <li class="nav-item">
+                    <a class="nav-link" href="{% url 'explore_data' analysis_id=analysis_id %}">🔍 Explore Data</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{% url 'inference' analysis_id=analysis_id %}">📊 Inference</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link active" href="{% url 'summary' analysis_id=analysis_id %}">📘 Summary</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{% url 'settings' analysis_id=analysis_id %}">⚙️ Settings</a>
+                </li>
+            </ul>
+        </div>
+
+        <div class="m-1 mb-3">
+            <div class="card">
+                <div class="card-body">
+                    <h5>Summary Report</h5>
+                    <p>In this analysis, there are:</p>
+                    <ul>
+                        <li>1000 genes (3000 observed, 7000 inferred)</li>
+                        <li>3000 proteins (2000 observed, 1000 inferred)</li>
+                        <li>300 compounds (200 observed, 100 inferred)</li>
+                        <li>600 reactions in 200 pathways</li>
+                    </ul>
+                    <p>There are 6 samples separated into 2 groups</p>
+                    <p>The following are the list of all annotated items.</p>
+                    <p>The following statistical analyses have been done, with results:</p>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+{% endblock %}
+
+{% block js_block %}
+
+{% endblock %}

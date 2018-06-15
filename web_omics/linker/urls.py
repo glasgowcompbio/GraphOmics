@@ -7,6 +7,7 @@ urlpatterns = [
     path('create_analysis', views.CreateAnalysisView.as_view(), name='create_analysis'),
     path('explore_data/<int:analysis_id>', views.explore_data, name='explore_data'),
     path('inference/<int:analysis_id>', views.inference, name='inference'),
+    path('summary/<int:analysis_id>', views.summary, name='summary'),
     path('settings/<int:analysis_id>', views.settings, name='settings'),
 
     path('get_ensembl_gene_info', views.get_ensembl_gene_info, name='get_ensembl_gene_info'),

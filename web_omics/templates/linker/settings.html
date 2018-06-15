@@ -22,6 +22,9 @@
                     <a class="nav-link" href="{% url 'inference' analysis_id=analysis_id %}">📊 Inference</a>
                 </li>
                 <li class="nav-item">
+                    <a class="nav-link" href="{% url 'summary' analysis_id=analysis_id %}">📘 Summary</a>
+                </li>
+                <li class="nav-item">
                     <a class="nav-link active" href="{% url 'settings' analysis_id=analysis_id %}">⚙️ Settings</a>
                 </li>
             </ul>
@@ -30,14 +33,7 @@
         <div class="m-1 mb-3">
             <div class="card">
                 <div class="card-body">
-                    <h5>Data Management</h5>
-                    <p>In this analysis, there are:</p>
-                    <ul>
-                        <li>1000 genes (3000 observed, 7000 inferred)</li>
-                        <li>3000 proteins (2000 observed, 1000 inferred)</li>
-                        <li>300 compounds (200 observed, 100 inferred)</li>
-                        <li>600 reactions in 200 pathways</li>
-                    </ul>
+                    <h5>Add Data</h5>
                     <p>To add a new data point, enter its Reactome ID below.</p>
                     <form id="inference_form"
                           method="post"
