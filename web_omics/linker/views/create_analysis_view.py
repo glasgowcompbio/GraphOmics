@@ -11,7 +11,7 @@ from django.conf import settings
 from linker.constants import *
 from linker.forms import LinkerForm
 from linker.metadata import kegg_to_chebi, get_gene_names, get_compound_metadata, clean_label
-from linker.models import Analysis, AnalysisData
+from linker.models import Analysis, AnalysisData, AnalysisSample
 from linker.reactome import get_reaction_df
 from linker.reactome import get_species_dict, ensembl_to_uniprot, uniprot_to_reaction, compound_to_reaction, \
     reaction_to_metabolite_pathway, reaction_to_uniprot, reaction_to_compound, uniprot_to_ensembl
@@ -41,11 +41,9 @@ class CreateAnalysisView(FormView):
 
         ### all the ids that we have from the user ###
 
-        observed_gene_df = csv_to_dataframe(genes_str)
-        observed_protein_df = csv_to_dataframe(proteins_str)
-        observed_compound_df = csv_to_dataframe(compounds_str)
-        observed_gene_ids = get_ids_from_dataframe(observed_gene_df)
-        observed_protein_ids = get_ids_from_dataframe(observed_protein_df)
+        observed_gene_df, group_gene_df, observed_gene_ids = csv_to_dataframe(genes_str)
+        observed_protein_df, group_protein_df, observed_protein_ids = csv_to_dataframe(proteins_str)
+        observed_compound_df, group_compound_df, observed_compound_ids = csv_to_dataframe(compounds_str)
 
         # try to convert all kegg ids to chebi ids, if possible
         print('Converting kegg ids -> chebi ids')
@@ -184,22 +182,37 @@ class CreateAnalysisView(FormView):
         print('Saving analysis', analysis.pk, 'to database')
 
         datatype_json = {
-            GENOMICS: (genes_json, 'genes_json'),
-            PROTEOMICS: (proteins_json, 'proteins_json'),
-            METABOLOMICS: (compounds_json, 'compounds_json'),
-            REACTIONS: (reactions_json, 'reactions_json'),
-            PATHWAYS: (pathways_json, 'pathways_json'),
-            GENES_TO_PROTEINS: (gene_2_proteins_json, 'gene_proteins_json'),
-            PROTEINS_TO_REACTIONS: (protein_2_reactions_json, 'protein_reactions_json'),
-            COMPOUNDS_TO_REACTIONS: (compound_2_reactions_json, 'compound_reactions_json'),
-            REACTIONS_TO_PATHWAYS: (reaction_2_pathways_json, 'reaction_pathways_json'),
+            GENOMICS: (genes_json, 'genes_json', group_gene_df),
+            PROTEOMICS: (proteins_json, 'proteins_json', group_protein_df),
+            METABOLOMICS: (compounds_json, 'compounds_json', group_compound_df),
+            REACTIONS: (reactions_json, 'reactions_json', None),
+            PATHWAYS: (pathways_json, 'pathways_json', None),
+            GENES_TO_PROTEINS: (gene_2_proteins_json, 'gene_proteins_json', None),
+            PROTEINS_TO_REACTIONS: (protein_2_reactions_json, 'protein_reactions_json', None),
+            COMPOUNDS_TO_REACTIONS: (compound_2_reactions_json, 'compound_reactions_json', None),
+            REACTIONS_TO_PATHWAYS: (reaction_2_pathways_json, 'reaction_pathways_json', None),
         }
         data = {}
         for k, v in datatype_json.items():
-            data[v[1]] = v[0]
-            analysis_data = AnalysisData(analysis=analysis, json_data=json.loads(v[0]), data_type=k)
+
+            # v is a tuple defined in the datatype_json dictionary above
+            json_str, ui_label, group_info = v
+            data[ui_label] = json_str
+            analysis_data = AnalysisData(analysis=analysis, json_data=json.loads(json_str), data_type=k)
             analysis_data.save()
-            print('Saving analysis data', analysis_data.pk, '(', v[1], ') to database')
+            print('Saving analysis data', analysis_data.pk, 'for analysis', analysis.pk,  'to database')
+
+            # save analysis data sample too
+            if group_info is not None:
+                for index, row in group_info.iterrows():
+                    sample = row['sample']
+                    group = row['group']
+                    analysis_sample = AnalysisSample(analysis_data=analysis_data, sample_name=sample,
+                                                     group_name=group)
+                    analysis_sample.save()
+                    print('Saving analysis sample', analysis_sample.pk, 'for analysis data',
+                          analysis_data.pk, 'to database')
+
             if settings.DEBUG:
                 save_json_string(v[0], 'static/data/debugging/' + v[1] + '.json')
         print()
@@ -266,12 +279,34 @@ def save_json_string(data, outfile):
 
 
 def csv_to_dataframe(csv_str):
-    data = StringIO(csv_str)
+
+    # extract group, if any
+    filtered_str = ''
+    group_str = None
+    for line in csv_str.splitlines():
+        if line.startswith('group'):
+            group_str = line
+        else:
+            filtered_str += line + '\n'
+
+    data = StringIO(filtered_str)
     try:
-        df = pd.read_csv(data)
+        data_df = pd.read_csv(data)
+        id_list = data_df.values[:, 0].tolist() # id is always the first column
     except pd.errors.EmptyDataError:
-        df = None
-    return df
+        data_df = None
+        id_list = []
+
+    if group_str is not None:
+        print(group_str)
+        group_data = group_str.split(',')
+        sample_data = data_df.columns.values
+        group_df = pd.DataFrame(list(zip(sample_data[1:], group_data[1:])), columns=['sample', 'group'])
+        group_df = group_df[group_df['sample'].str.contains('pvalue') == False] # filter 'pvalue'
+    else:
+        group_df = None
+
+    return data_df, group_df, id_list
 
 
 def get_ids_from_dataframe(df):
