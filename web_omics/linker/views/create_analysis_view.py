@@ -32,6 +32,8 @@ class CreateAnalysisView(FormView):
     success_url = 'linker/explore_data.html'
 
     def form_valid(self, form):
+        analysis_name = form.cleaned_data['analysis_name']
+        analysis_desc = form.cleaned_data['analysis_description']
         genes_str = form.cleaned_data['genes']
         proteins_str = form.cleaned_data['proteins']
         compounds_str = form.cleaned_data['compounds']
@@ -40,7 +42,6 @@ class CreateAnalysisView(FormView):
         species = species_dict[species_key]
 
         ### all the ids that we have from the user ###
-
         observed_gene_df, group_gene_df, observed_gene_ids = csv_to_dataframe(genes_str)
         observed_protein_df, group_protein_df, observed_protein_ids = csv_to_dataframe(proteins_str)
         observed_compound_df, group_compound_df, observed_compound_ids = csv_to_dataframe(compounds_str)
@@ -49,8 +50,73 @@ class CreateAnalysisView(FormView):
         print('Converting kegg ids -> chebi ids')
         observed_compound_ids = get_ids_from_dataframe(observed_compound_df)
         kegg_2_chebi = kegg_to_chebi(observed_compound_ids)
-        observed_compound_df.iloc[:, 0] = observed_compound_df.iloc[:, 0].map(kegg_2_chebi)  # assume 1st column is id
-        observed_compound_ids = get_ids_from_dataframe(observed_compound_df)
+        if observed_compound_df is not None:
+            observed_compound_df.iloc[:, 0] = observed_compound_df.iloc[:, 0].map(
+                kegg_2_chebi)  # assume 1st column is id
+            observed_compound_ids = get_ids_from_dataframe(observed_compound_df)
+
+        genes_json, proteins_json, compounds_json, \
+            reactions_json, pathways_json, \
+            gene_2_proteins_json, protein_2_reactions_json, \
+            compound_2_reactions_json, reaction_2_pathways_json = self.reactome_mapping(
+                observed_gene_df, observed_gene_ids,
+                observed_protein_df, observed_protein_ids,
+                observed_compound_df, observed_compound_ids, species)
+
+        analysis = Analysis.objects.create(name=analysis_name,
+                                           description=analysis_desc,
+                                           species=species)
+        print('Saving analysis', analysis.pk, 'to database')
+
+        datatype_json = {
+            GENOMICS: (genes_json, 'genes_json', group_gene_df),
+            PROTEOMICS: (proteins_json, 'proteins_json', group_protein_df),
+            METABOLOMICS: (compounds_json, 'compounds_json', group_compound_df),
+            REACTIONS: (reactions_json, 'reactions_json', None),
+            PATHWAYS: (pathways_json, 'pathways_json', None),
+            GENES_TO_PROTEINS: (gene_2_proteins_json, 'gene_proteins_json', None),
+            PROTEINS_TO_REACTIONS: (protein_2_reactions_json, 'protein_reactions_json', None),
+            COMPOUNDS_TO_REACTIONS: (compound_2_reactions_json, 'compound_reactions_json', None),
+            REACTIONS_TO_PATHWAYS: (reaction_2_pathways_json, 'reaction_pathways_json', None),
+        }
+        data = {}
+        for k, v in datatype_json.items():
+
+            # v is a tuple defined in the datatype_json dictionary above
+            json_str, ui_label, group_info = v
+            data[ui_label] = json_str
+            analysis_data = AnalysisData(analysis=analysis, json_data=json.loads(json_str), data_type=k)
+            analysis_data.save()
+            print('Saving analysis data', analysis_data.pk, 'for analysis', analysis.pk, 'to database')
+
+            # save analysis data sample too
+            if group_info is not None:
+                for index, row in group_info.iterrows():
+                    sample = row['sample']
+                    group = row['group']
+                    analysis_sample = AnalysisSample(analysis_data=analysis_data, sample_name=sample,
+                                                     group_name=group)
+                    analysis_sample.save()
+                    print('Saving analysis sample', analysis_sample.pk, 'for analysis data',
+                          analysis_data.pk, 'to database')
+
+            if settings.DEBUG:
+                save_json_string(v[0], 'static/data/debugging/' + v[1] + '.json')
+        print()
+
+        context = {
+            'data': data,
+            'analysis_id': analysis.pk,
+            'analysis_name': analysis.name,
+            'analysis_description': analysis.description
+        }
+        return render(self.request, self.success_url, context)
+
+
+    def reactome_mapping(self,
+                         observed_gene_df, observed_gene_ids,
+                         observed_protein_df, observed_protein_ids,
+                         observed_compound_df, observed_compound_ids, species):
 
         ### map genes -> proteins ###
         print('Mapping genes -> proteins')
@@ -140,8 +206,6 @@ class CreateAnalysisView(FormView):
         reaction_pk_list = [x for x in reaction_ids if x not in reaction_2_pathways.keys]
         reaction_2_pathways = add_links(reaction_2_pathways, REACTION_PK, PATHWAY_PK, reaction_pk_list, [NA])
 
-        ### set everything to the request context ###
-
         gene_2_proteins_json = json.dumps(gene_2_proteins.mapping_list)
         protein_2_reactions_json = json.dumps(protein_2_reactions.mapping_list)
         compound_2_reactions_json = json.dumps(compound_2_reactions.mapping_list)
@@ -174,61 +238,14 @@ class CreateAnalysisView(FormView):
         reactions_json = pk_to_json('reaction_pk', 'reaction_id', reaction_ids, metadata_map, reaction_count_df)
         pathways_json = pk_to_json('pathway_pk', 'pathway_id', pathway_ids, metadata_map, pathway_count_df)
 
-        analysis_name = form.cleaned_data['analysis_name']
-        analysis_desc = form.cleaned_data['analysis_description']
-        analysis = Analysis.objects.create(name=analysis_name,
-                                           description=analysis_desc,
-                                           species=species)
-        print('Saving analysis', analysis.pk, 'to database')
-
-        datatype_json = {
-            GENOMICS: (genes_json, 'genes_json', group_gene_df),
-            PROTEOMICS: (proteins_json, 'proteins_json', group_protein_df),
-            METABOLOMICS: (compounds_json, 'compounds_json', group_compound_df),
-            REACTIONS: (reactions_json, 'reactions_json', None),
-            PATHWAYS: (pathways_json, 'pathways_json', None),
-            GENES_TO_PROTEINS: (gene_2_proteins_json, 'gene_proteins_json', None),
-            PROTEINS_TO_REACTIONS: (protein_2_reactions_json, 'protein_reactions_json', None),
-            COMPOUNDS_TO_REACTIONS: (compound_2_reactions_json, 'compound_reactions_json', None),
-            REACTIONS_TO_PATHWAYS: (reaction_2_pathways_json, 'reaction_pathways_json', None),
-        }
-        data = {}
-        for k, v in datatype_json.items():
-
-            # v is a tuple defined in the datatype_json dictionary above
-            json_str, ui_label, group_info = v
-            data[ui_label] = json_str
-            analysis_data = AnalysisData(analysis=analysis, json_data=json.loads(json_str), data_type=k)
-            analysis_data.save()
-            print('Saving analysis data', analysis_data.pk, 'for analysis', analysis.pk,  'to database')
-
-            # save analysis data sample too
-            if group_info is not None:
-                for index, row in group_info.iterrows():
-                    sample = row['sample']
-                    group = row['group']
-                    analysis_sample = AnalysisSample(analysis_data=analysis_data, sample_name=sample,
-                                                     group_name=group)
-                    analysis_sample.save()
-                    print('Saving analysis sample', analysis_sample.pk, 'for analysis data',
-                          analysis_data.pk, 'to database')
-
-            if settings.DEBUG:
-                save_json_string(v[0], 'static/data/debugging/' + v[1] + '.json')
-        print()
-
-        context = {
-            'data': data,
-            'analysis_id': analysis.pk,
-            'analysis_name': analysis.name,
-            'analysis_description': analysis.description
-        }
-        return render(self.request, self.success_url, context)
+        return genes_json, proteins_json, compounds_json, \
+               reactions_json, pathways_json, \
+               gene_2_proteins_json, protein_2_reactions_json, \
+               compound_2_reactions_json, reaction_2_pathways_json
 
 
 def get_count_df(gene_2_proteins_mapping, protein_2_reactions_mapping, compound_2_reactions_mapping,
                  reaction_2_pathways_mapping, species):
-
     count_df, pathway_compound_counts, pathway_protein_counts = get_reaction_df(
         gene_2_proteins_mapping,
         protein_2_reactions_mapping,
@@ -279,7 +296,6 @@ def save_json_string(data, outfile):
 
 
 def csv_to_dataframe(csv_str):
-
     # extract group, if any
     filtered_str = ''
     group_str = None
@@ -292,7 +308,7 @@ def csv_to_dataframe(csv_str):
     data = StringIO(filtered_str)
     try:
         data_df = pd.read_csv(data)
-        id_list = data_df.values[:, 0].tolist() # id is always the first column
+        id_list = data_df.values[:, 0].tolist()  # id is always the first column
     except pd.errors.EmptyDataError:
         data_df = None
         id_list = []
@@ -302,7 +318,7 @@ def csv_to_dataframe(csv_str):
         group_data = group_str.split(',')
         sample_data = data_df.columns.values
         group_df = pd.DataFrame(list(zip(sample_data[1:], group_data[1:])), columns=['sample', 'group'])
-        group_df = group_df[group_df['sample'].str.contains('pvalue') == False] # filter 'pvalue'
+        group_df = group_df[group_df['sample'].str.contains('pvalue') == False]  # filter 'pvalue'
     else:
         group_df = None
 
@@ -313,14 +329,14 @@ def get_ids_from_dataframe(df):
     if df is None:
         return []
     else:
-        return df.values[:, 0].tolist() # id is always the first column
+        return df.values[:, 0].tolist()  # id is always the first column
 
 
 def merge_relation(r1, r2):
     unique_keys = list(set(r1.keys + r2.keys))
     unique_values = list(set(r1.values + r2.values))
     mapping_list = r1.mapping_list + r2.mapping_list
-    mapping_list = list(map(dict, set(map(lambda x: frozenset(x.items()), mapping_list)))) # removes duplicates, if any
+    mapping_list = list(map(dict, set(map(lambda x: frozenset(x.items()), mapping_list))))  # removes duplicates, if any
     return Relation(keys=list(unique_keys), values=list(unique_values),
                     mapping_list=mapping_list)
 
@@ -330,18 +346,17 @@ def reverse_relation(rel):
 
 
 def pk_to_json(pk_label, display_label, data, metadata_map, observed_df):
-
     # turn the first column of the dataframe into index
     if observed_df is not None:
         observed_df = observed_df.set_index(observed_df.columns[0])
-        observed_df = observed_df[~observed_df.index.duplicated(keep='first')] # remove row with duplicate indices
-        observed_df = observed_df.fillna(value=0) # replace all NaNs with 0s
+        observed_df = observed_df[~observed_df.index.duplicated(keep='first')]  # remove row with duplicate indices
+        observed_df = observed_df.fillna(value=0)  # replace all NaNs with 0s
 
     output = []
     for item in sorted(data):
 
         if item == NA:
-            continue # handled below after this loop
+            continue  # handled below after this loop
 
         # add primary key to row data
         row = {pk_label: item}
@@ -357,7 +372,7 @@ def pk_to_json(pk_label, display_label, data, metadata_map, observed_df):
         if observed_df is not None:
             try:
                 data = observed_df.loc[item].to_dict()
-            except KeyError: # missing data
+            except KeyError:  # missing data
                 data = {}
                 for col in observed_df.columns:
                     data.update({col: 0})
@@ -367,7 +382,7 @@ def pk_to_json(pk_label, display_label, data, metadata_map, observed_df):
 
     # add dummy entry
     row = {pk_label: NA, display_label: NA}
-    if observed_df is not None: # and the the values of the remaining columns for the dummy entry
+    if observed_df is not None:  # and the the values of the remaining columns for the dummy entry
         for col in observed_df.columns:
             row.update({col: 0})
     output.append(row)
@@ -410,7 +425,6 @@ def make_relations(mapping, source_pk, target_pk, value_key=None):
 
 
 def add_dummy(relation, source_ids, target_ids, source_pk_label, target_pk_label):
-
     to_add = [x for x in source_ids if x not in relation.keys]
     relation = add_links(relation, source_pk_label, target_pk_label, to_add, [NA])
 
@@ -422,7 +436,6 @@ def add_dummy(relation, source_ids, target_ids, source_pk_label, target_pk_label
 
 
 def add_links(relation, source_pk_label, target_pk_label, source_pk_list, target_pk_list):
-
     rel_mapping_list = list(relation.mapping_list)
     rel_keys = relation.keys
     rel_values = relation.values

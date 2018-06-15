@@ -15,23 +15,59 @@
 
         <div>
             <ul class="nav nav-tabs">
-              <li class="nav-item">
-                <a class="nav-link" href="{% url 'explore_data' analysis_id=analysis_id %}">🔍 Explore Data</a>
-              </li>
-              <li class="nav-item">
-                <a class="nav-link" href="{% url 'inference' analysis_id=analysis_id %}">📊 Inference</a>
-              </li>
-              <li class="nav-item">
-                <a class="nav-link active" href="{% url 'settings' analysis_id=analysis_id %}">⚙️ Settings</a>
-              </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{% url 'explore_data' analysis_id=analysis_id %}">🔍 Explore Data</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{% url 'inference' analysis_id=analysis_id %}">📊 Inference</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link active" href="{% url 'settings' analysis_id=analysis_id %}">⚙️ Settings</a>
+                </li>
             </ul>
         </div>
 
         <div class="m-1 mb-3">
             <div class="card">
-              <div class="card-body">
-                Configure user settings.
-              </div>
+                <div class="card-body">
+                    <h5>Data Management</h5>
+                    <p>In this analysis, there are:</p>
+                    <ul>
+                        <li>1000 genes (3000 observed, 7000 inferred)</li>
+                        <li>3000 proteins (2000 observed, 1000 inferred)</li>
+                        <li>300 compounds (200 observed, 100 inferred)</li>
+                        <li>600 reactions in 200 pathways</li>
+                    </ul>
+                    <p>To add a new data point, enter its Reactome ID below.</p>
+                    <form id="inference_form"
+                          method="post"
+                          enctype="multipart/form-data">
+                        <div class="form-group">
+                            <label for="reactome_id">Reactome ID</label>
+                            <input type="text" class="form-control" id="reactome_id"
+                                   aria-describedby="reactome_id_help">
+                            <small id="reactome_id_help" class="form-text text-muted">Enter the Reactome ID of a new data point to add, e.g.
+                                R-MMU-123123.
+                            </small>
+                        </div>
+                        <div class="form-group">
+                            <label for="exampleFormControlSelect0">Data Type</label>
+                            <select class="form-control" id="exampleFormControlSelect0">
+                                <option>Gene Data</option>
+                                <option>Protein Data</option>
+                                <option>Compound Data</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="exampleFormControlSelect1">Species</label>
+                            <select class="form-control" id="exampleFormControlSelect1">
+                                <option>Mus musculus</option>
+                                <option>Homo sapiens</option>
+                            </select>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Add</button>
+                    </form>
+                </div>
             </div>
         </div>
 
