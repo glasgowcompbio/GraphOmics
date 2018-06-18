@@ -63,9 +63,15 @@ class CreateAnalysisView(FormView):
                 observed_protein_df, observed_protein_ids,
                 observed_compound_df, observed_compound_ids, species)
 
+        metadata = {
+            'genes_str': genes_str,
+            'proteins_str': proteins_str,
+            'compounds_str': compounds_str
+        }
         analysis = Analysis.objects.create(name=analysis_name,
                                            description=analysis_desc,
-                                           species=species)
+                                           species=species,
+                                           metadata=metadata)
         print('Saving analysis', analysis.pk, 'to database')
 
         datatype_json = {
