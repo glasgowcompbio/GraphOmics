@@ -1,5 +1,6 @@
 # forms.py for decomposition
 from django import forms
+from django_select2.forms import Select2MultipleWidget
 import os
 from linker.reactome import get_species_dict
 
@@ -34,7 +35,8 @@ class LinkerForm(forms.Form):
     analysis_name = forms.CharField(required = True, widget=forms.TextInput(attrs={'size':100}))
     analysis_description = forms.CharField(required = False,
                                widget = forms.Textarea(attrs={'rows': 3, 'cols': 100}))
-    species = forms.MultipleChoiceField(required=True, choices=SPECIES_CHOICES, initial=mus_musculus[0])
+    species = forms.MultipleChoiceField(required=True, choices=SPECIES_CHOICES, initial=mus_musculus[0],
+                                        widget=Select2MultipleWidget)
     genes = forms.CharField(required = False,
                                widget = forms.Textarea(attrs={'rows': 6, 'cols': 100}),
                                initial = example_genes, label='Genes/Transcripts')

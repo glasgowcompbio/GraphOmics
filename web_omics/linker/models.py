@@ -13,6 +13,11 @@ class Analysis(models.Model):
     timestamp = models.DateTimeField(default=timezone.localtime, null=False)
     metadata = JSONField(load_kwargs={'object_pairs_hook': collections.OrderedDict})
 
+    def get_species(self):
+        if 'species_list' in self.metadata:
+            return ','.join(self.metadata['species_list'])
+        else:
+            return ''
 
 class AnalysisData(models.Model):
     analysis = models.ForeignKey(Analysis, on_delete=models.CASCADE)

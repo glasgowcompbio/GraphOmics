@@ -3,6 +3,7 @@
 {% load static %}
 
 {% block head_block %}
+    {{ form.media.css }}
 {% endblock %}
 
 {% block body_block %}
@@ -65,7 +66,8 @@
             genes.val(exampleGenes);
             proteins.val(exampleProteins);
             compounds.val(exampleCompounds);
-            species.val(exampleSpecies);
+            species.val(exampleSpecies).trigger('change');
         }
     </script>
+    {{ form.media.js }}
 {% endblock %}

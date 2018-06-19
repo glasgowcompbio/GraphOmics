@@ -36,6 +36,7 @@ class Common(Configuration):
 
         'django_extensions',
         # 'debug_toolbar',
+        'django_select2',
 
         'web_omics.users',
         'linker'
