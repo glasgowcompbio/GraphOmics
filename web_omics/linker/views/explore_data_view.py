@@ -47,7 +47,8 @@ def explore_data(request, analysis_id):
         'data': data,
         'analysis_id': analysis.pk,
         'analysis_name': analysis.name,
-        'analysis_description': analysis.description
+        'analysis_description': analysis.description,
+        'analysis_species': analysis.get_species()
     }
     return render(request, 'linker/explore_data.html', context)
 

@@ -15,7 +15,7 @@ class Analysis(models.Model):
 
     def get_species(self):
         if 'species_list' in self.metadata:
-            return ','.join(self.metadata['species_list'])
+            return ', '.join(self.metadata['species_list'])
         else:
             return ''
 
