@@ -4,7 +4,7 @@ const myLinker = (function () {
         init: function (data) {
 
             const defaultDataTablesSettings = {
-                "dom": "Brtp",
+                "dom": "Brftip",
                 "pageLength": 10,
                 // "scrollY": "400px",
                 // "scrollCollapse": true,
@@ -165,9 +165,9 @@ const myLinker = (function () {
 
             columnsToHidePerTable.forEach(function (tableInfo) {
                 const tableAPI = $('#' + tableInfo['tableName']).DataTable();
-                // get all column names containing the word 'pvalue' to hide as well
+                // get all column names containing the word 'pvalue' or 'species' to hide as well
                 const colNames = tableAPI.settings()[0].aoColumns.map(x => x.sName);
-                const filtered = colNames.filter(x => x.indexOf('pvalue')>-1);
+                const filtered = colNames.filter(x => x.indexOf('pvalue')>-1 || x.indexOf('species')>-1);
                 tableInfo['columnNames'] = tableInfo['columnNames'].concat(filtered);
                 // do the hiding here
                 tableAPI
