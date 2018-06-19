@@ -37,9 +37,8 @@ class CreateAnalysisView(FormView):
         genes_str = form.cleaned_data['genes']
         proteins_str = form.cleaned_data['proteins']
         compounds_str = form.cleaned_data['compounds']
-        species_key = int(form.cleaned_data['species'])
         species_dict = get_species_dict()
-        species = species_dict[species_key]
+        species_list = [species_dict[x] for x in form.cleaned_data['species']]
 
         ### all the ids that we have from the user ###
         observed_gene_df, group_gene_df, observed_gene_ids = csv_to_dataframe(genes_str)
@@ -61,18 +60,18 @@ class CreateAnalysisView(FormView):
             compound_2_reactions_json, reaction_2_pathways_json = self.reactome_mapping(
                 observed_gene_df, observed_gene_ids,
                 observed_protein_df, observed_protein_ids,
-                observed_compound_df, observed_compound_ids, species)
+                observed_compound_df, observed_compound_ids, species_list)
 
         metadata = {
             'genes_str': genes_str,
             'proteins_str': proteins_str,
-            'compounds_str': compounds_str
+            'compounds_str': compounds_str,
+            'species_list': species_list
         }
         analysis = Analysis.objects.create(name=analysis_name,
                                            description=analysis_desc,
-                                           species=species,
                                            metadata=metadata)
-        print('Saving analysis', analysis.pk, 'to database')
+        print('Saving analysis', analysis.pk, '(', species_list, ') to database')
 
         datatype_json = {
             GENOMICS: (genes_json, 'genes_json', group_gene_df),
@@ -122,24 +121,24 @@ class CreateAnalysisView(FormView):
     def reactome_mapping(self,
                          observed_gene_df, observed_gene_ids,
                          observed_protein_df, observed_protein_ids,
-                         observed_compound_df, observed_compound_ids, species):
+                         observed_compound_df, observed_compound_ids, species_list):
 
         ### map genes -> proteins ###
         print('Mapping genes -> proteins')
-        gene_2_proteins_mapping, _ = ensembl_to_uniprot(observed_gene_ids, species)
+        gene_2_proteins_mapping, _ = ensembl_to_uniprot(observed_gene_ids, species_list)
         gene_2_proteins = make_relations(gene_2_proteins_mapping, GENE_PK, PROTEIN_PK, value_key=None)
 
         ### maps proteins -> reactions ###
         print('Mapping proteins -> reactions')
         protein_ids_from_genes = gene_2_proteins.values
         known_protein_ids = list(set(observed_protein_ids + protein_ids_from_genes))
-        protein_2_reactions_mapping, _ = uniprot_to_reaction(known_protein_ids, species)
+        protein_2_reactions_mapping, _ = uniprot_to_reaction(known_protein_ids, species_list)
         protein_2_reactions = make_relations(protein_2_reactions_mapping, PROTEIN_PK, REACTION_PK,
                                              value_key='reaction_id')
 
         ### maps compounds -> reactions ###
         print('Mapping compounds -> reactions')
-        compound_2_reactions_mapping, _ = compound_to_reaction(observed_compound_ids, species)
+        compound_2_reactions_mapping, _ = compound_to_reaction(observed_compound_ids, species_list)
         compound_2_reactions = make_relations(compound_2_reactions_mapping, COMPOUND_PK, REACTION_PK,
                                               value_key='reaction_id')
 
@@ -149,28 +148,28 @@ class CreateAnalysisView(FormView):
         reaction_ids_from_compounds = compound_2_reactions.values
         reaction_ids = list(set(reaction_ids_from_proteins + reaction_ids_from_compounds))
         reaction_2_pathways_mapping, reaction_2_pathways_id_to_names = reaction_to_metabolite_pathway(reaction_ids,
-                                                                                                      species)
+                                                                                                      species_list)
         reaction_2_pathways = make_relations(reaction_2_pathways_mapping, REACTION_PK, PATHWAY_PK,
                                              value_key='pathway_id')
         reaction_ids = reaction_2_pathways.keys  # keep only reactions in metabolic pathways
 
         ### maps reactions -> proteins ###
         print('Mapping reactions -> proteins')
-        mapping, _ = reaction_to_uniprot(reaction_ids, species)
+        mapping, _ = reaction_to_uniprot(reaction_ids, species_list)
         reaction_2_proteins = make_relations(mapping, REACTION_PK, PROTEIN_PK, value_key=None)
         protein_2_reactions = reverse_relation(reaction_2_proteins)
         protein_ids = protein_2_reactions.keys
 
         ### maps reactions -> compounds ###
         print('Mapping reactions -> compounds')
-        reaction_2_compounds_mapping, reaction_to_compound_id_to_names = reaction_to_compound(reaction_ids, species)
+        reaction_2_compounds_mapping, reaction_to_compound_id_to_names = reaction_to_compound(reaction_ids, species_list)
         reaction_2_compounds = make_relations(reaction_2_compounds_mapping, REACTION_PK, COMPOUND_PK, value_key=None)
         compound_2_reactions = reverse_relation(reaction_2_compounds)
         compound_ids = compound_2_reactions.keys
 
         ### map proteins -> genes ###
         print('Mapping proteins -> genes')
-        mapping, _ = uniprot_to_ensembl(protein_ids, species)
+        mapping, _ = uniprot_to_ensembl(protein_ids, species_list)
         protein_2_genes = make_relations(mapping, PROTEIN_PK, GENE_PK, value_key=None)
         gene_2_proteins = merge_relation(gene_2_proteins, reverse_relation(protein_2_genes))
         inferred_gene_ids = protein_2_genes.values
@@ -232,14 +231,18 @@ class CreateAnalysisView(FormView):
 
         metadata_map = {}
         for name in reaction_2_pathways_id_to_names:
-            tok = reaction_2_pathways_id_to_names[name]
+            tok = reaction_2_pathways_id_to_names[name]['name']
             filtered = clean_label(tok)
-            metadata_map[name] = {'display_name': filtered}
+            species = reaction_2_pathways_id_to_names[name]['species']
+            metadata_map[name] = {'display_name': filtered, 'species': species}
 
-        print('Computing reaction and pathway counts')
-        reaction_count_df, pathway_count_df = get_count_df(gene_2_proteins_mapping, protein_2_reactions_mapping,
-                                                           compound_2_reactions_mapping, reaction_2_pathways_mapping,
-                                                           species)
+        # print('Computing reaction and pathway counts')
+        # reaction_count_df, pathway_count_df = get_count_df(gene_2_proteins_mapping, protein_2_reactions_mapping,
+        #                                                    compound_2_reactions_mapping, reaction_2_pathways_mapping,
+        #                                                    species_list)
+        reaction_count_df = None
+        pathway_count_df = None
+
         pathway_ids = reaction_2_pathways.values
         reactions_json = pk_to_json('reaction_pk', 'reaction_id', reaction_ids, metadata_map, reaction_count_df)
         pathways_json = pk_to_json('pathway_pk', 'pathway_id', pathway_ids, metadata_map, pathway_count_df)
@@ -251,13 +254,13 @@ class CreateAnalysisView(FormView):
 
 
 def get_count_df(gene_2_proteins_mapping, protein_2_reactions_mapping, compound_2_reactions_mapping,
-                 reaction_2_pathways_mapping, species):
+                 reaction_2_pathways_mapping, species_list):
     count_df, pathway_compound_counts, pathway_protein_counts = get_reaction_df(
         gene_2_proteins_mapping,
         protein_2_reactions_mapping,
         compound_2_reactions_mapping,
         reaction_2_pathways_mapping,
-        species)
+        species_list)
 
     reaction_count_df = count_df.rename({
         'reaction_id': 'reaction_pk',
@@ -365,13 +368,18 @@ def pk_to_json(pk_label, display_label, data, metadata_map, observed_df):
             continue  # handled below after this loop
 
         # add primary key to row data
-        row = {pk_label: item}
+        row = collections.OrderedDict()
+        row[pk_label] = item
 
         # add display label to row_data
+        species = None
         if len(metadata_map) > 0 and item in metadata_map and metadata_map[item] is not None:
             label = metadata_map[item]['display_name']
+            # get the species if it's there too
+            if 'species' in metadata_map[item]:
+                species = metadata_map[item]['species']
         else:
-            label = item
+            label = item # otherwise use the item id as the label
         row[display_label] = label
 
         # add the remaining data columns to row
@@ -384,11 +392,13 @@ def pk_to_json(pk_label, display_label, data, metadata_map, observed_df):
                     data.update({col: 0})
             row.update(data)
 
+        if species is not None:
+            row['species'] = species
         output.append(row)
 
     # add dummy entry
-    row = {pk_label: NA, display_label: NA}
-    if observed_df is not None:  # and the the values of the remaining columns for the dummy entry
+    row = {pk_label: NA, display_label: NA, 'species': NA}
+    if observed_df is not None:  # and the values of the remaining columns for the dummy entry
         for col in observed_df.columns:
             row.update({col: 0})
     output.append(row)

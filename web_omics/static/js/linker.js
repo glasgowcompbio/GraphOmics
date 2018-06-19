@@ -260,8 +260,7 @@ const myLinker = (function () {
             if (rowObject[displayNameCol] != '-') {
 
                 const tableData = {
-                    'id': rowObject[pkCol],
-                    'species': SPECIES
+                    'id': rowObject[pkCol]
                 };
                 let infoDiv = $('<div/>');
                 let infoTitle = $('<h6/>', {

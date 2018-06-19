@@ -9,7 +9,6 @@ from linker.constants import DataType, DataRelationType, InferenceType
 
 class Analysis(models.Model):
     name = models.CharField(max_length=100, null=True)
-    species = models.CharField(max_length=100, null=True)
     description = models.CharField(max_length=1000, null=True)
     timestamp = models.DateTimeField(default=timezone.localtime, null=False)
     metadata = JSONField(load_kwargs={'object_pairs_hook': collections.OrderedDict})

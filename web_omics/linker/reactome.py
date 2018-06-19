@@ -44,7 +44,7 @@ def get_species_dict():
     species_list = get_species_list()
     species_dict = {}
     for idx, s in enumerate(species_list):
-        species_dict[idx] = s
+        species_dict[str(idx)] = s
     return species_dict
 
 
@@ -53,7 +53,7 @@ def get_species_dict():
 ################################################################################
 
 
-def ensembl_to_uniprot(ensembl_ids, species):
+def ensembl_to_uniprot(ensembl_ids, species_list):
     id_to_names = {}
     results = defaultdict(list)
     try:
@@ -65,7 +65,7 @@ def ensembl_to_uniprot(ensembl_ids, species):
         WHERE
             rs.identifier IN {ensembl_ids} AND
             rs.databaseName = 'ENSEMBL' AND            
-            s.displayName = {species}
+            s.displayName IN {species}
         RETURN DISTINCT
             rs.identifier AS gene_id,
             rs.databaseName AS gene_db,
@@ -75,7 +75,7 @@ def ensembl_to_uniprot(ensembl_ids, species):
         """
         params = {
             'ensembl_ids': ensembl_ids,
-            'species': species
+            'species': species_list
         }
         query_res = session.run(query, params)
         print(query)
@@ -95,7 +95,7 @@ def ensembl_to_uniprot(ensembl_ids, species):
 ################################################################################
 
 
-def uniprot_to_ensembl(uniprot_ids, species):
+def uniprot_to_ensembl(uniprot_ids, species_list):
     id_to_names = {}
     results = defaultdict(list)
     try:
@@ -107,7 +107,7 @@ def uniprot_to_ensembl(uniprot_ids, species):
         WHERE
             rg.identifier IN {uniprot_ids} AND
             rs.databaseName = 'ENSEMBL' AND
-            s.displayName = {species}
+            s.displayName IN {species}
         RETURN DISTINCT
             rs.identifier AS gene_id,
             rs.databaseName AS gene_db,
@@ -117,7 +117,7 @@ def uniprot_to_ensembl(uniprot_ids, species):
         """
         params = {
             'uniprot_ids': uniprot_ids,
-            'species': species
+            'species': species_list
         }
         query_res = session.run(query, params)
         print(query)
@@ -132,7 +132,7 @@ def uniprot_to_ensembl(uniprot_ids, species):
     return dict(results), id_to_names
 
 
-def uniprot_to_reaction(uniprot_ids, species):
+def uniprot_to_reaction(uniprot_ids, species_list):
     id_to_names = {}
     results = defaultdict(list)
     try:
@@ -150,7 +150,7 @@ def uniprot_to_reaction(uniprot_ids, species):
         WHERE
             re.identifier IN {uniprot_ids} AND
             rd.displayName = 'UniProt' AND
-            rle.speciesName = {species}
+            rle.speciesName IN {species}
         RETURN DISTINCT
             re.identifier AS protein_id,
             re.description AS description,
@@ -160,7 +160,7 @@ def uniprot_to_reaction(uniprot_ids, species):
         """
         params = {
             'uniprot_ids': uniprot_ids,
-            'species': species
+            'species': species_list
         }
         query_res = session.run(query, params)
         print(query)
@@ -205,7 +205,7 @@ def get_all_compound_ids():
     return results
 
 
-def compound_to_reaction(compound_ids, species):
+def compound_to_reaction(compound_ids, species_list):
     id_to_names = {}
     results = defaultdict(list)
     try:
@@ -218,7 +218,7 @@ def compound_to_reaction(compound_ids, species):
               (do:DatabaseObject)
         WHERE
             do.identifier IN {compound_ids} AND
-            rle.speciesName = {species}
+            rle.speciesName IN {species}
         RETURN DISTINCT
             do.identifier AS compound_id,
             do.displayName as display_name,
@@ -228,7 +228,7 @@ def compound_to_reaction(compound_ids, species):
         """
         params = {
             'compound_ids': compound_ids,
-            'species': species
+            'species': species_list
         }
         query_res = session.run(query, params)
         print(query)
@@ -263,7 +263,7 @@ def produce_kegg_dict(kegg_location, param):
 
 
 # get all the entities involved in a reaction
-def get_reaction_entities(reaction_ids, species):
+def get_reaction_entities(reaction_ids):
     results = defaultdict(list)
     try:
         session = get_neo4j_session()
@@ -272,8 +272,7 @@ def get_reaction_entities(reaction_ids, species):
               |physicalEntity|regulatedBy|regulator|hasComponent|hasMember
               |hasCandidate*]->(dbo:DatabaseObject)
         WHERE
-            rle.stId IN {reaction_ids} AND
-            rle.speciesName = {species}
+            rle.stId IN {reaction_ids}
         RETURN
             rle.stId AS reaction_id,
             dbo.stId AS entity_id,
@@ -282,8 +281,7 @@ def get_reaction_entities(reaction_ids, species):
             extract(rel IN rr | type(rel)) AS types
         """
         params = {
-            'reaction_ids': reaction_ids,
-            'species': species
+            'reaction_ids': reaction_ids
         }
         query_res = session.run(query, params)
         print(query)
@@ -301,7 +299,7 @@ def get_reaction_entities(reaction_ids, species):
     return results
 
 
-def reaction_to_uniprot(reaction_ids, species):
+def reaction_to_uniprot(reaction_ids, species_list):
     id_to_names = {}
     results = defaultdict(list)
     try:
@@ -319,7 +317,7 @@ def reaction_to_uniprot(reaction_ids, species):
         WHERE
             rle.stId IN {reaction_ids} AND
             rd.displayName = 'UniProt' AND
-            rle.speciesName = {species}
+            rle.speciesName IN {species}
         RETURN DISTINCT
             re.identifier AS protein_id,
             re.description AS description,
@@ -329,7 +327,7 @@ def reaction_to_uniprot(reaction_ids, species):
         """
         params = {
             'reaction_ids': reaction_ids,
-            'species': species
+            'species': species_list
         }
         query_res = session.run(query, params)
         print(query)
@@ -343,7 +341,7 @@ def reaction_to_uniprot(reaction_ids, species):
     return dict(results), id_to_names
 
 
-def reaction_to_compound(reaction_ids, species):
+def reaction_to_compound(reaction_ids, species_list):
     id_to_names = {}
     results = defaultdict(list)
     try:
@@ -357,7 +355,7 @@ def reaction_to_compound(reaction_ids, species):
         WHERE
             rle.stId IN {reaction_ids} AND        
             (do.databaseName = 'COMPOUND' OR do.databaseName = 'ChEBI') AND
-            rle.speciesName = {species}
+            rle.speciesName IN {species}
         RETURN DISTINCT
             do.identifier as compound_id,
             do.displayName as display_name,            
@@ -367,7 +365,7 @@ def reaction_to_compound(reaction_ids, species):
         """
         params = {
             'reaction_ids': reaction_ids,
-            'species': species
+            'species': species_list
         }
         query_res = session.run(query, params)
         print(query)
@@ -387,7 +385,7 @@ def reaction_to_compound(reaction_ids, species):
     return dict(results), id_to_names
 
 
-def reaction_to_metabolite_pathway(reaction_ids, species,
+def reaction_to_metabolite_pathway(reaction_ids, species_list,
                                    leaf=True):
     id_to_names = {}
     results = defaultdict(list)
@@ -399,15 +397,17 @@ def reaction_to_metabolite_pathway(reaction_ids, species,
             MATCH (tp:TopLevelPathway)-[:hasEvent*]->
                   (p:Pathway)-[:hasEvent*]->(rle:ReactionLikeEvent)
             WHERE
-            	tp.displayName = 'Metabolism' AND
-                tp.speciesName = {species} AND
-            	rle.stId IN {reaction_ids} AND
+                tp.displayName = 'Metabolism' AND
+                tp.speciesName IN {species} AND
+                rle.stId IN {reaction_ids} AND
                 (p)-[:hasEvent]->(rle)
             RETURN
                 rle.stId AS reaction_id,
-        	    rle.displayName AS reaction_name,
+                rle.displayName AS reaction_name,
+                rle.speciesName AS reaction_species,
                 p.stId AS pathway_id,
-                p.displayName AS pathway_name
+                p.displayName AS pathway_name,
+                tp.speciesName AS pathway_species
             """
         else:
             # retrieve all nodes maps reactions to all levels in the pathway
@@ -416,18 +416,20 @@ def reaction_to_metabolite_pathway(reaction_ids, species,
             MATCH (tp:TopLevelPathway)-[:hasEvent*]->
                   (p:Pathway)-[:hasEvent*]->(rle:ReactionLikeEvent)
             WHERE
-            	tp.displayName = 'Metabolism' AND
-                tp.speciesName = {species} AND
-            	rle.stId IN {reaction_ids}
+                tp.displayName = 'Metabolism' AND
+                tp.speciesName IN {species} AND
+                rle.stId IN {reaction_ids}
             RETURN
                 rle.stId AS reaction_id,
-        	    rle.displayName AS reaction_name,
+                rle.displayName AS reaction_name,
+                rle.speciesName AS reaction_species,        	    
                 p.stId AS pathway_id,
-                p.displayName AS pathway_name
+                p.displayName AS pathway_name,
+                tp.speciesName AS pathway_species                
             """
         params = {
             'reaction_ids': reaction_ids,
-            'species': species
+            'species': species_list
         }
         query_res = session.run(query, params)
         print(query)
@@ -435,15 +437,17 @@ def reaction_to_metabolite_pathway(reaction_ids, species,
         for record in query_res:
             reaction_id = record['reaction_id']
             reaction_name = record['reaction_name']
+            reaction_species = record['reaction_species']
             pathway_id = record['pathway_id']
             pathway_name = record['pathway_name']
+            pathway_species = record['pathway_species']
             item = {
                 'pathway_id': pathway_id,
                 'pathway_name': pathway_name
             }
             results[reaction_id].append(item)
-            id_to_names[reaction_id] = reaction_name
-            id_to_names[pathway_id] = pathway_name
+            id_to_names[reaction_id] = {'name': reaction_name, 'species': reaction_species}
+            id_to_names[pathway_id] = {'name': pathway_name, 'species': pathway_species}
     finally:
         if session is not None: session.close()
     return dict(results), id_to_names
@@ -454,7 +458,7 @@ def reaction_to_metabolite_pathway(reaction_ids, species,
 ################################################################################
 
 
-def pathway_to_reactions(pathway_ids, species):
+def pathway_to_reactions(pathway_ids):
     id_to_names = {}
     results = defaultdict(list)
     try:
@@ -472,8 +476,7 @@ def pathway_to_reactions(pathway_ids, species):
             p.displayName AS pathway_name
         """
         params = {
-            'pathway_ids': pathway_ids,
-            'species': species
+            'pathway_ids': pathway_ids
         }
         query_res = session.run(query, params)
         print(query)
@@ -653,7 +656,7 @@ def get_coverage(observed_count, total_count):
 
 
 def get_reaction_df(transcript_mapping, protein_mapping, compound_mapping,
-                    pathway_mapping, species):
+                    pathway_mapping, species_list):
     r_name_1, r_members_1 = get_reactions_from_mapping(protein_mapping)
     r_name_2, r_members_2 = get_reactions_from_mapping(compound_mapping)
     reaction_names = merge_two_dicts(r_name_1, r_name_2)
@@ -663,7 +666,7 @@ def get_reaction_df(transcript_mapping, protein_mapping, compound_mapping,
     pathway_protein_counts = defaultdict(int)
 
     reaction_ids = set(list(r_members_1.keys()) + list(r_members_2.keys()))
-    reaction_entities = get_reaction_entities(list(reaction_ids), species)
+    reaction_entities = get_reaction_entities(list(reaction_ids))
     rows = []
     for reaction_id in reaction_ids:
 

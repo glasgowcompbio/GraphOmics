@@ -34,7 +34,7 @@ def explore_data(request, analysis_id):
         COMPOUNDS_TO_REACTIONS: 'compound_reactions_json',
         REACTIONS_TO_PATHWAYS: 'reaction_pathways_json'
     }
-    data = {'species': analysis.species}
+    data = {}
     for k, v in DataRelationType:
         analysis_data = AnalysisData.objects.filter(analysis=analysis, data_type=k).first()
         if analysis_data:
@@ -286,8 +286,12 @@ def get_kegg_metabolite_info(request):
 
 def get_summary_string(reactome_id):
     desc, is_inferred = get_reactome_description(reactome_id, from_parent=False)
+    original_species = desc[0]['species']
     if is_inferred:
         desc, _ = get_reactome_description(reactome_id, from_parent=True)
+        inferred_species = desc[0]['species']
+    else:
+        inferred_species = original_species
 
     summary_list = []
     for s in desc:
@@ -296,28 +300,28 @@ def get_summary_string(reactome_id):
         st = s['summary_text'].replace(';', ',')
         summary_list.append(truncate(st))
     summary_str = ';'.join(summary_list)
-    return summary_str, is_inferred, desc[0]['species']
+    return summary_str, is_inferred, original_species, inferred_species
 
 
 def get_reactome_reaction_info(request):
     if request.is_ajax():
         reactome_id = request.GET['id']
-        species = urllib.parse.unquote(request.GET['species'])
 
         infos = []
 
         # res = get_reactome_content_service(reactome_id)
         # summary_str = res['summation'][0]['text']
-        summary_str, is_inferred, inferred_species = get_summary_string(reactome_id)
+        summary_str, is_inferred, original_species, inferred_species = get_summary_string(reactome_id)
         infos.append({'key': 'Summary', 'value': summary_str})
 
+        infos.append({'key': 'Species', 'value': original_species})
         if is_inferred:
             inferred = 'Inferred from %s' % inferred_species
             infos.append({'key': 'Inferred', 'value': inferred})
 
         # get all the participants
         temp = collections.defaultdict(list)
-        results = get_reaction_entities([reactome_id], species)[reactome_id]
+        results = get_reaction_entities([reactome_id])[reactome_id]
         for res in results:
             entity_id = res[1]
             display_name = res[2]
@@ -356,8 +360,7 @@ def get_reactome_pathway_info(request):
     if request.is_ajax():
 
         pathway_id = request.GET['id']
-        species = urllib.parse.unquote(request.GET['species'])
-        mapping, id_to_names = pathway_to_reactions([pathway_id], species)
+        mapping, id_to_names = pathway_to_reactions([pathway_id])
         pathway_reactions = mapping[pathway_id]
 
         reaction_list = map(lambda x: id_to_names[x], pathway_reactions)
@@ -368,9 +371,10 @@ def get_reactome_pathway_info(request):
 
         # res = get_reactome_content_service(pathway_id)
         # summary_str = res['summation'][0]['text']
-        summary_str, is_inferred, inferred_species = get_summary_string(pathway_id)
+        summary_str, is_inferred, original_species, inferred_species = get_summary_string(pathway_id)
 
         infos = [{'key': 'Summary', 'value': summary_str}]
+        infos.append({'key': 'Species', 'value': original_species})
         if is_inferred:
             inferred = 'Inferred from %s' % inferred_species
             infos.append({'key': 'Inferred', 'value': inferred})
