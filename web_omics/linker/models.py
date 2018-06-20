@@ -11,17 +11,24 @@ class Analysis(models.Model):
     name = models.CharField(max_length=100, null=True)
     description = models.CharField(max_length=1000, null=True)
     timestamp = models.DateTimeField(default=timezone.localtime, null=False)
-    metadata = JSONField(load_kwargs={'object_pairs_hook': collections.OrderedDict})
+    metadata = JSONField()
 
-    def get_species(self):
+    def get_species_str(self):
         if 'species_list' in self.metadata:
             return ', '.join(self.metadata['species_list'])
         else:
             return ''
 
+    def get_species_list(self):
+        if 'species_list' in self.metadata:
+            return self.metadata['species_list']
+        else:
+            return []
+
+
 class AnalysisData(models.Model):
     analysis = models.ForeignKey(Analysis, on_delete=models.CASCADE)
-    json_data = JSONField(load_kwargs={'object_pairs_hook': collections.OrderedDict})
+    json_data = JSONField()
     data_type = models.IntegerField(choices=DataRelationType)
 
 
@@ -34,6 +41,6 @@ class AnalysisSample(models.Model):
 class AnalysisResult(models.Model):
     analysis_data = models.ForeignKey(AnalysisData, on_delete=models.CASCADE)
     inference_type = models.IntegerField(choices=InferenceType)
-    params = JSONField(load_kwargs={'object_pairs_hook': collections.OrderedDict})
-    results = JSONField(load_kwargs={'object_pairs_hook': collections.OrderedDict})
+    params = JSONField()
+    results = JSONField()
     timestamp = models.DateTimeField(default=timezone.localtime, null=False)

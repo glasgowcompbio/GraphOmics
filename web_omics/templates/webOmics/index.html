@@ -24,7 +24,7 @@
                                 <a href="{% url 'explore_data' analysis_id=analysis.pk %}">{{ analysis.name }}</a>
                             </td>
                             <td>{{ analysis.description }}</td>
-                            <td>{{ analysis.get_species }}</td>
+                            <td>{{ analysis.get_species_str }}</td>
                             <td>{{ analysis.timestamp|date:"jS F Y H:i" }}</td>
                         </tr>
                     {% endfor %}

@@ -10,6 +10,7 @@ https://docs.djangoproject.com/en/2.0/ref/settings/
 import os
 
 from configurations import Configuration, values
+from django.contrib.messages import constants as message_constants
 
 
 class Common(Configuration):
@@ -127,6 +128,7 @@ class Development(Common):
     The in-development settings and the default configuration.
     """
     DEBUG = True
+    MESSAGE_LEVEL = message_constants.DEBUG
 
     ALLOWED_HOSTS = []
 

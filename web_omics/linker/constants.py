@@ -1,6 +1,11 @@
 TRUNCATE_LIMIT = 400
 
 GENOMICS, TRANSCRIPTOMICS, PROTEOMICS, METABOLOMICS, REACTIONS, PATHWAYS = range(0, 6)
+AddNewDataChoices = (
+    (GENOMICS, 'Gene Data'),
+    (PROTEOMICS, 'Protein Data'),
+    (METABOLOMICS, 'Compound Data'),
+)
 DataType = (
     (GENOMICS, 'Genomics'),
     (TRANSCRIPTOMICS, 'Transcriptomics'),

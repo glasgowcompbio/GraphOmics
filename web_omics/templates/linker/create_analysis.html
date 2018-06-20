@@ -4,6 +4,11 @@
 
 {% block head_block %}
     {{ form.media.css }}
+    <style type="text/css">
+        select {
+            width: 100%;
+        }
+    </style>
 {% endblock %}
 
 {% block body_block %}
@@ -31,7 +36,7 @@
             </p>
         <form id="analysis_form"
               method="post"
-              action="{% url "create_analysis" %}"
+              action="{% url 'create_analysis' %}"
               enctype="multipart/form-data">
             {% csrf_token %}
             <table>

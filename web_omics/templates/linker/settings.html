@@ -7,6 +7,12 @@
     <!-- link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/v/dt/dt-1.10.16/sc-1.4.4/sl-1.2.5/datatables.min.css"/ -->
     <link rel="stylesheet" type="text/css"
           href="https://cdn.datatables.net/v/dt/dt-1.10.16/b-1.5.1/b-colvis-1.5.1/r-2.2.1/sc-1.4.4/sl-1.2.5/datatables.min.css"/>
+    {{ form.media.css }}
+    <style type="text/css">
+        select {
+            width: 200px;
+        }
+    </style>
 {% endblock %}
 
 {% block body_block %}
@@ -34,34 +40,40 @@
             <div class="card">
                 <div class="card-body">
                     <h5>Add Data</h5>
-                    <p>To add a new data point, enter its Reactome ID below.</p>
-                    <form id="inference_form"
+                    {% if messages %}
+                        {% for message in messages %}
+                            <div class="alert alert-{{ message.tags }}" role="alert">
+                                {{ message }}
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+                    <p>
+                        To add a new data point, enter its database identifiers below.
+                    </p>
+                    <ul>
+                        <li>
+                            For gene data, this should be the <strong>Ensembl</strong> ID.
+                        </li>
+                        <li>
+                            For protein data, this should be the <strong>Uniprot</strong> ID.
+                        </li>
+                        <li>
+                            For compound data, this should be the <strong>KEGG</strong> or <strong>ChEBI</strong> ID.
+                        </li>
+                        <!-- li>
+                            For reactions and pathways, this should be the <strong>Reactome</strong> ID.
+                        </li -->
+                    </ul>
+                    <form id="settings_form"
                           method="post"
+                          action="{% url 'add_data' analysis_id=analysis_id %}"
                           enctype="multipart/form-data">
-                        <div class="form-group">
-                            <label for="reactome_id">Reactome ID</label>
-                            <input type="text" class="form-control" id="reactome_id"
-                                   aria-describedby="reactome_id_help">
-                            <small id="reactome_id_help" class="form-text text-muted">Enter the Reactome ID of a new data point to add, e.g.
-                                R-MMU-123123.
-                            </small>
-                        </div>
-                        <div class="form-group">
-                            <label for="exampleFormControlSelect0">Data Type</label>
-                            <select class="form-control" id="exampleFormControlSelect0">
-                                <option>Gene Data</option>
-                                <option>Protein Data</option>
-                                <option>Compound Data</option>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label for="exampleFormControlSelect1">Species</label>
-                            <select class="form-control" id="exampleFormControlSelect1">
-                                <option>Mus musculus</option>
-                                <option>Homo sapiens</option>
-                            </select>
-                        </div>
-                        <button type="submit" class="btn btn-primary">Add</button>
+                        {% csrf_token %}
+                        <table>
+                            {{ form.as_table }}
+                        </table>
+                        <br/>
+                        <input type="submit" name="submit" value="Save" class="btn btn-primary"/>
                     </form>
                 </div>
             </div>
@@ -72,5 +84,5 @@
 {% endblock %}
 
 {% block js_block %}
-
+    {{ form.media.js }}
 {% endblock %}
