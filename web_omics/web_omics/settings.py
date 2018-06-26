@@ -120,6 +120,11 @@ class Common(Configuration):
         STATIC_PATH,
     )
 
+    # For file upload
+    # See https://simpleisbetterthancomplex.com/tutorial/2016/08/01/how-to-upload-files-with-django.html
+    MEDIA_URL = '/media/'
+    MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+
     AUTH_USER_MODEL = 'users.User'
 
 

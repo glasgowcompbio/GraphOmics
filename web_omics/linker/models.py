@@ -1,7 +1,9 @@
 from django.db import models
 from jsonfield import JSONField
 from django.utils import timezone
+from django.conf import settings
 import collections
+import os
 
 
 from linker.constants import DataType, DataRelationType, InferenceType
@@ -24,6 +26,25 @@ class Analysis(models.Model):
             return self.metadata['species_list']
         else:
             return []
+
+
+def get_upload_folder(instance, filename):
+    upload_folder = "analysis_upload_%s" % instance.pk
+    return os.path.abspath(os.path.join(settings.MEDIA_ROOT, upload_folder, filename))
+
+
+class AnalysisUpload(models.Model):
+    analysis = models.OneToOneField(
+        Analysis,
+        on_delete=models.CASCADE,
+        primary_key=True,
+    )
+    gene_data = models.FileField(blank=True, null=True, upload_to=get_upload_folder)
+    gene_design = models.FileField(blank=True, null=True, upload_to=get_upload_folder)
+    protein_data = models.FileField(blank=True, null=True, upload_to=get_upload_folder)
+    protein_design = models.FileField(blank=True, null=True, upload_to=get_upload_folder)
+    compound_data = models.FileField(blank=True, null=True, upload_to=get_upload_folder)
+    compound_design = models.FileField(blank=True, null=True, upload_to=get_upload_folder)
 
 
 class AnalysisData(models.Model):

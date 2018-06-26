@@ -5,6 +5,7 @@ from django_select2.forms import Select2Widget, Select2MultipleWidget
 
 from linker.constants import AddNewDataChoices
 from linker.reactome import get_species_dict
+from linker.models import Analysis, AnalysisUpload
 
 
 def load_example_data(file_path):
@@ -34,11 +35,9 @@ for k, v in get_species_dict().items():
         mus_musculus = (k, v,)
 
 
-class LinkerForm(forms.Form):
-    analysis_name = forms.CharField(required=True, widget=forms.TextInput(attrs={'style': 'width: 100%'}))
-    analysis_description = forms.CharField(required=False,
-                                           widget=forms.Textarea(
-                                               attrs={'rows': 3, 'cols': 100, 'style': 'width: 100%'}))
+class CreateAnalysisForm(forms.Form):
+    analysis_name = forms.CharField(required=False, widget=forms.TextInput(attrs={'style': 'width: 100%'}))
+    analysis_description = forms.CharField(required=False, widget=forms.TextInput(attrs={'style': 'width: 100%'}))
     species = forms.MultipleChoiceField(required=True, choices=SPECIES_CHOICES, initial=mus_musculus[0],
                                         widget=Select2MultipleWidget)
     genes = forms.CharField(required=False,
@@ -50,6 +49,18 @@ class LinkerForm(forms.Form):
     compounds = forms.CharField(required=False,
                                 widget=forms.Textarea(attrs={'rows': 6, 'cols': 100, 'style': 'width: 100%'}),
                                 initial=example_compounds)
+
+
+class UploadAnalysisForm(forms.ModelForm):
+    analysis_name = forms.CharField(required=False, widget=forms.TextInput(attrs={'style': 'width: 100%'}))
+    analysis_description = forms.CharField(required=False, widget=forms.TextInput(attrs={'style': 'width: 100%'}))
+    species = forms.MultipleChoiceField(required=True, choices=SPECIES_CHOICES, widget=Select2MultipleWidget)
+    class Meta:
+        model = AnalysisUpload
+        fields = ('analysis_name', 'analysis_description', 'species',
+                  'gene_data', 'gene_design',
+                  'protein_data', 'protein_design',
+                  'compound_data', 'compound_design')
 
 
 class SettingsForm(forms.Form):

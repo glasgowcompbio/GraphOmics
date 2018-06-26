@@ -5,6 +5,7 @@ from . import views
 urlpatterns = [
 
     path('create_analysis', views.CreateAnalysisView.as_view(), name='create_analysis'),
+    path('upload_analysis', views.UploadAnalysisView.as_view(), name='upload_analysis'),
     path('explore_data/<int:analysis_id>', views.explore_data, name='explore_data'),
     path('inference/<int:analysis_id>', views.inference, name='inference'),
     path('summary/<int:analysis_id>', views.summary, name='summary'),
