@@ -17,11 +17,11 @@ def settings(request, analysis_id):
     species_dict = get_species_dict()
 
     # here we also set the species field to the first species of this analysis
-    add_data_form = AddDataForm()
+    form = AddDataForm()
     inv_map = {v: k for k, v in species_dict.items()}
     first_species = analysis.metadata['species_list'][0]
     idx = inv_map[first_species]
-    add_data_form.fields['species'].initial = idx
+    form.fields['species'].initial = idx
 
     context = {
         'analysis_id': analysis.pk,

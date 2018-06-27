@@ -64,32 +64,10 @@
                           enctype="multipart/form-data">
                         {% csrf_token %}
                         <table>
-                            {{ add_data_form.as_table }}
+                            {{ form.as_table }}
                         </table>
                         <br/>
                         <input type="submit" name="submit" value="Save" class="btn btn-primary"/>
-                    </form>
-                </div>
-            </div>
-        </div>
-
-        <div class="m-1 mb-3">
-            <div class="card">
-                <div class="card-body">
-                    <h5>Add Metabolic Pathways</h5>
-                    <p>
-                        To add metabolic pathways of some common species and their associated links to the data, click the button below.
-                    </p>
-                    <form id="add_pathway_form"
-                          method="post"
-                          action="{% url 'add_pathway' analysis_id=analysis_id %}"
-                          enctype="multipart/form-data">
-                        {% csrf_token %}
-                        <table>
-                            {{ add_pathway_form.as_table }}
-                        </table>
-                        <br/>
-                        <input type="submit" name="submit" value="Add Pathways" class="btn btn-primary"/>
                     </form>
                 </div>
             </div>
