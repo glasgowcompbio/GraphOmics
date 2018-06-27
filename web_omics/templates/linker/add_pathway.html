@@ -13,35 +13,29 @@
 
 {% block body_block %}
     <div class="container-fluid m-2 mb-5">
-        <h3>Create Analysis - Upload Data</h3>
+        <h3>Create Analysis - Add Pathways</h3>
         <div>
             <ul class="nav nav-tabs">
                 <li class="nav-item">
                     <a class="nav-link" href="{% url 'create_analysis' %}">📝 Enter Data</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link active" href="{% url 'upload_analysis' %}">💾 Upload Data</a>
+                    <a class="nav-link" href="{% url 'upload_analysis' %}">💾 Upload Data</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" href="{% url 'add_pathway' %}">🙈 Add Pathways</a>
+                    <a class="nav-link active" href="{% url 'add_pathway' %}">🙈 Add Pathways</a>
                 </li>
             </ul>
         </div>
         <div class="m-1 mb-3">
             <div>
                 <p>
-                    Create a new data integration analysis by uploading data.
-                    Analysis description is optional and can be left blank.
-                    Other fields for the data should be provided in a comma-separated
-                    format. For each omics data, the following two files should be provided:
+                    Create a data integration analysis by directly selecting pathways of interest
+                    for some common species. This should only be used for browsing the Reactome knowledgebase.
                 </p>
-                <ul>
-                    <li>Sample measurements</li>
-                    <li>Design matrix</li>
-                </ul>
                 <form id="analysis_form"
                       method="post"
-                      action="{% url 'upload_analysis' %}"
+                      action="{% url 'add_pathway' %}"
                       enctype="multipart/form-data">
                     {% csrf_token %}
                     <table>

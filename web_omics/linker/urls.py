@@ -6,11 +6,13 @@ urlpatterns = [
 
     path('create_analysis', views.CreateAnalysisView.as_view(), name='create_analysis'),
     path('upload_analysis', views.UploadAnalysisView.as_view(), name='upload_analysis'),
+    path('add_pathway', views.AddPathwayView.as_view(), name='add_pathway'),
     path('explore_data/<int:analysis_id>', views.explore_data, name='explore_data'),
     path('inference/<int:analysis_id>', views.inference, name='inference'),
     path('summary/<int:analysis_id>', views.summary, name='summary'),
     path('settings/<int:analysis_id>', views.settings, name='settings'),
-    path('settings/add_data/<int:analysis_id>', views.settings, name='add_data'),
+    path('settings/add_data/<int:analysis_id>', views.add_data, name='add_data'),
+    path('settings/add_pathway/<int:analysis_id>', views.add_pathway, name='add_pathway'),
 
     path('get_ensembl_gene_info', views.get_ensembl_gene_info, name='get_ensembl_gene_info'),
     path('get_uniprot_protein_info', views.get_uniprot_protein_info, name='get_uniprot_protein_info'),

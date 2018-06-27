@@ -131,14 +131,18 @@ def kegg_to_chebi(compound_ids):
     results = {}
     ch = ChEBI()
     for compound_id in compound_ids:
-        if compound_id.startswith('C'):
-            res = ch.getLiteEntity(compound_id)
-            assert len(res) > 0 # we should always be able to convert from KEGG -> ChEBI ids
-            le = res[0]
-            chebi_number = le.chebiId.split(':')[1]
-            print('KEGG %s --> ChEBI %s' % (compound_id, chebi_number))
-            results[compound_id] = chebi_number
-        else:
+        try:
+            if compound_id.startswith('C'):
+                res = ch.getLiteEntity(compound_id)
+                assert len(res) > 0 # we should always be able to convert from KEGG -> ChEBI ids
+                le = res[0]
+                chebi_number = le.chebiId.split(':')[1]
+                print('KEGG %s --> ChEBI %s' % (compound_id, chebi_number))
+                results[compound_id] = chebi_number
+            else:
+                print('ChEBI %s --> ChEBI %s' % (compound_id, compound_id))
+                results[compound_id] = compound_id
+        except AttributeError:
             print('ChEBI %s --> ChEBI %s' % (compound_id, compound_id))
             results[compound_id] = compound_id
     return results

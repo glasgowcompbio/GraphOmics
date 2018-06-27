@@ -5,7 +5,7 @@ import pprint
 from django.shortcuts import render, get_object_or_404
 from django.contrib import messages
 
-from linker.forms import SettingsForm
+from linker.forms import AddDataForm, AddPathwayForm
 from linker.models import Analysis, AnalysisData
 from linker.reactome import get_species_dict
 from linker.views.functions import reactome_mapping, save_analysis
@@ -16,8 +16,25 @@ def settings(request, analysis_id):
     analysis = get_object_or_404(Analysis, pk=analysis_id)
     species_dict = get_species_dict()
 
+    # here we also set the species field to the first species of this analysis
+    add_data_form = AddDataForm()
+    inv_map = {v: k for k, v in species_dict.items()}
+    first_species = analysis.metadata['species_list'][0]
+    idx = inv_map[first_species]
+    add_data_form.fields['species'].initial = idx
+
+    context = {
+        'analysis_id': analysis.pk,
+        'form': form,
+    }
+    return render(request, 'linker/settings.html', context)
+
+
+def add_data(request, analysis_id):
     if request.method == 'POST':
-        form = SettingsForm(request.POST, request.FILES)
+        analysis = get_object_or_404(Analysis, pk=analysis_id)
+        species_dict = get_species_dict()
+        form = AddDataForm(request.POST, request.FILES)
         if form.is_valid():
             database_id = form.cleaned_data['database_id']
             species = form.cleaned_data['species']
@@ -65,21 +82,7 @@ def settings(request, analysis_id):
         else:
             messages.warning(request, 'Add new data failed.')
 
-
-
-    form = SettingsForm()
-
-    # set the species field in form to be the first species of this analysis
-    inv_map = {v: k for k, v in species_dict.items()}
-    first_species = analysis.metadata['species_list'][0]
-    idx = inv_map[first_species]
-    form.fields['species'].initial = idx
-
-    context = {
-        'analysis_id': analysis.pk,
-        'form': form
-    }
-    return render(request, 'linker/settings.html', context)
+    return settings(request, analysis_id)
 
 
 def get_formatted_data(metadata, key, database_id):
@@ -100,3 +103,10 @@ def get_formatted_data(metadata, key, database_id):
         else:
             new_str = header_line + '\n'
     return new_str
+
+
+
+def add_pathway(request, analysis_id):
+    if request.method == 'POST':
+        analysis = get_object_or_404(Analysis, pk=analysis_id)
+    return settings(request, analysis_id)

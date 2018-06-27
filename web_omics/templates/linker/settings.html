@@ -4,13 +4,10 @@
 {% block title %}WebOmics{% endblock %}
 
 {% block head_block %}
-    <!-- link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/v/dt/dt-1.10.16/sc-1.4.4/sl-1.2.5/datatables.min.css"/ -->
-    <link rel="stylesheet" type="text/css"
-          href="https://cdn.datatables.net/v/dt/dt-1.10.16/b-1.5.1/b-colvis-1.5.1/r-2.2.1/sc-1.4.4/sl-1.2.5/datatables.min.css"/>
     {{ form.media.css }}
     <style type="text/css">
         select {
-            width: 200px;
+            width: 100%;
         }
     </style>
 {% endblock %}
@@ -60,17 +57,14 @@
                         <li>
                             For compound data, this should be the <strong>KEGG</strong> or <strong>ChEBI</strong> ID.
                         </li>
-                        <!-- li>
-                            For reactions and pathways, this should be the <strong>Reactome</strong> ID.
-                        </li -->
                     </ul>
-                    <form id="settings_form"
+                    <form id="add_data_form"
                           method="post"
                           action="{% url 'add_data' analysis_id=analysis_id %}"
                           enctype="multipart/form-data">
                         {% csrf_token %}
                         <table>
-                            {{ form.as_table }}
+                            {{ add_data_form.as_table }}
                         </table>
                         <br/>
                         <input type="submit" name="submit" value="Save" class="btn btn-primary"/>
@@ -84,9 +78,19 @@
                 <div class="card-body">
                     <h5>Add Metabolic Pathways</h5>
                     <p>
-                        To add metabolic pathways and all their associated links to this analysis, click the button below.
+                        To add metabolic pathways of some common species and their associated links to the data, click the button below.
                     </p>
-                    <a href="#" class="btn btn-primary">Add pathways</a>
+                    <form id="add_pathway_form"
+                          method="post"
+                          action="{% url 'add_pathway' analysis_id=analysis_id %}"
+                          enctype="multipart/form-data">
+                        {% csrf_token %}
+                        <table>
+                            {{ add_pathway_form.as_table }}
+                        </table>
+                        <br/>
+                        <input type="submit" name="submit" value="Add Pathways" class="btn btn-primary"/>
+                    </form>
                 </div>
             </div>
         </div>

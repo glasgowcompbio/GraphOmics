@@ -1,11 +1,11 @@
-from django.shortcuts import render, redirect
+import pandas as pd
+from django.shortcuts import render
 from django.views.generic.edit import FormView
 
-from linker.forms import CreateAnalysisForm, UploadAnalysisForm
-from linker.reactome import get_species_dict
+from linker.forms import CreateAnalysisForm, UploadAnalysisForm, AddPathwayForm, pathway_species_dict
+from linker.reactome import get_species_dict, pathway_to_reactions, reaction_to_uniprot, reaction_to_compound, \
+    uniprot_to_ensembl
 from linker.views.functions import reactome_mapping, save_analysis
-
-import pandas as pd
 
 
 class CreateAnalysisView(FormView):
@@ -64,6 +64,48 @@ class UploadAnalysisView(FormView):
         return render(self.request, self.success_url, context)
 
 
+class AddPathwayView(FormView):
+    template_name = 'linker/add_pathway.html'
+    form_class = AddPathwayForm
+    success_url = 'linker/explore_data.html'
+
+    def form_valid(self, form):
+        analysis_name = form.cleaned_data['analysis_name']
+        analysis_desc = form.cleaned_data['analysis_description']
+        pathway_list = form.cleaned_data['pathways']
+        species_list = list(set([pathway_species_dict[x] for x in pathway_list]))
+
+        # get reactions under pathways
+        pathway_2_reactions, _ = pathway_to_reactions(pathway_list)
+        all_reactions = get_unique_items(pathway_2_reactions)
+
+        # get proteins and compounds under reactions
+        reaction_2_proteins, _ = reaction_to_uniprot(all_reactions, species_list)
+        reaction_2_compounds, _ = reaction_to_compound(all_reactions, species_list)
+        all_proteins = get_unique_items(reaction_2_proteins)
+        all_compounds = get_unique_items(reaction_2_compounds)
+
+        # get genes under proteins
+        protein_2_genes, _ = uniprot_to_ensembl(all_proteins, species_list)
+        all_genes = get_unique_items(protein_2_genes)
+
+        genes_str = '\n'.join(['identifier'] + all_genes)
+        proteins_str = '\n'.join(['identifier'] + all_proteins)
+        compounds_str = '\n'.join(['identifier'] + all_compounds)
+        results = reactome_mapping(self.request, genes_str, proteins_str, compounds_str, species_list)
+        analysis, data = save_analysis(analysis_name, analysis_desc,
+                                       genes_str, proteins_str, compounds_str,
+                                       results, species_list)
+        context = {
+            'data': data,
+            'analysis_id': analysis.pk,
+            'analysis_name': analysis.name,
+            'analysis_description': analysis.description,
+            'analysis_species': analysis.get_species_str()
+        }
+        return render(self.request, self.success_url, context)
+
+
 def get_uploaded_data(form_dict, data_key, design_key):
     try:
         data = pd.read_csv(form_dict[data_key])
@@ -91,3 +133,11 @@ def get_uploaded_str(data_df, design_df):
     new_data_list.extend(data_list[1:])
     data_str = '\n'.join(new_data_list)
     return data_str
+
+
+def get_unique_items(mapping):
+    all_items = []
+    for key, values in mapping.items():
+        all_items.extend(values)
+    unique_items = list(set(all_items))
+    return unique_items

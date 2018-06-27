@@ -552,13 +552,47 @@ def retrieve_kegg_formula(reactome_compound_name):
     return None
 
 
+def get_all_pathways(species_list):
+    results = []
+    try:
+        session = get_neo4j_session()
+
+        # retrieve only the leaf nodes in the pathway hierarchy
+        query = """
+            MATCH (tp:TopLevelPathway)-[:hasEvent*]->(p:Pathway)-[:hasEvent*]->(rle:ReactionLikeEvent)
+            WHERE
+                tp.displayName = 'Metabolism' AND
+                tp.speciesName IN {species_list} AND
+                (p)-[:hasEvent]->(rle)
+            RETURN DISTINCT
+                p.speciesName AS species_name,            
+                p.displayName AS pathway_name,
+                p.stId AS pathway_id                       
+            ORDER BY species_name, pathway_name
+        """
+        params = {
+            'species_list': species_list
+        }
+        query_res = session.run(query, params)
+        print(query)
+
+        for record in query_res:
+            pathway_species = record['species_name']
+            pathway_name = record['pathway_name']
+            pathway_id = record['pathway_id']
+            results.append((pathway_species, pathway_name, pathway_id))
+    finally:
+        if session is not None: session.close()
+    return results
+
+
 def get_all_pathways_formulae(species):
     results = defaultdict(set)
     pathway_id_to_name = {}
     try:
         session = get_neo4j_session()
 
-        # TODO: retrieve only the leaf nodes in the pathway hierarchy
+        # retrieve only the leaf nodes in the pathway hierarchy
         query = """
         MATCH (tp:TopLevelPathway)-[:hasEvent*]->
               (p:Pathway)-[:hasEvent*]->(rle:ReactionLikeEvent),
@@ -605,6 +639,7 @@ def get_all_pathways_formulae(species):
     finally:
         if session is not None: session.close()
     return dict(results), pathway_id_to_name
+
 
 ################################################################################
 ### Analysis functions                                                       ###

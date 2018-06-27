@@ -13,7 +13,7 @@
 
 {% block body_block %}
     <div class="container-fluid m-2 mb-5">
-        <h3>Create a New Data Integration Analysis</h3>
+        <h3>Create Analysis - Enter Data</h3>
         <div>
             <ul class="nav nav-tabs">
                 <li class="nav-item">
@@ -22,43 +22,38 @@
                 <li class="nav-item">
                     <a class="nav-link" href="{% url 'upload_analysis' %}">💾 Upload Data</a>
                 </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{% url 'add_pathway' %}">🙈 Add Pathways</a>
+                </li>
             </ul>
         </div>
         <div class="m-1 mb-3">
             <div>
                 <p>
-                    Enter your data below to create a new integration analysis.
-                    <a data-toggle="collapse" href="#collapseExample" role="button"
-                       aria-expanded="false" aria-controls="collapseExample">
-                        Click here
-                    </a> to see the format and <a href="#" onClick="showExample();" value="here">click here</a> to load
-                    an example data.
+                    Create a new data integration analysis by entering its data below in comma-separated values format.
+                    To see an example data, <a href="#" onClick="showExample();" value="here">click here</a>.
                 </p>
-                <div class="collapse" id="collapseExample">
-                    <div class="card card-body">
-                        <ul>
-                            <li>Analysis description is optional and can be left blank.</li>
-                            <li>Other fields for the data should be provided in a comma-separated
-                                format.
-                            </li>
-                            <li>For each -omics data:
-                            </li>
-                            <ul>
-                                <li>The first row is the header, and the first column is always used as the
-                                    identifier column.
-                                </li>
-                                <li>Other columns are taken as the sample measurements.</li>
-                                <li>If present, a second row that begins with <strong>group</strong> can also be
-                                    provided
-                                    to specify the grouping information.
-                                </li>
-                                <li>Optional column names that end with <strong>_pvalue</strong> are used for
-                                    highlighting.
-                                </li>
-                            </ul>
-                        </ul>
-                    </div>
-                </div>
+                <ul>
+                    <li>Analysis description is optional and can be left blank.</li>
+                    <li>Other fields for the data should be provided in a comma-separated
+                        format.
+                    </li>
+                    <li>For each -omics data:
+                    </li>
+                    <ul>
+                        <li>The first row is the header, and the first column is always used as the
+                            identifier column.
+                        </li>
+                        <li>Other columns are taken as the sample measurements.</li>
+                        <li>If present, a second row that begins with <strong>group</strong> can also be
+                            provided
+                            to specify the grouping information.
+                        </li>
+                        <li>Optional column names that end with <strong>_pvalue</strong> are used for
+                            highlighting.
+                        </li>
+                    </ul>
+                </ul>
                 <form id="analysis_form"
                       method="post"
                       action="{% url 'create_analysis' %}"
