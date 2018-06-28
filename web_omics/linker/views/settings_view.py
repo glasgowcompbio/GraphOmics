@@ -103,10 +103,3 @@ def get_formatted_data(metadata, key, database_id):
         else:
             new_str = header_line + '\n'
     return new_str
-
-
-
-def add_pathway(request, analysis_id):
-    if request.method == 'POST':
-        analysis = get_object_or_404(Analysis, pk=analysis_id)
-    return settings(request, analysis_id)

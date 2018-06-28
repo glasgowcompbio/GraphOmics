@@ -1,0 +1,52 @@
+{% extends 'base.html' %}
+
+{% block title %}User Registration{% endblock %}
+
+{% block body_block %}
+
+    <div class="container py-5">
+        <div class="row">
+            <div class="col-md-12">
+                <div class="row">
+                    <div class="col-md-6 mx-auto">
+
+                        <!-- form card login -->
+                        <div class="card rounded-0">
+                            <div class="card-header">
+                                <h3 class="mb-0">Registration</h3>
+                            </div>
+                            <div class="card-body">
+                                {% if registered %}
+                                <strong>Thank you for registering! Your account is now active, and you can run analyses by logging into the site.</strong><br/><br/>
+                                {% else %}
+                                <form id="user_form" method="post" action="/registration/register/"
+                                        enctype="multipart/form-data">
+                                    {% csrf_token %}
+                                    <table>
+                                    {{ user_form.as_table }}
+                                    </table>
+                                    <br/>
+                                    <button type="submit" name="submit" class="btn btn-primary" id="btnLogin">
+                                        Register
+                                    </button>
+                                </form>
+                                {% endif %}
+                            </div>
+                            <!--/card-block-->
+                        </div>
+                        <!-- /form card login -->
+
+                    </div>
+
+
+                </div>
+                <!--/row-->
+
+            </div>
+            <!--/col-->
+        </div>
+        <!--/row-->
+    </div>
+    <!--/container-->
+
+{% endblock %}

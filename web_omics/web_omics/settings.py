@@ -40,7 +40,8 @@ class Common(Configuration):
         'django_select2',
 
         'web_omics.users',
-        'linker'
+        'linker',
+        'registration'
     ]
 
     MIDDLEWARE = [

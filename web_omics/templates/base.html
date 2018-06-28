@@ -15,7 +15,7 @@
     <link href="{% static 'css/bootstrap4-business-tycoon.min.css' %}" rel="stylesheet">
 
     <!-- Custom CSS -->
-    <link rel="shortcut icon" href="#" />
+    <link rel="shortcut icon" href="#"/>
 
     <!-- Any other additional things you want to include .. -->
     {% block head_block %}
@@ -26,9 +26,9 @@
 </head>
 <body role="document">
 
-<nav class="navbar navbar-expand-lg navbar-light bg-light">
+<nav class="navbar navbar-expand-lg navbar-dark bg-primary">
     <a class="navbar-brand" href="/">
-        <img src="{% static 'images/transparent_banner.png' %}" alt="Banner" width="15%"/>
+        <img src="{% static 'images/transparent_banner_inverted.png' %}" alt="Banner" width="15%"/>
     </a>
     <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent"
             aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
@@ -37,21 +37,22 @@
 
     <div class="collapse navbar-collapse" id="navbarSupportedContent">
         <ul class="navbar-nav mr-auto">
-            <!-- li class="nav-item active">
-                <a class="nav-link" href="/linker">Analysis</a>
-            </li -->
-            <!-- li class="nav-item dropdown">
-                <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-toggle="dropdown"
-                   aria-haspopup="true" aria-expanded="false">
-                    Dropdown
-                </a>
-                <div class="dropdown-menu" aria-labelledby="navbarDropdown">
-                    <a class="dropdown-item" href="#">Action</a>
-                    <a class="dropdown-item" href="#">Another action</a>
-                    <div class="dropdown-divider"></div>
-                    <a class="dropdown-item" href="#">Something else here</a>
-                </div>
-            </li -->
+            {% if user.is_authenticated %}
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-toggle="dropdown"
+                       aria-haspopup="true" aria-expanded="false">
+                        Profile
+                    </a>
+                    <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+                        <a class="dropdown-item" href="/registration/logout">Log out {{ user }}</a>
+                        <a class="dropdown-item" href="/registration/profile">Update profile</a>
+                    </div>
+                </li>
+            {% else %}
+                <li class="nav-item active">
+                    <a class="nav-link" href="/registration/login">Log in</a>
+                </li>
+            {% endif %}
         </ul>
     </div>
 </nav>
