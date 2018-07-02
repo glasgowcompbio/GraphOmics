@@ -46,9 +46,9 @@ def get_counts(analysis, data_type):
     cols = [c for c in df.columns if all(s not in c.lower() for s in ['pvalue', 'id', 'pk'])]
     val = df[cols].values
     s = np.sum(val, axis=1)
-    total = len(s)
     observed = np.count_nonzero(s)
-    inferred = total - observed - 1 # -1 to account for dummy item
+    inferred = len(s) - observed - 1 # -1 to account for dummy item
+    total = observed + inferred
     return observed, inferred, total
 
 
