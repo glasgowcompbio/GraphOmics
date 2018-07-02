@@ -35,17 +35,105 @@
         <div class="m-1 mb-3">
             <div class="card">
                 <div class="card-body">
-                    <h5>Summary Report</h5>
-                    <p>In this analysis, there are:</p>
-                    <ul>
-                        <li>1000 genes (3000 observed, 7000 inferred)</li>
-                        <li>3000 proteins (2000 observed, 1000 inferred)</li>
-                        <li>300 compounds (200 observed, 100 inferred)</li>
-                        <li>600 reactions in 200 pathways</li>
-                    </ul>
-                    <p>There are 6 samples separated into 2 groups</p>
-                    <p>The following are the list of all annotated items.</p>
-                    <p>The following statistical analyses have been done, with results:</p>
+                    <h5 class="card-title">Database Counts</h5>
+                    <h6 class="card-subtitle mb-2 text-muted">
+                        The following biological entities are found in this analysis.
+                    </h6>
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th scope="col">Data Type</th>
+                                <th scope="col"># Observed</th>
+                                <th scope="col"># Inferred</th>
+                                <th scope="col">Total</th>
+                                <th scope="col">Samples</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Gene data</td>
+                                <td>{{ observed_genes }}</td>
+                                <td>{{ inferred_genes }}</td>
+                                <td>{{ total_genes }}</td>
+                                <td>
+                                    <ul>
+                                        {% for item in gene_samples %}
+                                            <li>{{ item.0 }} ({{ item.1 }})</li>
+                                        {% endfor %}
+                                    </ul>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>Protein data</td>
+                                <td>{{ observed_proteins }}</td>
+                                <td>{{ inferred_proteins }}</td>
+                                <td>{{ total_proteins }}</td>
+                                <td>
+                                    <ul>
+                                        {% for item in protein_samples %}
+                                            <li>{{ item.0 }} ({{ item.1 }})</li>
+                                        {% endfor %}
+                                    </ul>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>Compound data</td>
+                                <td>{{ observed_compounds }}</td>
+                                <td>{{ inferred_compounds }}</td>
+                                <td>{{ total_compounds }}</td>
+                                <td>
+                                    <ul>
+                                        {% for item in compound_samples %}
+                                            <li>{{ item.0 }} ({{ item.1 }})</li>
+                                        {% endfor %}
+                                    </ul>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>Reaction data</td>
+                                <td>-</td>
+                                <td>{{ num_reactions }}</td>
+                                <td>{{ num_reactions }}</td>
+                                <td></td>
+                            </tr>
+                            <tr>
+                                <td>Pathway data</td>
+                                <td>-</td>
+                                <td>{{ num_pathways }}</td>
+                                <td>{{ num_pathways }}</td>
+                                <td></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="m-1 mb-3">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Annotations</h5>
+                    <h6 class="card-subtitle mb-2 text-muted">
+                        The following user annotations have been performed in this analysis.
+                    </h6>
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th scope="col">Data Type</th>
+                                <th scope="col">Database ID</th>
+                                <th scope="col">Annotation</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in annotations %}
+                                <tr>
+                                    <td>{{ item.0 }}</td>
+                                    <td><a href="{{ item.3 }}" target="_blank">{{ item.1 }}</a></td>
+                                    <td>{{ item.2 }}</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
                 </div>
             </div>
         </div>

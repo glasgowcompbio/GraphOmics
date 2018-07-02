@@ -220,7 +220,10 @@ def save_analysis(analysis_name, analysis_desc,
         if group_info is not None:
             for index, row in group_info.iterrows():
                 sample = row['sample']
-                group = row['group']
+                try:
+                    group = row['group']
+                except KeyError: # no group
+                    group = None
                 analysis_sample = AnalysisSample(analysis_data=analysis_data, sample_name=sample,
                                                  group_name=group)
                 analysis_sample.save()
@@ -294,6 +297,7 @@ def csv_to_dataframe(csv_str):
         else:
             filtered_str += line + '\n'
 
+    # extract id values
     data = StringIO(filtered_str)
     try:
         data_df = pd.read_csv(data)
@@ -302,14 +306,17 @@ def csv_to_dataframe(csv_str):
         data_df = None
         id_list = []
 
-    if group_str is not None:
-        print(group_str)
-        group_data = group_str.split(',')
+    # create grouping dataframe
+    group_df = None
+    if data_df is not None:
         sample_data = data_df.columns.values
-        group_df = pd.DataFrame(list(zip(sample_data[1:], group_data[1:])), columns=['sample', 'group'])
+        if group_str is not None:
+            print(group_str)
+            group_data = group_str.split(',')
+            group_df = pd.DataFrame(list(zip(sample_data[1:], group_data[1:])), columns=['sample', 'group'])
+        else:
+            group_df = pd.DataFrame(sample_data[1:], columns=['sample'])
         group_df = group_df[group_df['sample'].str.contains('pvalue') == False]  # filter 'pvalue'
-    else:
-        group_df = None
 
     return data_df, group_df, id_list
 
