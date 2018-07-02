@@ -457,12 +457,14 @@ def get_annotation_url(analysis_id, database_id, data_type):
 def update_annotation(request, analysis_id, database_id, data_type):
     analysis = Analysis.objects.get(id=analysis_id)
     annotation_value = request.POST['annotationValue']
+    display_name = request.POST['displayName']
     annot = AnalysisAnnotation.objects.get_or_create(
         analysis=analysis,
         data_type=data_type,
-        database_id=database_id
+        database_id=database_id,
     )[0]
     annot.annotation = annotation_value
+    annot.display_name = display_name
     annot.timestamp = timezone.localtime()
     annot.save()
     data = {'success': True}

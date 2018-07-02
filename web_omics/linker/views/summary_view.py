@@ -72,7 +72,7 @@ def get_annotations(analysis):
     results = []
     for annot in annotations:
         url = get_url(annot.data_type, annot.database_id)
-        results.append((to_label(annot.data_type), annot.database_id, annot.annotation, url))
+        results.append((to_label(annot.data_type), annot.database_id, annot.annotation, url, annot.display_name))
     return results
 
 

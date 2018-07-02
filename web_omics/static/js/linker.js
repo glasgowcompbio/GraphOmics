@@ -262,9 +262,10 @@ const myLinker = (function () {
                 const tableData = {
                     'id': rowObject[pkCol]
                 };
+                const displayName = rowObject[displayNameCol];
                 let infoDiv = $('<div/>');
                 let infoTitle = $('<h6/>', {
-                    'text': rowObject[displayNameCol]
+                    'text': displayName
                 });
                 infoDiv.append(infoTitle);
 
@@ -276,7 +277,7 @@ const myLinker = (function () {
                     const annotationUrl = data['annotation_url'];
                     const annotationId = data['annotation_id'];
                     const annotationLink = '<button type="button" class="btn btn-default btn-sm"' +
-                        `onclick="annotate('${annotationId}', '${annotationUrl}')"><i class="fas fa-edit"></i></button>`;
+                        `onclick="annotate('${annotationId}', '${annotationUrl}', '${displayName}')"><i class="fas fa-edit"></i></button>`;
                     infoTitle.append(annotationLink);
 
                     let annotationHtml = '';
@@ -433,12 +434,13 @@ const myLinker = (function () {
 
 })();
 
-function annotate(annotationId, annotationUrl) {
+function annotate(annotationId, annotationUrl, displayName) {
     $('#annotationId').val(`annotation-${annotationId}`);
     let annotation = $(`#annotation-${annotationId}`).text();
     if (annotation.length > 0) {
        annotation = annotation.split(':')[1].trim();
     }
+    $('#displayName').val(displayName);
     $('#annotationValue').val(annotation);
     $('#annotationForm').attr('action', annotationUrl);
     $('#annotationDialog').dialog({

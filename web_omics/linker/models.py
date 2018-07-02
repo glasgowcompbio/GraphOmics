@@ -73,5 +73,6 @@ class AnalysisAnnotation(models.Model):
     analysis = models.ForeignKey(Analysis, on_delete=models.CASCADE)
     data_type = models.IntegerField(choices=DataType)
     database_id = models.CharField(max_length=100)
+    display_name = models.CharField(max_length=1000)
     annotation = models.CharField(max_length=1000)
     timestamp = models.DateTimeField(default=timezone.localtime, null=False)
