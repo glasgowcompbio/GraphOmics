@@ -272,6 +272,23 @@ const myLinker = (function () {
                     'html': '<p>Loading data...</p>'
                 });
                 $.getJSON(dataUrl, tableData, data => {
+                    const annotation = data['annotation'];
+                    const annotationUrl = data['annotation_url'];
+                    const annotationId = data['annotation_id'];
+                    const annotationLink = '<button type="button" class="btn btn-default btn-sm"' +
+                        `onclick="annotate('${annotationId}', '${annotationUrl}')"><i class="fas fa-edit"></i></button>`;
+                    infoTitle.append(annotationLink);
+
+                    let annotationHtml = '';
+                    if (annotation.length > 0) {
+                        annotationHtml = `<p><strong>Annotation</strong>: ${annotation}</p>`
+                    }
+                    const annotationDiv = $('<div\>', {
+                        id: `annotation-${annotationId}`,
+                        html: annotationHtml,
+                        class: 'annotation'
+                    });
+                    infoDiv.append(annotationDiv);
 
                     // loop over additional information
                     let infos = data['infos'];
@@ -410,16 +427,77 @@ const myLinker = (function () {
         },
     } // end infoPanesManager
 
-
     return {
         init: linkerResultsManager.init.bind(linkerResultsManager)
     };
 
 })();
 
+function annotate(annotationId, annotationUrl) {
+    $('#annotationId').val(`annotation-${annotationId}`);
+    let annotation = $(`#annotation-${annotationId}`).text();
+    if (annotation.length > 0) {
+       annotation = annotation.split(':')[1].trim();
+    }
+    $('#annotationValue').val(annotation);
+    $('#annotationForm').attr('action', annotationUrl);
+    $('#annotationDialog').dialog({
+        modal: true,
+        width: 460,
+    });
+}
 
 $(document).ready(function () {
 
     let pqr = myLinker.init(data);
+
+    // see https://docs.djangoproject.com/en/dev/ref/csrf/#ajax
+    // using jQuery
+    function getCookie(name) {
+        var cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            var cookies = document.cookie.split(';');
+            for (var i = 0; i < cookies.length; i++) {
+                var cookie = jQuery.trim(cookies[i]);
+                // Does this cookie string begin with the name we want?
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+    var csrftoken = getCookie('csrftoken');
+
+    function csrfSafeMethod(method) {
+        // these HTTP methods do not require CSRF protection
+        return (/^(GET|HEAD|OPTIONS|TRACE)$/.test(method));
+    }
+    $.ajaxSetup({
+        beforeSend: function(xhr, settings) {
+            if (!csrfSafeMethod(settings.type) && !this.crossDomain) {
+                xhr.setRequestHeader("X-CSRFToken", csrftoken);
+            }
+        }
+    });
+
+    $('#annotationSubmit').on('click', function (e) {
+        const form = $('#annotationForm');
+        const action = form.attr('action');
+        const data = form.serialize();
+        $.ajax({
+            type: 'POST',
+            url: action,
+            data: data,
+            success: function () {
+                const annotId = $('#annotationId').val();
+                const annotValue = $('#annotationValue').val();
+                const annotHtml = `<p><strong>Annotation:</strong> ${annotValue}</p>`;
+                $(`#${annotId}`).html(annotHtml);
+                $('#annotationDialog').dialog('close');
+            }
+        });
+    });
 
 });

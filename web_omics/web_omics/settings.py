@@ -11,6 +11,7 @@ import os
 
 from configurations import Configuration, values
 from django.contrib.messages import constants as message_constants
+from django.urls import reverse_lazy
 
 
 class Common(Configuration):
@@ -127,6 +128,7 @@ class Common(Configuration):
     MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
     AUTH_USER_MODEL = 'users.User'
+    LOGIN_URL = reverse_lazy('login')
 
 
 class Development(Common):

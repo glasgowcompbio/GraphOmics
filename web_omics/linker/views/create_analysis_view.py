@@ -22,10 +22,11 @@ class CreateAnalysisView(FormView):
         species_dict = get_species_dict()
         species_list = [species_dict[x] for x in form.cleaned_data['species']]
 
+        current_user = self.request.user
         results = reactome_mapping(self.request, genes_str, proteins_str, compounds_str, species_list)
         analysis, data = save_analysis(analysis_name, analysis_desc,
                                        genes_str, proteins_str, compounds_str,
-                                       results, species_list)
+                                       results, species_list, current_user)
         context = {
             'data': data,
             'analysis_id': analysis.pk,
@@ -49,11 +50,12 @@ class UploadAnalysisView(FormView):
         compounds_str = get_uploaded_data(form.cleaned_data, 'compound_data', 'compound_design')
         species_dict = get_species_dict()
         species_list = [species_dict[x] for x in form.cleaned_data['species']]
+        current_user = self.request.user
 
         results = reactome_mapping(self.request, genes_str, proteins_str, compounds_str, species_list)
         analysis, data = save_analysis(analysis_name, analysis_desc,
                                        genes_str, proteins_str, compounds_str,
-                                       results, species_list)
+                                       results, species_list, current_user)
         context = {
             'data': data,
             'analysis_id': analysis.pk,
@@ -89,13 +91,14 @@ class AddPathwayView(FormView):
         protein_2_genes, _ = uniprot_to_ensembl(all_proteins, species_list)
         all_genes = get_unique_items(protein_2_genes)
 
+        current_user = self.request.user
         genes_str = '\n'.join(['identifier'] + all_genes)
         proteins_str = '\n'.join(['identifier'] + all_proteins)
         compounds_str = '\n'.join(['identifier'] + all_compounds)
         results = reactome_mapping(self.request, genes_str, proteins_str, compounds_str, species_list)
         analysis, data = save_analysis(analysis_name, analysis_desc,
                                        genes_str, proteins_str, compounds_str,
-                                       results, species_list)
+                                       results, species_list, current_user)
         context = {
             'data': data,
             'analysis_id': analysis.pk,

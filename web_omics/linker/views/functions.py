@@ -183,7 +183,7 @@ def reactome_mapping(request, genes_str, proteins_str, compounds_str, species_li
 
 def save_analysis(analysis_name, analysis_desc,
                   genes_str, proteins_str, compounds_str,
-                  results, species_list):
+                  results, species_list, current_user):
     metadata = {
         'genes_str': genes_str,
         'proteins_str': proteins_str,
@@ -192,7 +192,8 @@ def save_analysis(analysis_name, analysis_desc,
     }
     analysis = Analysis.objects.create(name=analysis_name,
                                        description=analysis_desc,
-                                       metadata=metadata)
+                                       metadata=metadata,
+                                       user=current_user)
     print('Saved analysis', analysis.pk, '(', species_list, ')')
     datatype_json = {
         GENOMICS: (results[GENOMICS], 'genes_json', results['group_gene_df']),

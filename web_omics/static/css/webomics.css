@@ -95,3 +95,6 @@ button.dt-button {
     width: 400px;
     height: 400px;
 }
+.annotation {
+    color: red;
+}

@@ -2,18 +2,20 @@ from django.db import models
 from jsonfield import JSONField
 from django.utils import timezone
 from django.conf import settings
-import collections
 import os
 
+from django.contrib.auth import get_user_model
+
+User = get_user_model()
 
 from linker.constants import DataType, DataRelationType, InferenceType
-
 
 class Analysis(models.Model):
     name = models.CharField(max_length=100, null=True)
     description = models.CharField(max_length=1000, null=True)
     timestamp = models.DateTimeField(default=timezone.localtime, null=False)
     metadata = JSONField()
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
 
     def get_species_str(self):
         if 'species_list' in self.metadata:
@@ -64,4 +66,12 @@ class AnalysisResult(models.Model):
     inference_type = models.IntegerField(choices=InferenceType)
     params = JSONField()
     results = JSONField()
+    timestamp = models.DateTimeField(default=timezone.localtime, null=False)
+
+
+class AnalysisAnnotation(models.Model):
+    analysis = models.ForeignKey(Analysis, on_delete=models.CASCADE)
+    data_type = models.IntegerField(choices=DataType)
+    database_id = models.CharField(max_length=100)
+    annotation = models.CharField(max_length=1000)
     timestamp = models.DateTimeField(default=timezone.localtime, null=False)

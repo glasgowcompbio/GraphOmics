@@ -6,10 +6,13 @@ import wikipedia
 from django.http import HttpResponse
 from django.http import JsonResponse
 from django.shortcuts import render, get_object_or_404
+from django.urls import reverse
+from django.utils import timezone
+from django.core.exceptions import ObjectDoesNotExist
 
 from linker.metadata import get_single_ensembl_metadata_online, get_single_uniprot_metadata_online, \
     get_single_compound_metadata_online
-from linker.models import Analysis, AnalysisData
+from linker.models import Analysis, AnalysisData, AnalysisAnnotation
 from linker.reactome import get_reactome_description, get_reaction_entities, pathway_to_reactions
 from linker.constants import *
 
@@ -69,7 +72,7 @@ def settings(request, analysis_id):
     return render(request, 'linker/settings.html', context)
 
 
-def get_ensembl_gene_info(request):
+def get_ensembl_gene_info(request, analysis_id):
     if request.is_ajax():
         ensembl_id = request.GET['id']
         metadata = get_single_ensembl_metadata_online(ensembl_id)
@@ -109,15 +112,20 @@ def get_ensembl_gene_info(request):
         #     href = 'https://www.ensembl.org/id/' + x['id']
         #     links.append({'text': text, 'href': href})
 
+        annotation = get_annotation(analysis_id, ensembl_id, GENOMICS)
+        annotation_url = get_annotation_url(analysis_id, ensembl_id, GENOMICS)
         data = {
             'infos': infos,
             'images': images,
-            'links': links
+            'links': links,
+            'annotation': annotation,
+            'annotation_url': annotation_url,
+            'annotation_id': ensembl_id
         }
         return JsonResponse(data)
 
 
-def get_uniprot_protein_info(request):
+def get_uniprot_protein_info(request, analysis_id):
     if request.is_ajax():
         uniprot_id = request.GET['id']
         metadata = get_single_uniprot_metadata_online(uniprot_id)
@@ -190,22 +198,28 @@ def get_uniprot_protein_info(request):
                 'href': 'https://swissmodel.expasy.org/repository/uniprot/' + uniprot_id
             }
         ]
+
+        annotation = get_annotation(analysis_id, uniprot_id, PROTEOMICS)
+        annotation_url = get_annotation_url(analysis_id, uniprot_id, PROTEOMICS)
         data = {
             'infos': infos,
             'images': images,
-            'links': links
+            'links': links,
+            'annotation': annotation,
+            'annotation_url': annotation_url,
+            'annotation_id': uniprot_id
         }
         return JsonResponse(data)
 
 
-def get_swissmodel_protein_pdb(request):
+def get_swissmodel_protein_pdb(request, analysis_id):
     pdb_url = request.GET['pdb_url']
     with urllib.request.urlopen(pdb_url) as response:
         content = response.read()
         return HttpResponse(content, content_type="text/plain")
 
 
-def get_kegg_metabolite_info(request):
+def get_kegg_metabolite_info(request, analysis_id):
     if request.is_ajax():
 
         compound_id = request.GET['id']
@@ -277,10 +291,15 @@ def get_kegg_metabolite_info(request):
                 if value is not None:
                     infos.append({'key': key, 'value': value})
 
+        annotation = get_annotation(analysis_id, compound_id, METABOLOMICS)
+        annotation_url = get_annotation_url(analysis_id, compound_id, METABOLOMICS)
         data = {
             'infos': infos,
             'images': images,
-            'links': links
+            'links': links,
+            'annotation': annotation,
+            'annotation_url': annotation_url,
+            'annotation_id': compound_id
         }
         return JsonResponse(data)
 
@@ -304,7 +323,7 @@ def get_summary_string(reactome_id):
     return summary_str, is_inferred, original_species, inferred_species
 
 
-def get_reactome_reaction_info(request):
+def get_reactome_reaction_info(request, analysis_id):
     if request.is_ajax():
         reactome_id = request.GET['id']
 
@@ -349,15 +368,20 @@ def get_reactome_reaction_info(request):
                 'href': 'https://reactome.org/content/detail/' + reactome_id
             }
         ]
+        annotation = get_annotation(analysis_id, reactome_id, REACTIONS)
+        annotation_url = get_annotation_url(analysis_id, reactome_id, REACTIONS)
         data = {
             'infos': infos,
             'images': images,
-            'links': links
+            'links': links,
+            'annotation': annotation,
+            'annotation_url': annotation_url,
+            'annotation_id': reactome_id
         }
         return JsonResponse(data)
 
 
-def get_reactome_pathway_info(request):
+def get_reactome_pathway_info(request, analysis_id):
     if request.is_ajax():
 
         pathway_id = request.GET['id']
@@ -394,9 +418,54 @@ def get_reactome_pathway_info(request):
                 'href': 'https://reactome.org/ContentService/exporter/sbml/' + pathway_id + '.xml'
             }
         ]
+        annotation = get_annotation(analysis_id, pathway_id, PATHWAYS)
+        annotation_url = get_annotation_url(analysis_id, pathway_id, PATHWAYS)
         data = {
             'infos': infos,
             'images': images,
-            'links': links
+            'links': links,
+            'annotation': annotation,
+            'annotation_url': annotation_url,
+            'annotation_id': pathway_id
         }
         return JsonResponse(data)
+
+
+def get_annotation(analysis_id, database_id, data_type):
+    analysis = Analysis.objects.get(id=analysis_id)
+    try:
+        annot = AnalysisAnnotation.objects.get(
+            analysis=analysis,
+            database_id=database_id,
+            data_type=data_type
+        )
+        annotation = annot.annotation
+    except ObjectDoesNotExist:
+        annotation = ''
+    return annotation
+
+
+def get_annotation_url(analysis_id, database_id, data_type):
+    annotation_url = reverse('update_annotation', kwargs={
+        'analysis_id': analysis_id,
+        'database_id': database_id,
+        'data_type': data_type
+    })
+    return annotation_url
+
+
+def update_annotation(request, analysis_id, database_id, data_type):
+    analysis = Analysis.objects.get(id=analysis_id)
+    annotation_value = request.POST['annotationValue']
+    annot = AnalysisAnnotation.objects.get_or_create(
+        analysis=analysis,
+        data_type=data_type,
+        database_id=database_id
+    )[0]
+    annot.annotation = annotation_value
+    annot.timestamp = timezone.localtime()
+    annot.save()
+    data = {'success': True}
+    return JsonResponse(data)
+
+

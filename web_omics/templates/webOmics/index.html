@@ -9,13 +9,14 @@
                 <h3>Analysis</h3>
                 <p>
                     The following table shows all data integration analyses that have been created.
-                    To add a new analysis, click the [Create] button below.
+                    To add a new analysis, click the Create button below.
                 </p>
                 <table border="1" width="100%">
                     <tr>
                         <th>Analysis Name</th>
                         <th>Analysis Description</th>
                         <th>Species</th>
+                        <th>User</th>
                         <th>Date</th>
                     </tr>
                     {% for analysis in object_list %}
@@ -25,16 +26,19 @@
                             </td>
                             <td>{{ analysis.description }}</td>
                             <td>{{ analysis.get_species_str }}</td>
+                            <td>{{ analysis.user }}</td>
                             <td>{{ analysis.timestamp|date:"jS F Y H:i" }}</td>
                         </tr>
                     {% endfor %}
                 </table>
-                <br/>
-                <p>
-                    <a href="{% url "create_analysis" %}" class="btn btn-primary">
-                        Create a New Data Integration Analysis
-                    </a>
-                </p>
+                {% if user.is_authenticated %}
+                    <br/>
+                    <p>
+                        <a href="{% url "create_analysis" %}" class="btn btn-primary">
+                            Create a New Data Integration Analysis
+                        </a>
+                    </p>
+                {% endif %}
             </div>
         </div>
     </div>

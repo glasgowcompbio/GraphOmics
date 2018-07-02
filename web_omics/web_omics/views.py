@@ -1,12 +1,23 @@
-from django.shortcuts import render
-from django.template.loader import render_to_string
 from django.views.generic.list import ListView
 from django.utils import timezone
+
+from django.contrib.auth.decorators import login_required
+from django.views.generic import View
+from django.utils.decorators import method_decorator
 
 from linker.models import Analysis
 
 
-class ExperimentListView(ListView):
+class LoginRequired(View):
+    """
+    Redirects to login if user is anonymous
+    """
+    @method_decorator(login_required)
+    def dispatch(self, *args, **kwargs):
+        return super(LoginRequired, self).dispatch(*args, **kwargs)
+
+
+class ExperimentListView(LoginRequired, ListView):
 
     model = Analysis
     paginate_by = 100  # if pagination is desired
@@ -16,3 +27,6 @@ class ExperimentListView(ListView):
         context = super().get_context_data(**kwargs)
         context['now'] = timezone.now()
         return context
+
+    def get_queryset(self):
+        return Analysis.objects.filter(user=self.request.user)

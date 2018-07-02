@@ -10,6 +10,7 @@ from registration.forms import UserForm
 
 User = get_user_model()
 
+
 def user_logout(request):
     logout(request)
     return HttpResponseRedirect('/')

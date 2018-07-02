@@ -7,6 +7,8 @@
     <!-- link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/v/dt/dt-1.10.16/sc-1.4.4/sl-1.2.5/datatables.min.css"/ -->
     <link rel="stylesheet" type="text/css"
           href="https://cdn.datatables.net/v/dt/dt-1.10.16/b-1.5.1/b-colvis-1.5.1/r-2.2.1/sc-1.4.4/sl-1.2.5/datatables.min.css"/>
+    <link rel="stylesheet" type="text/css"
+          href="https://code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css"/>
 {% endblock %}
 
 {% block body_block %}
@@ -20,14 +22,16 @@
                         Data</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" href="{% url 'inference' analysis_id=analysis_id %}">📊 Inference</a>
-                </li>
-                <li class="nav-item">
                     <a class="nav-link" href="{% url 'summary' analysis_id=analysis_id %}">📘 Summary</a>
                 </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="{% url 'settings' analysis_id=analysis_id %}">⚙️ Settings</a>
-                </li>
+                {% if user.is_authenticated %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'inference' analysis_id=analysis_id %}">📊 Inference</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'settings' analysis_id=analysis_id %}">⚙️ Settings</a>
+                    </li>
+                {% endif %}
             </ul>
         </div>
 
@@ -132,6 +136,18 @@
 
         </div>
 
+        <div id="annotationDialog" title="Update Annotation" style="display: none">
+            <form id="annotationForm" action="">
+                <fieldset>
+                    <input type="hidden" id="annotationId" />
+                    <label for="annotation">Annotation</label>
+                    <textarea class="form-control" rows="5" id="annotationValue" name="annotationValue"></textarea>
+                </fieldset>
+                <br/>
+                <input type="button" id="annotationSubmit" name="submit" value="Save" class="btn btn-primary"/>
+            </form>
+        </div>
+
     </div>
 
 {% endblock %}
@@ -165,16 +181,15 @@
             pathways: pathways,
             reaction_pathways: reaction_pathways
         }
-        const get_ensembl_gene_info = "{% url "get_ensembl_gene_info" %}";
-        const get_uniprot_protein_info = "{% url "get_uniprot_protein_info" %}";
-        const get_swissmodel_protein_pdb = "{% url "get_swissmodel_protein_pdb" %}";
-        const get_kegg_metabolite_info = "{% url "get_kegg_metabolite_info" %}";
-        const get_reactome_reaction_info = "{% url "get_reactome_reaction_info" %}";
-        const get_reactome_pathway_info = "{% url "get_reactome_pathway_info" %}";
+        const get_ensembl_gene_info = "{% url "get_ensembl_gene_info" analysis_id=analysis_id %}";
+        const get_uniprot_protein_info = "{% url "get_uniprot_protein_info" analysis_id=analysis_id %}";
+        const get_swissmodel_protein_pdb = "{% url "get_swissmodel_protein_pdb" analysis_id=analysis_id %}";
+        const get_kegg_metabolite_info = "{% url "get_kegg_metabolite_info" analysis_id=analysis_id %}";
+        const get_reactome_reaction_info = "{% url "get_reactome_reaction_info" analysis_id=analysis_id %}";
+        const get_reactome_pathway_info = "{% url "get_reactome_pathway_info" analysis_id=analysis_id %}";
         const biopv_url = "{% static "js/bio-pv.min.js" %}";
     </script>
     <script type='text/javascript' src='{% static "js/require.js" %}'></script>
     <script type='text/javascript' src='{% static "js/linker.js" %}'></script>
-
 
 {% endblock %}
