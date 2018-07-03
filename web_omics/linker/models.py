@@ -64,6 +64,7 @@ class AnalysisSample(models.Model):
 class AnalysisResult(models.Model):
     analysis_data = models.ForeignKey(AnalysisData, on_delete=models.CASCADE)
     inference_type = models.IntegerField(choices=InferenceTypeChoices)
+    display_name = models.CharField(max_length=1000)
     params = JSONField()
     results = JSONField()
     timestamp = models.DateTimeField(default=timezone.localtime, null=False)

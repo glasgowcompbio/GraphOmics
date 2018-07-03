@@ -33,9 +33,9 @@ T_TEST, CORRELATION, PCA, PLSDA, HIERARCHICAL, KMEANS = range(0, 6)
 InferenceTypeChoices = (
     (None, NA),
     (T_TEST, 't-test'),
-    (CORRELATION, 'Correlation Analysis'),
-    (PCA, 'Principal Component Analysis'),
-    (PLSDA, 'Partial Least Square - Disciminant Analysis'),
-    (HIERARCHICAL, 'Hierarchical Clustering'),
-    (KMEANS, 'K-Means')
+    # (CORRELATION, 'Correlation Analysis'),
+    # (PCA, 'Principal Component Analysis'),
+    # (PLSDA, 'Partial Least Square - Disciminant Analysis'),
+    # (HIERARCHICAL, 'Hierarchical Clustering'),
+    # (KMEANS, 'K-Means')
 )

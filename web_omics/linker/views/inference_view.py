@@ -17,8 +17,10 @@ def inference(request, analysis_id):
             data_type = int(form.cleaned_data['data_type'])
             inference_type = int(form.cleaned_data['inference_type'])
 
+            # run t-test analysis
             if inference_type == T_TEST:
-                groups = get_groups(analysis, data_type)
+                analysis_data = get_analysis_data(analysis, data_type)
+                groups = get_groups(analysis_data)
                 action_url = reverse('inference_t_test', kwargs={
                     'analysis_id': analysis_id,
                 })
@@ -60,14 +62,15 @@ def inference_t_test(request, analysis_id):
         analysis = get_object_or_404(Analysis, pk=analysis_id)
         form = T_test_Form(request.POST)
         data_type = int(request.POST['data_type'])
-        groups = get_groups(analysis, data_type)
+        analysis_data = get_analysis_data(analysis, data_type)
+        groups = get_groups(analysis_data)
         form.fields['case'] = forms.ChoiceField(choices=groups, widget=Select2Widget())
         form.fields['control'] = forms.ChoiceField(choices=groups, widget=Select2Widget())
 
         if form.is_valid():
             case = form.cleaned_data['case']
             control = form.cleaned_data['control']
-            do_t_test(analysis, case, control)
+            do_t_test(analysis_data, case, control)
             messages.success(request, 'Add new inference successful.', extra_tags='primary')
             return inference(request, analysis_id)
         else:
@@ -76,12 +79,16 @@ def inference_t_test(request, analysis_id):
     return inference(request, analysis_id)
 
 
-def get_groups(analysis, data_type):
+def get_analysis_data(analysis, data_type):
     analysis_data = [x for x in analysis.analysisdata_set.all() if x.data_type == data_type][0]
+    return analysis_data
+
+
+def get_groups(analysis_data):
     analysis_groups = set([x.group_name for x in analysis_data.analysissample_set.all()])
     groups = ((None, NA),) + tuple(zip(range(len(analysis_groups)), analysis_groups))
     return groups
 
 
-def do_t_test(analysis, case, control):
+def do_t_test(analysis_data, case, control):
     pass
