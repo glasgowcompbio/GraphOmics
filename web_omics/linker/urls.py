@@ -10,6 +10,7 @@ urlpatterns = [
     path('explore_data/<int:analysis_id>', views.explore_data, name='explore_data'),
     path('explore_data/<int:analysis_id>/annotate/<int:data_type>/<str:database_id>', views.update_annotation, name='update_annotation'),
     path('inference/<int:analysis_id>', views.inference, name='inference'),
+    path('inference/t_test/<int:analysis_id>', views.inference_t_test, name='inference_t_test'),
     path('summary/<int:analysis_id>', views.summary, name='summary'),
     path('settings/<int:analysis_id>', views.settings, name='settings'),
     path('settings/add_data/<int:analysis_id>', views.add_data, name='add_data'),

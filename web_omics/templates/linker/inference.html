@@ -4,9 +4,12 @@
 {% block title %}WebOmics{% endblock %}
 
 {% block head_block %}
-    <!-- link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/v/dt/dt-1.10.16/sc-1.4.4/sl-1.2.5/datatables.min.css"/ -->
-    <link rel="stylesheet" type="text/css"
-          href="https://cdn.datatables.net/v/dt/dt-1.10.16/b-1.5.1/b-colvis-1.5.1/r-2.2.1/sc-1.4.4/sl-1.2.5/datatables.min.css"/>
+    {{ form.media.css }}
+    <style type="text/css">
+        select {
+            width: 600px;
+        }
+    </style>
 {% endblock %}
 
 {% block body_block %}
@@ -33,49 +36,26 @@
         </div>
 
         <div class="m-1 mb-3">
-            <div class="card mb-3">
-                <div class="card card-body">
-                    <h5 class="card-title">
-                        Create a new inference
-                    </h5>
+            <div class="card">
+                <div class="card-body">
+                    <h5>Create a new inference</h5>
+                    {% if messages %}
+                        {% for message in messages %}
+                            <div class="alert alert-{{ message.tags }}" role="alert">
+                                {{ message }}
+                            </div>
+                        {% endfor %}
+                    {% endif %}
                     <form id="inference_form"
                           method="post"
+                          action="{{ action_url }}"
                           enctype="multipart/form-data">
-                        <div class="form-group">
-                            <label for="exampleFormControlSelect0">Data Type</label>
-                            <select class="form-control" id="exampleFormControlSelect0">
-                                <option>Gene Data</option>
-                                <option>Protein Data</option>
-                                <option>Compound Data</option>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label for="exampleFormControlSelect1">Inference Type</label>
-                            <select class="form-control" id="exampleFormControlSelect1">
-                                <option>Fold change</option>
-                                <option>T-test</option>
-                                <option>Correlation</option>
-                                <option>Principal Component Analysis (PCA)</option>
-                                <option>Partial Least Squares - Discriminant Analysis (PLS-DA)</option>
-                                <option>Hierarchical Clustering</option>
-                                <option>K-means</option>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label for="exampleFormControlSelect2">Control</label>
-                            <select class="form-control" id="exampleFormControlSelect2">
-                                <option>Wildtype</option>
-                                <option>Mutant</option>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label for="exampleFormControlSelect2">Condition</label>
-                            <select class="form-control" id="exampleFormControlSelect2">
-                                <option>Wildtype</option>
-                                <option>Mutant</option>
-                            </select>
-                        </div>
-                        <button type="submit" class="btn btn-primary">Submit</button>
+                        {% csrf_token %}
+                        <table>
+                            {{ form.as_table }}
+                        </table>
+                        <br/>
+                        <input type="submit" id="form_submit" name="submit" value="Save" class="btn btn-primary"/>
                     </form>
                 </div>
             </div>
@@ -86,5 +66,10 @@
 {% endblock %}
 
 {% block js_block %}
-
+    <script type='text/javascript'>
+        $('#id_inference_type').on('change', function() {
+            $('#form_submit').click();
+        })
+    </script>
+    {{ form.media.js }}
 {% endblock %}

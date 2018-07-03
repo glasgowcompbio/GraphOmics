@@ -39,10 +39,37 @@
             <p>
                 <small><strong>{{ analysis_name }}</strong>: {{ analysis_description }} ({{ analysis_species }})</small>
             </p>
-            <form class="form-inline">
-                <input class="form-control" type="search" placeholder="Search" aria-label="Search"
-                       style="width: 600px;"
-                       id="global_filter">
+        </div>
+
+        <div class="">
+            <form>
+                <div class="row">
+                    <div class="col-6">
+                        <input class="form-control" type="search" placeholder="Search" aria-label="Search"
+                               id="global_filter">
+                    </div>
+                    <div class="col-6  text-right">
+                        <div class="form-check-inline">
+                            <input class="form-check-input" type="checkbox" value="" id="defaultCheck1">
+                            <label class="form-check-label" for="defaultCheck1">
+                                Filter significant items
+                            </label>
+                            &nbsp;&nbsp;&nbsp;&nbsp;
+                            <div class="dropdown">
+                                <button class="btn btn-primary dropdown-toggle" type="button" id="dropdownMenuButton"
+                                        data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                    Colour tables by
+                                </button>
+                                <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+                                    <a class="dropdown-item" href="#">t-test</a>
+                                    <a class="dropdown-item" href="#">fold change</a>
+                                    <a class="dropdown-item" href="#">Correlation</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                &nbsp;
                 <!--button class="btn btn-success my-2 my-sm-0" type="button">Search</button-->
             </form>
         </div>
@@ -139,8 +166,8 @@
         <div id="annotationDialog" title="Update Annotation" style="display: none">
             <form id="annotationForm" action="">
                 <fieldset>
-                    <input type="hidden" id="annotationId" />
-                    <input type="hidden" id="displayName" name="displayName" />
+                    <input type="hidden" id="annotationId"/>
+                    <input type="hidden" id="displayName" name="displayName"/>
                     <label for="annotation">Annotation</label>
                     <textarea class="form-control" rows="5" id="annotationValue" name="annotationValue"></textarea>
                 </fieldset>

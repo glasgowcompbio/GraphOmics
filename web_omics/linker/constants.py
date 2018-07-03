@@ -1,7 +1,10 @@
 TRUNCATE_LIMIT = 400
 
+NA = '-'
+
 GENOMICS, TRANSCRIPTOMICS, PROTEOMICS, METABOLOMICS, REACTIONS, PATHWAYS = range(0, 6)
 AddNewDataChoices = (
+    (None, NA),
     (GENOMICS, 'Gene Data'),
     (PROTEOMICS, 'Protein Data'),
     (METABOLOMICS, 'Compound Data'),
@@ -26,11 +29,11 @@ DataRelationType = DataType + (
     (REACTIONS_TO_PATHWAYS, 'Reaction to Pathways')
 )
 
-FOLD_CHANGE, T_TEST, CORRELATION, PCA, PLSDA, HIERARCHICAL, KMEANS = range(0, 7)
-InferenceType = (
-    (FOLD_CHANGE, 'Fold Change'),
-    (T_TEST, 'Transcriptomics'),
-    (CORRELATION, 'Proteomics'),
+T_TEST, CORRELATION, PCA, PLSDA, HIERARCHICAL, KMEANS = range(0, 6)
+InferenceTypeChoices = (
+    (None, NA),
+    (T_TEST, 't-test'),
+    (CORRELATION, 'Correlation Analysis'),
     (PCA, 'Principal Component Analysis'),
     (PLSDA, 'Partial Least Square - Disciminant Analysis'),
     (HIERARCHICAL, 'Hierarchical Clustering'),
