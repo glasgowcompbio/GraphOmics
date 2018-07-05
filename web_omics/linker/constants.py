@@ -1,6 +1,7 @@
 TRUNCATE_LIMIT = 400
 
 NA = '-'
+ALL = 'ALL'
 
 GENOMICS, TRANSCRIPTOMICS, PROTEOMICS, METABOLOMICS, REACTIONS, PATHWAYS = range(0, 6)
 AddNewDataChoices = (
@@ -33,9 +34,9 @@ T_TEST, CORRELATION, PCA, PLSDA, HIERARCHICAL, KMEANS = range(0, 6)
 InferenceTypeChoices = (
     (None, NA),
     (T_TEST, 't-test'),
+    (HIERARCHICAL, 'Hierarchical Clustering'),
     # (CORRELATION, 'Correlation Analysis'),
     # (PCA, 'Principal Component Analysis'),
     # (PLSDA, 'Partial Least Square - Disciminant Analysis'),
-    # (HIERARCHICAL, 'Hierarchical Clustering'),
     # (KMEANS, 'K-Means')
 )

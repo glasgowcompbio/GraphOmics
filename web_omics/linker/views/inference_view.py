@@ -4,8 +4,10 @@ from django_select2.forms import Select2Widget
 from django.urls import reverse
 from django.contrib import messages
 
+import pandas as pd
+
 from linker.constants import *
-from linker.forms import BaseInferenceForm, T_test_Form
+from linker.forms import BaseInferenceForm, T_test_Form, HierarchicalClusteringForm
 from linker.models import Analysis
 
 
@@ -29,6 +31,19 @@ def inference(request, analysis_id):
                 selected_form.fields['inference_type'].initial = inference_type
                 selected_form.fields['case'] = forms.ChoiceField(choices=groups, widget=Select2Widget())
                 selected_form.fields['control'] = forms.ChoiceField(choices=groups, widget=Select2Widget())
+
+            # do hierarchical clustering
+            elif inference_type == HIERARCHICAL:
+                analysis_data = get_analysis_data(analysis, data_type)
+                groups = get_groups(analysis_data) + ((ALL, ALL),)
+                action_url = reverse('inference_hierarchical', kwargs={
+                    'analysis_id': analysis_id,
+                })
+                selected_form = HierarchicalClusteringForm()
+                selected_form.fields['data_type'].initial = data_type
+                selected_form.fields['inference_type'].initial = inference_type
+                selected_form.fields['group'] = forms.ChoiceField(choices=groups, widget=Select2Widget())
+
 
             else: # default
                 action_url = reverse('inference', kwargs={
@@ -70,7 +85,28 @@ def inference_t_test(request, analysis_id):
         if form.is_valid():
             case = form.cleaned_data['case']
             control = form.cleaned_data['control']
-            do_t_test(analysis_data, case, control)
+            do_t_test(analysis_data.json_data, case, control)
+            messages.success(request, 'Add new inference successful.', extra_tags='primary')
+            return inference(request, analysis_id)
+        else:
+            messages.warning(request, 'Add new inference failed.')
+
+    return inference(request, analysis_id)
+
+
+def inference_hierarchical(request, analysis_id):
+    if request.method == 'POST':
+
+        analysis = get_object_or_404(Analysis, pk=analysis_id)
+        form = HierarchicalClusteringForm(request.POST)
+        data_type = int(request.POST['data_type'])
+        analysis_data = get_analysis_data(analysis, data_type)
+        groups = get_groups(analysis_data) + ((ALL, ALL),)
+        form.fields['group'] = forms.ChoiceField(choices=groups, widget=Select2Widget())
+
+        if form.is_valid():
+            group = form.cleaned_data['group']
+            do_hierarchical_clustering(analysis_data.json_data, group)
             messages.success(request, 'Add new inference successful.', extra_tags='primary')
             return inference(request, analysis_id)
         else:
@@ -85,10 +121,16 @@ def get_analysis_data(analysis, data_type):
 
 
 def get_groups(analysis_data):
-    analysis_groups = set([x.group_name for x in analysis_data.analysissample_set.all()])
-    groups = ((None, NA),) + tuple(zip(range(len(analysis_groups)), analysis_groups))
+    analysis_groups = set([x.level for x in analysis_data.analysissample_set.all()])
+    groups = ((None, NA),) + tuple(zip(analysis_groups, analysis_groups))
     return groups
 
 
-def do_t_test(analysis_data, case, control):
+def do_t_test(data, case, control):
+    pass
+
+
+def do_hierarchical_clustering(data, group):
+    df = pd.DataFrame(data)
+    df.to_pickle('notebooks/gene_data.p')
     pass

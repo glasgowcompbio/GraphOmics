@@ -103,3 +103,9 @@ class T_test_Form(forms.Form):
     inference_type = forms.ChoiceField(required=True, choices=InferenceTypeChoices, widget=Select2Widget())
     case = forms.ChoiceField(required=True, widget=Select2Widget())
     control = forms.ChoiceField(required=True, widget=Select2Widget())
+
+
+class HierarchicalClusteringForm(forms.Form):
+    data_type = forms.ChoiceField(required=True, choices=AddNewDataChoices, widget=Select2Widget())
+    inference_type = forms.ChoiceField(required=True, choices=InferenceTypeChoices, widget=Select2Widget())
+    group = forms.ChoiceField(required=True, widget=Select2Widget())
