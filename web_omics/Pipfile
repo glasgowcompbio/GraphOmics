@@ -1,21 +1,16 @@
 [[source]]
-
 url = "https://pypi.python.org/simple"
 verify_ssl = true
 name = "pypi"
 
-
 [dev-packages]
-
 werkzeug = "==0.12.2"
 django = "*"
 django-configurations = "*"
 ipython = "*"
 jupyter = "*"
 
-
 [packages]
-
 dj-database-url = "==0.4.2"
 django-configurations = "==2.0.0"
 django-debug-toolbar = "==1.9.1"
@@ -35,8 +30,8 @@ xmltodict = "*"
 bioservices = "*"
 tables = "*"
 wikipedia = "*"
-
+"django-select2" = "*"
+jsonfield = "*"
 
 [requires]
-
 python_version = "3.6"
