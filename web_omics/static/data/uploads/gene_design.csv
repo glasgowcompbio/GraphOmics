@@ -1,4 +1,10 @@
 sample,group
-INF2cnt,Wildtype
-INF4cnt,Wildtype
-INF3cnt,Mutant
+HK1cnt,HK
+HK2cnt,HK
+HK3cnt,HK
+INF2cnt,INFEC
+INF3cnt,INFEC
+INF4cnt,INFEC
+M01cnt,UN
+M02cnt,UN
+M03cnt,UN

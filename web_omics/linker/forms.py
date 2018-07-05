@@ -19,9 +19,9 @@ def load_example_data(file_path):
     return example_data
 
 
-example_genes = load_example_data('../static/data/gene_data_small.csv')
+example_genes = load_example_data('../static/data/uploads/gene_data_example.csv')
 example_proteins = ""
-example_compounds = load_example_data('../static/data/compound_data.csv')
+example_compounds = load_example_data('../static/data/uploads/compound_data_example.csv')
 
 # example_genes = load_example_data('../static/data/gene_data.csv')
 # example_proteins = ""
