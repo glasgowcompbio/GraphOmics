@@ -63,7 +63,7 @@ def get_reaction_pathway_counts(analysis):
 def get_samples(analysis, data_type):
     analysis_data = AnalysisData.objects.filter(analysis=analysis, data_type=data_type).first()
     analysis_samples = analysis_data.analysissample_set.all()
-    results = [(x.sample_name, x.group_name) for x in analysis_samples]
+    results = [(x.sample_name, x.factor, x.level) for x in analysis_samples]
     return results
 
 

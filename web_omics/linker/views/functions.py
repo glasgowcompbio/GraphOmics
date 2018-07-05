@@ -217,15 +217,17 @@ def save_analysis(analysis_name, analysis_desc,
         print('Saved analysis data', analysis_data.pk, 'for analysis', analysis.pk)
 
         # save analysis data sample too
+        # TODO: allow multiple factors
+        factor = 'group'
         if group_info is not None:
             for index, row in group_info.iterrows():
                 sample = row['sample']
                 try:
-                    group = row['group']
+                    level = row[factor]
                 except KeyError: # no group
-                    group = None
+                    level = None
                 analysis_sample = AnalysisSample(analysis_data=analysis_data, sample_name=sample,
-                                                 group_name=group)
+                                                 factor=factor, level=level)
                 analysis_sample.save()
                 print('Saved analysis sample', analysis_sample.pk, 'for analysis data',
                       analysis_data.pk)

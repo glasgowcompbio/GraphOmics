@@ -58,8 +58,8 @@ class AnalysisData(models.Model):
 class AnalysisSample(models.Model):
     analysis_data = models.ForeignKey(AnalysisData, on_delete=models.CASCADE)
     sample_name = models.CharField(max_length=100)
-    group_name = models.CharField(max_length=100, blank=True, null=True)
-
+    factor = models.CharField(max_length=100, blank=True, null=True)
+    level = models.CharField(max_length=100, blank=True, null=True)
 
 class AnalysisResult(models.Model):
     analysis_data = models.ForeignKey(AnalysisData, on_delete=models.CASCADE)

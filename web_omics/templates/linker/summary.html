@@ -58,7 +58,7 @@
                                 <td>
                                     <ul>
                                         {% for item in gene_samples %}
-                                            <li>{{ item.0 }} ({{ item.1 }})</li>
+                                            <li>{{ item.0 }} ({{ item.1 }}: {{ item.2 }})</li>
                                         {% endfor %}
                                     </ul>
                                 </td>
@@ -71,7 +71,7 @@
                                 <td>
                                     <ul>
                                         {% for item in protein_samples %}
-                                            <li>{{ item.0 }} ({{ item.1 }})</li>
+                                            <li>{{ item.0 }} ({{ item.1 }}: {{ item.2 }})</li>
                                         {% endfor %}
                                     </ul>
                                 </td>
@@ -84,7 +84,7 @@
                                 <td>
                                     <ul>
                                         {% for item in compound_samples %}
-                                            <li>{{ item.0 }} ({{ item.1 }})</li>
+                                            <li>{{ item.0 }} ({{ item.1 }}: {{ item.2 }})</li>
                                         {% endfor %}
                                     </ul>
                                 </td>
