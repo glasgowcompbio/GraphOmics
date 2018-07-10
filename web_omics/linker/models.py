@@ -10,6 +10,7 @@ User = get_user_model()
 
 from linker.constants import DataType, DataRelationType, InferenceTypeChoices
 
+
 class Analysis(models.Model):
     name = models.CharField(max_length=100, null=True)
     description = models.CharField(max_length=1000, null=True)
@@ -50,9 +51,27 @@ class AnalysisUpload(models.Model):
 
 
 class AnalysisData(models.Model):
+    parent = models.ForeignKey("self", blank=True, null=True, on_delete=models.CASCADE)
     analysis = models.ForeignKey(Analysis, on_delete=models.CASCADE)
+    display_name = models.CharField(max_length=1000)
     json_data = JSONField()
+    json_design = JSONField()
     data_type = models.IntegerField(choices=DataRelationType)
+    inference_type = models.IntegerField(choices=InferenceTypeChoices, blank=True, null=True)
+    metadata = JSONField(blank=True, null=True)
+    timestamp = models.DateTimeField(default=timezone.localtime, null=False)
+
+    def get_data_type_str(self):
+        try:
+            return dict(DataRelationType)[self.data_type]
+        except KeyError:
+            return ''
+
+    def get_inference_type_str(self):
+        try:
+            return dict(InferenceTypeChoices)[self.inference_type]
+        except KeyError:
+            return ''
 
 
 class AnalysisSample(models.Model):
@@ -60,14 +79,6 @@ class AnalysisSample(models.Model):
     sample_name = models.CharField(max_length=100)
     factor = models.CharField(max_length=100, blank=True, null=True)
     level = models.CharField(max_length=100, blank=True, null=True)
-
-class AnalysisResult(models.Model):
-    analysis_data = models.ForeignKey(AnalysisData, on_delete=models.CASCADE)
-    inference_type = models.IntegerField(choices=InferenceTypeChoices)
-    display_name = models.CharField(max_length=1000)
-    params = JSONField()
-    results = JSONField()
-    timestamp = models.DateTimeField(default=timezone.localtime, null=False)
 
 
 class AnalysisAnnotation(models.Model):

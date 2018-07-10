@@ -32,6 +32,7 @@ tables = "*"
 wikipedia = "*"
 "django-select2" = "*"
 jsonfield = "*"
+scikit-learn = "*"
 
 [requires]
 python_version = "3.6"

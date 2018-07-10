@@ -38,16 +38,21 @@ def explore_data(request, analysis_id):
         REACTIONS_TO_PATHWAYS: 'reaction_pathways_json'
     }
     data = {}
+    data_display_name = {}
     for k, v in DataRelationType:
-        analysis_data = AnalysisData.objects.filter(analysis=analysis, data_type=k).first()
-        if analysis_data:
-            try:
-                label = mapping[k]
-                data[label] = json.dumps(analysis_data.json_data)
-            except KeyError:
-                continue
+        try:
+            analysis_data = AnalysisData.objects.filter(analysis=analysis, data_type=k).order_by('-timestamp')[0]
+            label = mapping[k]
+            data[label] = json.dumps(analysis_data.json_data)
+            data_display_name[k] = analysis_data.display_name
+        except IndexError:
+            continue
+        except KeyError:
+            continue
+
     context = {
         'data': data,
+        'data_display_name': data_display_name,
         'analysis_id': analysis.pk,
         'analysis_name': analysis.name,
         'analysis_description': analysis.description,

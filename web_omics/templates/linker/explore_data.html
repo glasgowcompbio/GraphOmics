@@ -79,7 +79,7 @@
             <!-- Gene card -->
             <div class="card border-light">
                 <div class="card-block">
-                    <div class="card-header bg-light m-0">Gene Data</div>
+                    <div class="card-header bg-light m-0"><strong>Gene {% if data_display_name.0 %}({{ data_display_name.0 }}){% endif %}</strong></div>
                     <div class="card-table p-1">
                         <table id="genes_table" class="table hover compact pod-table" style="width:100%">
                         </table>
@@ -96,7 +96,7 @@
             <!-- Protein card -->
             <div class="card border-light">
                 <div class="card-block">
-                    <div class="card-header bg-light m-0">Protein Data</div>
+                    <div class="card-header bg-light m-0"><strong>Protein {% if data.display_name.2 %}({{ data_display_name.2 }}){% endif %}</strong></div>
                     <div class="card-table p-1">
                         <table id="proteins_table" class="table hover compact pod-table" style="width:100%">
                         </table>
@@ -113,7 +113,7 @@
             <!-- Compound card -->
             <div class="card border-light">
                 <div class="card-block">
-                    <div class="card-header bg-light m-0">Compound Data</div>
+                    <div class="card-header bg-light m-0"><strong>Compound {% if data_display_name.3 %}({{ data_display_name.3 }}){% endif %}</strong></div>
                     <div class="card-table p-1">
                         <table id="compounds_table" class="table hover compact pod-table" style="width:100%">
                         </table>
@@ -130,7 +130,7 @@
             <!-- Reaction card -->
             <div class="card border-light">
                 <div class="card-block">
-                    <div class="card-header bg-light m-0">Reaction Data</div>
+                    <div class="card-header bg-light m-0"><strong>Reactions {% if data_display_name.4 %}({{ data_display_name.4 }}){% endif %}</strong></div>
                     <div class="card-table p-1">
                         <table id="reactions_table" class="table hover compact pod-table" style="width:100%">
                         </table>
@@ -147,7 +147,7 @@
             <!-- Pathway card -->
             <div class="card border-light" style="flex-grow:2">
                 <div class="card-block">
-                    <div class="card-header bg-light m-0">Pathway Data</div>
+                    <div class="card-header bg-light m-0"><strong>Pathway {% if data_display_name.5 %}({{ data_display_name.5 }}){% endif %}</strong></div>
                     <div class="card-table p-1">
                         <table id="pathways_table" class="table hover compact pod-table" style="width:100%">
                         </table>

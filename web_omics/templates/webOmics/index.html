@@ -11,14 +11,16 @@
                     The following table shows all data integration analyses that have been created.
                     To add a new analysis, click the Create button below.
                 </p>
-                <table border="1" width="100%">
-                    <tr>
-                        <th>Analysis Name</th>
-                        <th>Analysis Description</th>
-                        <th>Species</th>
-                        <th>User</th>
-                        <th>Date</th>
-                    </tr>
+                <table class="table table-bordered table-hover">
+                    <thead class="thead-light">
+                        <tr>
+                            <th>Analysis Name</th>
+                            <th>Analysis Description</th>
+                            <th>Species</th>
+                            <th>User</th>
+                            <th>Date</th>
+                        </tr>
+                    </thead>
                     {% for analysis in object_list %}
                         <tr>
                             <td>

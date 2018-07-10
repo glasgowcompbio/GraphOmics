@@ -142,8 +142,8 @@ def kegg_to_chebi(compound_ids):
             else:
                 print('ChEBI %s --> ChEBI %s' % (compound_id, compound_id))
                 results[compound_id] = compound_id
-        except AttributeError:
-            print('ChEBI %s --> ChEBI %s' % (compound_id, compound_id))
+        except Exception:
+            print('KEGG %s --> KEGG %s' % (compound_id, compound_id))
             results[compound_id] = compound_id
     return results
 

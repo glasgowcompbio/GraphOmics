@@ -34,7 +34,11 @@ def reactome_mapping(request, genes_str, proteins_str, compounds_str, species_li
     # try to convert all kegg ids to chebi ids, if possible
     print('Converting kegg ids -> chebi ids')
     observed_compound_ids = get_ids_from_dataframe(observed_compound_df)
-    kegg_2_chebi = kegg_to_chebi(observed_compound_ids)
+    try:
+        kegg_2_chebi = kegg_to_chebi(observed_compound_ids)
+    except Exception: # shouldn't happen?
+        kegg_2_chebi = dict(zip(observed_compound_ids, observed_compound_ids))
+
     if observed_compound_df is not None:
         observed_compound_df.iloc[:, 0] = observed_compound_df.iloc[:, 0].map(
             kegg_2_chebi)  # assume 1st column is id
@@ -212,7 +216,10 @@ def save_analysis(analysis_name, analysis_desc,
         # v is a tuple defined in the datatype_json dictionary above
         json_str, ui_label, group_info = v
         data[ui_label] = json_str
-        analysis_data = AnalysisData(analysis=analysis, json_data=json.loads(json_str), data_type=k)
+
+        json_design = group_info.to_json() if group_info is not None else None
+        analysis_data = AnalysisData(analysis=analysis,
+                                     json_data=json.loads(json_str), json_design=json_design, data_type=k)
         analysis_data.save()
         print('Saved analysis data', analysis_data.pk, 'for analysis', analysis.pk)
 

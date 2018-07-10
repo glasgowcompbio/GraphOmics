@@ -35,6 +35,36 @@
             </ul>
         </div>
 
+        {% if analysis_data.count > 0 %}
+            <div class="m-1 mb-3">
+                <div class="card">
+                    <div class="card-body">
+                            <h5>Inference Results</h5>
+                            <p>
+                                The following table shows all inference results that have been created.
+                                To add a new inference, see the panel at the bottom.
+                            </p>
+                            <table class="table table-sm">
+                                <tr>
+                                    <th>Analysis Data</th>
+                                    <th>Data Type</th>
+                                    <th>Inference Type</th>
+                                    <th>Date</th>
+                                </tr>
+                                {% for ad in analysis_data %}
+                                    <tr>
+                                        <td>{{ ad.display_name }}</td>
+                                        <td>{{ ad.get_data_type_str }}</td>
+                                        <td>{{ ad.get_inference_type_str }}</td>
+                                        <td>{{ ad.timestamp|date:"jS F Y H:i" }}</td>
+                                    </tr>
+                                {% endfor %}
+                            </table>
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+
         <div class="m-1 mb-3">
             <div class="card">
                 <div class="card-body">
