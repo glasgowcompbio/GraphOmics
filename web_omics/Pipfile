@@ -33,6 +33,9 @@ wikipedia = "*"
 "django-select2" = "*"
 jsonfield = "*"
 scikit-learn = "*"
+pywinpty = "*"
+tzlocal = "*"
+jsonpickle = "*"
 
 [requires]
 python_version = "3.6"

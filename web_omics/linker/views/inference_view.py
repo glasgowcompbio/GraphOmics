@@ -5,11 +5,14 @@ from django.urls import reverse
 from django.contrib import messages
 from django.utils import timezone
 
+import numpy as np
 import pandas as pd
+import jsonpickle
 
 from linker.constants import *
 from linker.forms import BaseInferenceForm, T_test_Form, HierarchicalClusteringForm
 from linker.models import Analysis, AnalysisData
+from linker.views.pipelines import run_deseq
 
 
 def inference(request, analysis_id):
@@ -88,15 +91,41 @@ def inference_t_test(request, analysis_id):
             case = form.cleaned_data['case']
             control = form.cleaned_data['control']
             data_df, design_df = get_dataframes(analysis_data)
-            do_t_test(data_df, design_df, case, control)
+            data_df = data_df.drop('gene_id', axis=1)
+
+            data_df.to_csv('static/data/debugging/data_df.csv', index=True)
+            design_df.to_csv('static/data/debugging/design_df.csv', index=True)
+            data_df.to_pickle('static/data/debugging/data_df.p')
+            design_df.to_pickle('static/data/debugging/design_df.p')
+
+            pd_df, rld_df, res_ordered = run_deseq(data_df, design_df, 10, case, control)
+
+            res = pd_df.to_dict()
+            json_data = analysis_data.json_data
+            for i in range(len(json_data)):
+                item = json_data[i]
+                key = item['gene_pk']
+                padj = res['padj'][key]
+                lfc = res['log2FoldChange'][key]
+                if np.isnan(padj):
+                    padj = 0
+                if np.isnan(lfc):
+                    lfc = 0
+                item['padj'] = padj
+                item['log2FoldChange'] = lfc
 
             # creates a copy of analysis_data
             parent_pk = analysis_data.pk
             analysis_data.pk = None
+            analysis_data.json_data = json_data
             analysis_data.parent = get_object_or_404(AnalysisData, pk=parent_pk)
-            analysis_data.display_name = 't-test results'
+            analysis_data.display_name = 'DeSeq2 %s (case) vs %s (control)' % (case, control)
             analysis_data.inference_type = T_TEST
             analysis_data.timestamp = timezone.localtime()
+            analysis_data.metadata = {
+                'rld_df': rld_df.to_json(),
+                'res_ordered': jsonpickle.encode(res_ordered)
+            }
             analysis_data.save()
 
             messages.success(request, 'Add new inference successful.', extra_tags='primary')
@@ -145,12 +174,8 @@ def get_groups(analysis_data):
     return groups
 
 
-def do_t_test(data_df, design_df, case, control):
-    data_df.to_csv('static/data/debugging/data_df.csv', index=True)
-    design_df.to_csv('static/data/debugging/design_df.csv', index=True)
-
-
 def do_hierarchical_clustering(data_df, design_df, group):
     data_df.to_csv('static/data/debugging/data_df.csv', index=True)
     design_df.to_csv('static/data/debugging/design_df.csv', index=True)
-    pass
+    data_df.to_pickle('static/data/debugging/data_df.p')
+    design_df.to_pickle('static/data/debugging/design_df.p')
