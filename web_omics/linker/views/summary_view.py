@@ -1,8 +1,9 @@
 from django.shortcuts import render, get_object_or_404
 
 from linker.constants import *
-from linker.models import Analysis, AnalysisData, AnalysisSample, AnalysisAnnotation
+from linker.models import Analysis, AnalysisData, AnalysisAnnotation
 
+import json
 import pandas as pd
 import numpy as np
 
@@ -62,8 +63,12 @@ def get_reaction_pathway_counts(analysis):
 
 def get_samples(analysis, data_type):
     analysis_data = AnalysisData.objects.filter(analysis=analysis, data_type=data_type).first()
-    analysis_samples = analysis_data.analysissample_set.all()
-    results = [(x.sample_name, x.factor, x.level) for x in analysis_samples]
+    if analysis_data.json_design is not None:
+        df = pd.DataFrame(json.loads(analysis_data.json_design))
+        df.insert(1, 'factor', 'group')
+        results = df.values
+    else:
+        results = []
     return results
 
 

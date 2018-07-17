@@ -7,7 +7,7 @@ import pandas as pd
 from django.templatetags.static import static
 from django.conf import settings
 
-from linker.models import Analysis, AnalysisData, AnalysisSample
+from linker.models import Analysis, AnalysisData
 from linker.reactome import get_reaction_df
 from linker.constants import GENOMICS, PROTEOMICS, METABOLOMICS, REACTIONS, PATHWAYS, GENES_TO_PROTEINS, \
     PROTEINS_TO_REACTIONS, COMPOUNDS_TO_REACTIONS, REACTIONS_TO_PATHWAYS
@@ -222,22 +222,6 @@ def save_analysis(analysis_name, analysis_desc,
                                      json_data=json.loads(json_str), json_design=json_design, data_type=k)
         analysis_data.save()
         print('Saved analysis data', analysis_data.pk, 'for analysis', analysis.pk)
-
-        # save analysis data sample too
-        # TODO: allow multiple factors
-        factor = 'group'
-        if group_info is not None:
-            for index, row in group_info.iterrows():
-                sample = row['sample']
-                try:
-                    level = row[factor]
-                except KeyError: # no group
-                    level = None
-                analysis_sample = AnalysisSample(analysis_data=analysis_data, sample_name=sample,
-                                                 factor=factor, level=level)
-                analysis_sample.save()
-                print('Saved analysis sample', analysis_sample.pk, 'for analysis data',
-                      analysis_data.pk)
 
         # if settings.DEBUG:
         #     save_json_string(v[0], 'static/data/debugging/' + v[1] + '.json')

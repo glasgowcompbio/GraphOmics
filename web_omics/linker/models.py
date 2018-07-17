@@ -74,13 +74,6 @@ class AnalysisData(models.Model):
             return ''
 
 
-class AnalysisSample(models.Model):
-    analysis_data = models.ForeignKey(AnalysisData, on_delete=models.CASCADE)
-    sample_name = models.CharField(max_length=100)
-    factor = models.CharField(max_length=100, blank=True, null=True)
-    level = models.CharField(max_length=100, blank=True, null=True)
-
-
 class AnalysisAnnotation(models.Model):
     analysis = models.ForeignKey(Analysis, on_delete=models.CASCADE)
     data_type = models.IntegerField(choices=DataType)
