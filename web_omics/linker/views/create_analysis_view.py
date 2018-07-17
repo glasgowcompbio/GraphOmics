@@ -41,7 +41,7 @@ class CreateAnalysisView(FormView):
 
         context = {
             'data': data,
-            'data_display_name': data_display_name,
+            # 'data_display_name': data_display_name,
             'analysis_id': analysis.pk,
             'analysis_name': analysis.name,
             'analysis_description': analysis.description,

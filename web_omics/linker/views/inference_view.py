@@ -91,7 +91,9 @@ def inference_t_test(request, analysis_id):
             case = form.cleaned_data['case']
             control = form.cleaned_data['control']
             data_df, design_df = get_dataframes(analysis_data)
-            data_df = data_df.drop('gene_id', axis=1)
+            to_drop = list(filter(lambda x: x.startswith('padj_') or x.startswith('FC_'), data_df.columns))
+            to_drop.append('gene_id')
+            data_df = data_df.drop(to_drop, axis=1)
 
             data_df.to_csv('static/data/debugging/data_df.csv', index=True)
             design_df.to_csv('static/data/debugging/design_df.csv', index=True)
@@ -99,9 +101,11 @@ def inference_t_test(request, analysis_id):
             design_df.to_pickle('static/data/debugging/design_df.p')
 
             pd_df, rld_df, res_ordered = run_deseq(data_df, design_df, 10, case, control)
+            deseq_df = pd_df[['padj', 'log2FoldChange']]
 
-            res = pd_df.to_dict()
+            res = deseq_df.to_dict()
             json_data = analysis_data.json_data
+            label = '%s_vs_%s' % (case, control)
             for i in range(len(json_data)):
                 item = json_data[i]
                 key = item['gene_pk']
@@ -111,8 +115,8 @@ def inference_t_test(request, analysis_id):
                     padj = 0
                 if np.isnan(lfc):
                     lfc = 0
-                item['padj'] = padj
-                item['log2FoldChange'] = lfc
+                item['padj_%s' % label] = padj
+                item['FC_%s' % label] = lfc
 
             # creates a copy of analysis_data
             parent_pk = analysis_data.pk
@@ -159,7 +163,7 @@ def inference_hierarchical(request, analysis_id):
 
 
 def get_analysis_data(analysis, data_type):
-    analysis_data = [x for x in analysis.analysisdata_set.all() if x.data_type == data_type][0]
+    analysis_data = [x for x in analysis.analysisdata_set.all().order_by('-timestamp') if x.data_type == data_type][0]
     return analysis_data
 
 
@@ -169,7 +173,8 @@ def get_dataframes(analysis_data):
     return data_df, design_df
 
 def get_groups(analysis_data):
-    analysis_groups = set([x.level for x in analysis_data.analysissample_set.all()])
+    df = pd.read_json(analysis_data.json_design)
+    analysis_groups = set(df['group'])
     groups = ((None, NA),) + tuple(zip(analysis_groups, analysis_groups))
     return groups
 
