@@ -169,11 +169,37 @@ const myLinker = (function () {
                 const colNames = tableAPI.settings()[0].aoColumns.map(x => x.sName);
                 const filtered = colNames.filter(x => x.indexOf('pvalue')>-1 || x.indexOf('species')>-1);
                 tableInfo['columnNames'] = tableInfo['columnNames'].concat(filtered);
+                // get all columns names for the raw data and hide them as well
+                const colData = data_fields[tableInfo['tableName']];
+                if (colData) {
+                    tableInfo['colData'] = colData;
+                    tableAPI
+                        .columns(tableInfo['colData'].map(columnName => columnName + ":name")) // append ":name" to each columnName for the selector
+                        .visible(false);
+                }
                 // do the hiding here
                 tableAPI
                     .columns(tableInfo['columnNames'].map(columnName => columnName + ":name")) // append ":name" to each columnName for the selector
                     .visible(false);
+
             });
+
+            // show/hide data columns
+            $('#showDataCheck').change(function() {
+                let visible = false;
+                if (this.checked) {
+                    visible = true;
+                }
+                columnsToHidePerTable.forEach(function (tableInfo) {
+                    const tableAPI = $('#' + tableInfo['tableName']).DataTable();
+                    if (tableInfo['colData']) {
+                        tableAPI
+                            .columns(tableInfo['colData'].map(columnName => columnName + ":name")) // append ":name" to each columnName for the selector
+                            .visible(visible);
+                    }
+                });
+            });
+
 
             // set event handler when rows in the visible tables are clicked
             this.visibleTableNames = ['genes_table', 'proteins_table',

@@ -10,6 +10,8 @@ from django.urls import reverse
 from django.utils import timezone
 from django.core.exceptions import ObjectDoesNotExist
 
+import pandas as pd
+
 from linker.metadata import get_single_ensembl_metadata_online, get_single_uniprot_metadata_online, \
     get_single_compound_metadata_online
 from linker.models import Analysis, AnalysisData, AnalysisAnnotation
@@ -37,14 +39,20 @@ def explore_data(request, analysis_id):
         COMPOUNDS_TO_REACTIONS: 'compound_reactions_json',
         REACTIONS_TO_PATHWAYS: 'reaction_pathways_json'
     }
+    table_names = {
+        GENOMICS: 'genes_table',
+        PROTEOMICS: 'proteins_table',
+        METABOLOMICS: 'compounds_table'
+    }
     data = {}
-    data_display_name = {}
+    data_fields = {}
     for k, v in DataRelationType:
         try:
             analysis_data = AnalysisData.objects.filter(analysis=analysis, data_type=k).order_by('-timestamp')[0]
             label = mapping[k]
             data[label] = json.dumps(analysis_data.json_data)
-            data_display_name[k] = analysis_data.display_name
+            if analysis_data.json_design:
+                data_fields[table_names[k]] = list(set(pd.DataFrame(json.loads(analysis_data.json_design))['sample']))
         except IndexError:
             continue
         except KeyError:
@@ -52,7 +60,7 @@ def explore_data(request, analysis_id):
 
     context = {
         'data': data,
-        # 'data_display_name': data_display_name,
+        'data_fields': json.dumps(data_fields),
         'analysis_id': analysis.pk,
         'analysis_name': analysis.name,
         'analysis_description': analysis.description,

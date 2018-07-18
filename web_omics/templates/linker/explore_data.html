@@ -50,12 +50,12 @@
                     </div>
                     <div class="col-6  text-right">
                         <div class="form-check-inline">
-                            <input class="form-check-input" type="checkbox" value="" id="defaultCheck1">
-                            <label class="form-check-label" for="defaultCheck1">
+                            <input class="form-check-input" type="checkbox" value="" id="showDataCheck">
+                            <label class="form-check-label" for="showDataCheck">
                                 Show data columns
                             </label>&nbsp;&nbsp;&nbsp;&nbsp;
-                            <input class="form-check-input" type="checkbox" value="" id="defaultCheck1">
-                            <label class="form-check-label" for="defaultCheck1">
+                            <input class="form-check-input" type="checkbox" value="" id="filterSignificantCheck">
+                            <label class="form-check-label" for="filterSignificantCheck">
                                 Filter significant items
                             </label>&nbsp;&nbsp;&nbsp;&nbsp;
                         </div>
@@ -208,6 +208,7 @@
         const get_reactome_reaction_info = "{% url "get_reactome_reaction_info" analysis_id=analysis_id %}";
         const get_reactome_pathway_info = "{% url "get_reactome_pathway_info" analysis_id=analysis_id %}";
         const biopv_url = "{% static "js/bio-pv.min.js" %}";
+        const data_fields = JSON.parse('{{ data_fields|safe }}');
     </script>
     <script type='text/javascript' src='{% static "js/require.js" %}'></script>
     <script type='text/javascript' src='{% static "js/linker.js" %}'></script>
