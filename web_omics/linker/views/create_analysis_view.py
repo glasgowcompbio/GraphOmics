@@ -1,4 +1,5 @@
 import pandas as pd
+import json
 from django.shortcuts import render
 from django.views.generic.edit import FormView
 
@@ -8,6 +9,7 @@ from linker.models import AnalysisData
 from linker.reactome import get_species_dict, pathway_to_reactions, reaction_to_uniprot, reaction_to_compound, \
     uniprot_to_ensembl
 from linker.views.functions import reactome_mapping, save_analysis
+from linker.constants import *
 
 
 class CreateAnalysisView(FormView):
@@ -29,11 +31,19 @@ class CreateAnalysisView(FormView):
         analysis, data = save_analysis(analysis_name, analysis_desc,
                                        genes_str, proteins_str, compounds_str,
                                        results, species_list, current_user)
-        data_display_name = {}
+
+        table_names = {
+            GENOMICS: 'genes_table',
+            PROTEOMICS: 'proteins_table',
+            METABOLOMICS: 'compounds_table'
+        }
+        data_fields = {}
         for k, v in DataRelationType:
             try:
                 analysis_data = AnalysisData.objects.filter(analysis=analysis, data_type=k).order_by('-timestamp')[0]
-                data_display_name[k] = analysis_data.display_name
+                if analysis_data.json_design:
+                    data_fields[table_names[k]] = list(
+                        set(pd.DataFrame(json.loads(analysis_data.json_design))['sample']))
             except IndexError:
                 continue
             except KeyError:
@@ -41,7 +51,7 @@ class CreateAnalysisView(FormView):
 
         context = {
             'data': data,
-            # 'data_display_name': data_display_name,
+            'data_fields': json.dumps(data_fields),
             'analysis_id': analysis.pk,
             'analysis_name': analysis.name,
             'analysis_description': analysis.description,
