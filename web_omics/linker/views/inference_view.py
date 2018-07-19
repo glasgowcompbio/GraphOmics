@@ -91,14 +91,9 @@ def inference_t_test(request, analysis_id):
             case = form.cleaned_data['case']
             control = form.cleaned_data['control']
             data_df, design_df = get_dataframes(analysis_data)
-            to_drop = list(filter(lambda x: x.startswith('padj_') or x.startswith('FC_'), data_df.columns))
+            to_drop = list(filter(lambda x: x.startswith('padj_') or x.startswith('FC_') or x.startswith('significant_'), data_df.columns))
             to_drop.append('gene_id')
             data_df = data_df.drop(to_drop, axis=1)
-
-            data_df.to_csv('static/data/debugging/data_df.csv', index=True)
-            design_df.to_csv('static/data/debugging/design_df.csv', index=True)
-            data_df.to_pickle('static/data/debugging/data_df.p')
-            design_df.to_pickle('static/data/debugging/design_df.p')
 
             pd_df, rld_df, res_ordered = run_deseq(data_df, design_df, 10, case, control)
             deseq_df = pd_df[['padj', 'log2FoldChange']]
@@ -117,6 +112,12 @@ def inference_t_test(request, analysis_id):
                     lfc = 0
                 item['padj_%s' % label] = padj
                 item['FC_%s' % label] = lfc
+
+                # check if item is statistically significant
+                padj_values = np.array([item[k] for k in item.keys() if 'padj' in k])
+                check = (padj_values > 0) & (padj_values < 0.05)
+                item['significant_all'] = np.all(check)
+                item['significant_any'] = np.any(check)
 
             # creates a copy of analysis_data
             parent_pk = analysis_data.pk
@@ -172,6 +173,7 @@ def get_dataframes(analysis_data):
     design_df = pd.read_json(analysis_data.json_design).set_index('sample')
     return data_df, design_df
 
+
 def get_groups(analysis_data):
     df = pd.read_json(analysis_data.json_design)
     analysis_groups = set(df['group'])
@@ -180,7 +182,4 @@ def get_groups(analysis_data):
 
 
 def do_hierarchical_clustering(data_df, design_df, group):
-    data_df.to_csv('static/data/debugging/data_df.csv', index=True)
-    design_df.to_csv('static/data/debugging/design_df.csv', index=True)
-    data_df.to_pickle('static/data/debugging/data_df.p')
-    design_df.to_pickle('static/data/debugging/design_df.p')
+    pass

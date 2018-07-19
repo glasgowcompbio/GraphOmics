@@ -309,7 +309,6 @@ def csv_to_dataframe(csv_str):
             group_df = pd.DataFrame(list(zip(sample_data[1:], group_data[1:])), columns=['sample', 'group'])
         else:
             group_df = pd.DataFrame(sample_data[1:], columns=['sample'])
-        group_df = group_df[group_df['sample'].str.contains('pvalue') == False]  # filter 'pvalue'
 
     return data_df, group_df, id_list
 

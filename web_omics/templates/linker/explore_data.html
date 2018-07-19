@@ -49,15 +49,31 @@
                                id="global_filter">
                     </div>
                     <div class="col-6  text-right">
-                        <div class="form-check-inline">
+                        <div class="form-check-inline border p-1">
                             <input class="form-check-input" type="checkbox" value="" id="showDataCheck">
                             <label class="form-check-label" for="showDataCheck">
                                 Show data columns
                             </label>&nbsp;&nbsp;&nbsp;&nbsp;
-                            <input class="form-check-input" type="checkbox" value="" id="filterSignificantCheck">
-                            <label class="form-check-label" for="filterSignificantCheck">
-                                Filter significant items
+                        </div>
+                        <div class="form-check-inline border p-1">
+                            <label class="form-check-label">
+                                Filter significant items in
                             </label>&nbsp;&nbsp;&nbsp;&nbsp;
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" name="inlineRadioOptions" id="inlineRadio1"
+                                       value="all">
+                                <label class="form-check-label" for="inlineRadio1">all tests</label>
+                            </div>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" name="inlineRadioOptions" id="inlineRadio2"
+                                       value="any">
+                                <label class="form-check-label" for="inlineRadio2">any test</label>
+                            </div>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" name="inlineRadioOptions" id="inlineRadio3"
+                                       value="none" checked="checked">
+                                <label class="form-check-label" for="inlineRadio3">none</label>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -71,7 +87,8 @@
             <!-- Gene card -->
             <div class="card border-light">
                 <div class="card-block">
-                    <div class="card-header bg-light m-0"><strong>Gene Data {% if data_display_name.0 %}({{ data_display_name.0 }}){% endif %}</strong></div>
+                    <div class="card-header bg-light m-0"><strong>Gene Data {% if data_display_name.0 %}(
+                        {{ data_display_name.0 }}){% endif %}</strong></div>
                     <div class="card-table p-1">
                         <table id="genes_table" class="table hover compact pod-table" style="width:100%">
                         </table>
@@ -88,7 +105,8 @@
             <!-- Protein card -->
             <div class="card border-light">
                 <div class="card-block">
-                    <div class="card-header bg-light m-0"><strong>Protein Data {% if data.display_name.2 %}({{ data_display_name.2 }}){% endif %}</strong></div>
+                    <div class="card-header bg-light m-0"><strong>Protein Data {% if data.display_name.2 %}(
+                        {{ data_display_name.2 }}){% endif %}</strong></div>
                     <div class="card-table p-1">
                         <table id="proteins_table" class="table hover compact pod-table" style="width:100%">
                         </table>
@@ -105,7 +123,8 @@
             <!-- Compound card -->
             <div class="card border-light">
                 <div class="card-block">
-                    <div class="card-header bg-light m-0"><strong>Compound Data {% if data_display_name.3 %}({{ data_display_name.3 }}){% endif %}</strong></div>
+                    <div class="card-header bg-light m-0"><strong>Compound Data {% if data_display_name.3 %}(
+                        {{ data_display_name.3 }}){% endif %}</strong></div>
                     <div class="card-table p-1">
                         <table id="compounds_table" class="table hover compact pod-table" style="width:100%">
                         </table>
@@ -122,7 +141,8 @@
             <!-- Reaction card -->
             <div class="card border-light">
                 <div class="card-block">
-                    <div class="card-header bg-light m-0"><strong>Reactions Data {% if data_display_name.4 %}({{ data_display_name.4 }}){% endif %}</strong></div>
+                    <div class="card-header bg-light m-0"><strong>Reactions Data {% if data_display_name.4 %}(
+                        {{ data_display_name.4 }}){% endif %}</strong></div>
                     <div class="card-table p-1">
                         <table id="reactions_table" class="table hover compact pod-table" style="width:100%">
                         </table>
@@ -139,7 +159,8 @@
             <!-- Pathway card -->
             <div class="card border-light" style="flex-grow:2">
                 <div class="card-block">
-                    <div class="card-header bg-light m-0"><strong>Pathway Data {% if data_display_name.5 %}({{ data_display_name.5 }}){% endif %}</strong></div>
+                    <div class="card-header bg-light m-0"><strong>Pathway Data {% if data_display_name.5 %}(
+                        {{ data_display_name.5 }}){% endif %}</strong></div>
                     <div class="card-table p-1">
                         <table id="pathways_table" class="table hover compact pod-table" style="width:100%">
                         </table>

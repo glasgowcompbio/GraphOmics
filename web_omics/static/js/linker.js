@@ -13,6 +13,9 @@ const myLinker = (function () {
                 "columnDefs": [{
                     targets: 1,
                     render: $.fn.dataTable.render.ellipsis(50, false)
+                }, {
+                    "targets": '_all',
+                    render: $.fn.dataTable.render.number( ',', '.', 5, '' )
                 }],
                 "order": [[1, "asc"]],
                 'buttons': [
@@ -21,33 +24,36 @@ const myLinker = (function () {
                         columns: ':gt(1)'
                     }
                 ],
-                'rowCallback': function(row, data, index) {
+                'rowCallback': function (row, data, index) {
                     const colNames = Object.keys(data);
-                    const filtered = colNames.filter(x => x.indexOf('pvalue')>-1);
+                    const filtered = colNames.filter(x => x.indexOf('FC') > -1);
                     const filteredIdx = filtered.map(x => {
-                        let temp = x.split('_'); // split by underscore
-                        temp.splice(-1); // remove the last item ('pvalue') from temp
-                        const toFind = temp.join('_'); // put them back together to get the column name we want
-                        return colNames.indexOf(toFind);
+                        return colNames.indexOf(x);
                     });
-                    const filtered_pValues = filtered.map(x => data[x]);
-                    const filteredColours = filtered_pValues.map(x => {
-                       if (x > 1e-2) {
-                           return 'white';
-                       } else if (1e-4 < x && x <= 1e-2) {
-                           return 'yellow';
-                       } else if (1e-6 < x && x <= 1e-4) {
-                           return 'orange';
-                       } else if (1e-10 < x && x <= 1e-6) {
-                           return 'red';
-                       } else {
-                           return 'white';
-                       }
-                    });
+                    const filtered_logfc = filtered.map(x => data[x]);
+                    var colorScale = d3.scaleLinear()
+                        .range(["red", "green"])
+                        .domain([-2, 2]);
+                    const filteredColours = filtered_logfc.map(x => colorScale(x));
                     for (let i = 0; i < filteredIdx.length; i++) {
                         const idx = filteredIdx[i];
                         const colour = filteredColours[i];
-                        $(row).find(`td:eq(${idx})`).css('background-color', colour);
+                        // $(row).find(`td:eq(${idx})`).css({
+                        //     'background-color': colour,
+                        //     'color': 'white'
+                        // });
+                        x = $(row).find(`td`).filter(function() {
+                            // TODO: round to the specified decimal places and compare the string representation. Might not always work.
+                            const dp = 3;
+                            return parseFloat(this.textContent).toFixed(dp) === filtered_logfc[i].toFixed(dp)
+                        });
+                        if (x) {
+                            x.css({
+                                'background-color': colour,
+                                'color': 'white'
+                            });
+                        }
+
                     }
                 }
                 // 'responsive': true
@@ -156,18 +162,18 @@ const myLinker = (function () {
 
             // Hide certain columns
             let columnsToHidePerTable = [
-                {"tableName": "genes_table", "columnNames": ["gene_pk"]},
-                {"tableName": "proteins_table", "columnNames": ["protein_pk"]},
-                {"tableName": "compounds_table", "columnNames": ["compound_pk"]},
-                {"tableName": "reactions_table", "columnNames": ["reaction_pk"]},
-                {"tableName": "pathways_table", "columnNames": ["pathway_pk"]}
+                {"tableName": "genes_table", "columnNames": ["gene_pk", "significant_all", "significant_any"]},
+                {"tableName": "proteins_table", "columnNames": ["protein_pk", "significant_all", "significant_any"]},
+                {"tableName": "compounds_table", "columnNames": ["compound_pk", "significant_all", "significant_any"]},
+                {"tableName": "reactions_table", "columnNames": ["reaction_pk", "significant_all", "significant_any"]},
+                {"tableName": "pathways_table", "columnNames": ["pathway_pk", "significant_all", "significant_any"]}
             ];
 
             columnsToHidePerTable.forEach(function (tableInfo) {
                 const tableAPI = $('#' + tableInfo['tableName']).DataTable();
-                // get all column names containing the word 'pvalue' or 'species' to hide as well
+                // get all column names containing the word 'padj' or 'species' to hide as well
                 const colNames = tableAPI.settings()[0].aoColumns.map(x => x.sName);
-                const filtered = colNames.filter(x => x.indexOf('pvalue')>-1 || x.indexOf('species')>-1);
+                const filtered = colNames.filter(x => x.indexOf('padj') > -1 || x.indexOf('species') > -1);
                 tableInfo['columnNames'] = tableInfo['columnNames'].concat(filtered);
                 // get all columns names for the raw data and hide them as well
                 const colData = data_fields[tableInfo['tableName']];
@@ -185,7 +191,7 @@ const myLinker = (function () {
             });
 
             // show/hide data columns
-            $('#showDataCheck').change(function() {
+            $('#showDataCheck').change(function () {
                 let visible = false;
                 if (this.checked) {
                     visible = true;
@@ -213,6 +219,42 @@ const myLinker = (function () {
                 const val = $('#global_filter').val();
                 $.fn.dataTable.tables({api: true}).search(val).draw();
             });
+
+            function setColumnFilter(tables, i, colNames, colName, value) {
+                let idx = colNames.indexOf(colName);
+                if (idx > -1) {
+                    tables.table(i).column(idx).search(value).draw();
+                }
+            }
+
+            // enable the significant items filter radio button
+            $('input[type=radio][name=inlineRadioOptions]').change(function () {
+                let filterColumnName = ''
+                if (this.value == 'all') {
+                    filterColumnName = 'significant_all';
+                } else if (this.value == 'any') {
+                    filterColumnName = 'significant_any';
+                }
+                const tables = $.fn.dataTable.tables({api: true}).tables();
+                for (let i = 0; i < tables.context.length; i++) {
+                    t = tables.context[i];
+                    const colNames = t.aoColumns.map(x => x.name);
+                    if (this.value == 'all') {
+                        setColumnFilter(tables, i, colNames, 'significant_all', 'true');
+                        setColumnFilter(tables, i, colNames, 'significant_any', '');
+                    } else if (this.value == 'any') {
+                        setColumnFilter(tables, i, colNames, 'significant_all', '');
+                        setColumnFilter(tables, i, colNames, 'significant_any', 'true');
+                    } else {
+                        setColumnFilter(tables, i, colNames, 'significant_all', '');
+                        setColumnFilter(tables, i, colNames, 'significant_any', '');
+                    }
+                }
+            });
+            // const tables = $.fn.dataTable.tables({api: true}).tables();
+            // colNames = table.context[0].aoColumns.map(x => x.name)
+            // idx = colNames.indexOf('significant_all')
+            // table.column(idx).search('true').draw()
 
         }, // end init
 
@@ -464,7 +506,7 @@ function annotate(annotationId, annotationUrl, displayName) {
     $('#annotationId').val(`annotation-${annotationId}`);
     let annotation = $(`#annotation-${annotationId}`).text();
     if (annotation.length > 0) {
-       annotation = annotation.split(':')[1].trim();
+        annotation = annotation.split(':')[1].trim();
     }
     $('#displayName').val(displayName);
     $('#annotationValue').val(annotation);
@@ -496,14 +538,16 @@ $(document).ready(function () {
         }
         return cookieValue;
     }
+
     var csrftoken = getCookie('csrftoken');
 
     function csrfSafeMethod(method) {
         // these HTTP methods do not require CSRF protection
         return (/^(GET|HEAD|OPTIONS|TRACE)$/.test(method));
     }
+
     $.ajaxSetup({
-        beforeSend: function(xhr, settings) {
+        beforeSend: function (xhr, settings) {
             if (!csrfSafeMethod(settings.type) && !this.crossDomain) {
                 xhr.setRequestHeader("X-CSRFToken", csrftoken);
             }
