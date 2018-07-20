@@ -9,7 +9,6 @@ const FiRDI = (function () {
             const filteredTableInfo = this.uniqueDataFilter(tablesInfo);
             const dataTablesSettings = this.makeDataTablesSettingsObjects(filteredTableInfo, dataTablesColumnsSettings);
             this.initialiseDataTables(dataTablesSettings);
-            this.filteredTableInfo = filteredTableInfo;
 
             return this;
         },
@@ -29,10 +28,7 @@ const FiRDI = (function () {
             // Gets the distinct entries for the tableData for datatables initialisation
             return tablesInfo.filter(isTableVisible)
                 .map(tableInfo => {
-                    const sql = "SELECT DISTINCT " + Object.keys(tableInfo['tableData'][0]).join(", ") +
-                        " FROM ? ORDER BY " + tableInfo.options.order_by + " ASC";
-                    tableInfo['tableData'] = alasql(sql, [tableInfo['tableData']]);
-                    console.log(sql);
+                    tableInfo['tableData'] = alasql("SELECT DISTINCT " + Object.keys(tableInfo['tableData'][0]).join(", ") + " FROM ?", [tableInfo['tableData']]);
                     return tableInfo;
                 });
         },
@@ -84,23 +80,19 @@ const FiRDI = (function () {
             return this;
         },
         initialiseAlasqlTables: function (tablesInfo) {
-            tablesInfo.forEach(function (t, i) {
-                const tName = t['tableName'];
-
+            tablesInfo.forEach(function (t) {
                 // Create table
-                let sql = "CREATE TABLE " + tName;
+                let sql = "CREATE TABLE " + t['tableName'];
                 console.log(sql);
                 alasql(sql);
-
                 // Create index
-                const columns = Object.keys(t.tableData[0]).join(', ');
-                const idxName = 'idx' + i;
-                sql = "CREATE UNIQUE INDEX " + idxName + " ON " + tName + "(" + columns + ")";
-                console.log(sql);
-                alasql(sql);
-
+                if (t['options']['pk'] !== undefined) {
+                    sql = "CREATE UNIQUE INDEX tmp ON " + t['tableName'] + "(" + t['options']['pk'] + ")";
+                    console.log(sql);
+                    alasql(sql);
+                }
                 // Add data
-                alasql.tables[tName].data = t['tableData'];
+                alasql.tables[t['tableName']].data = t['tableData'];
             });
         },
         clearAlasqlTables: function (tablesInfo) {
@@ -126,6 +118,7 @@ const FiRDI = (function () {
                 .join(", ");
         },
         assembleInnerJoinStatementFromRelationship: function (relationship) {
+            // debugger;
             function parseRelationship(r) {
                 if (r['with']) {
                     return "INNER JOIN " + r['with'] + " ON " + r['tableName'] + "." + r['using'] + " = " + r['with'] + "." + r['using'] + " ";
@@ -164,6 +157,7 @@ const FiRDI = (function () {
             return tablesInfo[0]['tableName'];
         },
         getRelationship: function (tableInfo) {
+            // debugger;
             function parseRelationship(r) {
                 let parsed = {'tableName': tableInfo['tableName'], 'with': r['with'], 'using': r['using']};
                 return parsed;
@@ -197,18 +191,12 @@ const FiRDI = (function () {
                 .filter((tk, idx, tka) => tka.indexOf(tk) === idx)
                 .map(t => JSON.parse(t));
         },
-        makeWhereSubClauses: function (includeTableName) {
-            if (includeTableName) {
-                return this.constraintTableConstraintKeyNames
-                    .map(t => t['tableName'] + "." + t['constraintKeyName'])
-            } else {
-                return this.constraintTableConstraintKeyNames
-                    .map(t => t['constraintKeyName'])
-            }
+        makeWhereSubClauses: function () {
+            return this.constraintTableConstraintKeyNames
+                .map(t => t['tableName'] + "." + t['constraintKeyName'])
         },
-        makeWhereClause: function (tablesInfo, skipConstraints, includeTableName) {
-            const incl = (includeTableName === undefined ? true : includeTableName);
-            const whereSubClauses = this.makeWhereSubClauses(incl);
+        makeWhereClause: function (tablesInfo, skipConstraints) {
+            const whereSubClauses = this.makeWhereSubClauses();
             let selectedWhereSubClauses = [];
             whereSubClauses.forEach(function (value, i) {
                 if (!skipConstraints[i]) {
@@ -228,13 +216,11 @@ const FiRDI = (function () {
 
             return [selectClause, innerJoinClause, whereClause].join(" ");
         },
-        queryDatabase: function (tablesInfo, constraints, prevQueryResult) {
+        queryDatabase: function (tablesInfo, constraints) {
 
             const constraintTableNames = this.constraintTableConstraintKeyNames.map(t => t['tableName']);
             const unpackedConstraints = constraintTableNames.map(n => constraints[n]);
             // console.log("unpackedConstraints.length = " + unpackedConstraints.length);
-
-            // TODO: quick hack by joe to speed things up
             let skipConstraints = [];
             let selectedConstraints = []
             unpackedConstraints.forEach(function (uc, i) {
@@ -254,26 +240,12 @@ const FiRDI = (function () {
                 // console.log('%d. skip %s (%s)', i, sc, uc);
             });
 
-            if (prevQueryResult === undefined) { // no previous query
-                const sqlQuery = this.makeSQLquery(tablesInfo, skipConstraints);
-                console.log(sqlQuery);
-                const compiledSQLQuery = alasql.compile(sqlQuery);
-                return compiledSQLQuery(selectedConstraints);
-            } else {
-                // reuse existing query result
-                const selectClause = 'SELECT * FROM ?';
-                const includeTableName = false;
-                const whereClause = this.makeWhereClause(tablesInfo, skipConstraints, includeTableName);
-                const sqlQuery = [selectClause, whereClause].join(" ");
-                console.log(sqlQuery);
-                if (whereClause.length == 0) {
-                    return prevQueryResult;
-                } else {
-                    const compiledSQLQuery = alasql.compile(sqlQuery);
-                    selectedConstraints.unshift(prevQueryResult);
-                    return compiledSQLQuery(selectedConstraints);
-                }
-            }
+            // debugger;
+            const sqlQuery = this.makeSQLquery(tablesInfo, skipConstraints);
+            console.log(sqlQuery);
+            const compiledSQLQuery = alasql.compile(sqlQuery);
+
+            return compiledSQLQuery(selectedConstraints);
         }
     };
 
@@ -418,11 +390,6 @@ const FiRDI = (function () {
             }, {});
 
             this.initTableClicks();
-            this.bigResult = this.sqlManager.queryDatabase(this.tablesInfo, this.constraintsManager.defaultConstraints);
-
-            d = {}
-            this.dataTablesOptionsManager.filteredTableInfo.map(t => d[t.tableName]= t.tableData);
-            this.resetDataForTables = d;
 
             return this;
         },
@@ -458,16 +425,14 @@ const FiRDI = (function () {
                 .filter(isTableVisible)
                 .map(tableInfo => ({
                     'tableName': tableInfo['tableName'],
-                    'fieldNames': Object.keys(tableInfo['tableData'][0]),
-                    'orderBy': tableInfo['options']['order_by']
+                    'fieldNames': Object.keys(tableInfo['tableData'][0])
                 }));
         },
         getFocusData: function (dataForTables, focusResult, queryResult, tableFieldNames, focus) {
             // Function to get the default constraints for the focus table
             const tableName = tableFieldNames['tableName'];
             const fieldNames = tableFieldNames['fieldNames'];
-            const orderBy = tableFieldNames['orderBy'];
-            const sqlStatement = "SELECT DISTINCT " + fieldNames.join(", ") + " FROM ? ORDER BY " + orderBy + " ASC";
+            const sqlStatement = "SELECT DISTINCT " + fieldNames.join(", ") + " FROM ?";
 
             if (focus !== tableName) {
                 console.log(sqlStatement + ' (queryResult)')
@@ -485,13 +450,16 @@ const FiRDI = (function () {
         },
         updateTables: function () {
             if (this.stackManager.stack.length > 0) {
+                // debugger;
 
+                console.log('queryResult');
+                let dataForTables = this.constraintsManager.makeEmptyConstraint(this.tablesInfo);
+                const queryResult = this.sqlManager.queryDatabase(this.tablesInfo, this.constraintsManager.constraints);
+
+                console.log('focusResult');
                 const focus = this.stackManager.peek();
                 const focusConstraints = this.constraintsManager.getFocusConstraints(focus, this.tablesInfo);
-                const focusResult = this.sqlManager.queryDatabase(this.tablesInfo, focusConstraints, this.bigResult);
-
-                let dataForTables = this.constraintsManager.makeEmptyConstraint(this.tablesInfo);
-                const queryResult = this.sqlManager.queryDatabase(this.tablesInfo, this.constraintsManager.constraints, this.bigResult);
+                const focusResult = this.sqlManager.queryDatabase(this.tablesInfo, focusConstraints);
 
                 this.tableFieldNames.forEach(tableFieldNames => this.getFocusData(dataForTables, focusResult, queryResult, tableFieldNames, focus));
             } else {
@@ -521,15 +489,21 @@ const FiRDI = (function () {
 
             }
         },
-        resetTable: function (tableFieldNames) {
+        resetTable: function (tableFieldNames, dataForTables, queryResult) {
             const tableName = tableFieldNames['tableName'];
+            const fieldNames = tableFieldNames['fieldNames'];
+            const sqlStatement = "SELECT DISTINCT " + fieldNames.join(", ") + " FROM ?";
+            console.log(sqlStatement + ' (resetTable)');
             const tableAPI = $(this.dataTablesIds[tableName]).DataTable();
+
+            dataForTables[tableFieldNames['tableName']] = alasql(sqlStatement, [queryResult]);
+
             const oldPageInfo = tableAPI.page.info();
             const oldRowIndex = oldPageInfo['start'];
             const rowID = tableAPI.row(oldRowIndex).id();
 
             tableAPI.clear();
-            tableAPI.rows.add(this.resetDataForTables[tableName]);
+            tableAPI.rows.add(dataForTables[tableName]);
             tableAPI.draw();
 
             // go back to the previous page
@@ -542,10 +516,14 @@ const FiRDI = (function () {
 
         },
         resetTables: function () {
-            this.tableFieldNames.forEach(tableFieldNames => this.resetTable(tableFieldNames));
+            let dataForTables = this.constraintsManager.makeEmptyConstraint(this.tablesInfo);
+            console.log('resetTable');
+            const queryResult = this.sqlManager.queryDatabase(this.tablesInfo, this.constraintsManager.constraints);
+            this.tableFieldNames.forEach(tableFieldNames => this.resetTable(tableFieldNames, dataForTables, queryResult));
         },
         trClickHandler: function (e, dt, type, cell, originalEvent) {
             // Calls the appropriate constraint function depending on the state of the bound table
+            // debugger;
             e.preventDefault();
             const tableName = e.currentTarget.id;
             const tableAPI = $(this.dataTablesIds[tableName]).DataTable()
