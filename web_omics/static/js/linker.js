@@ -1,3 +1,9 @@
+// https://stackoverflow.com/questions/1199352/smart-way-to-shorten-long-strings-with-javascript
+String.prototype.trunc = String.prototype.trunc ||
+      function(n){
+          return (this.length > n) ? this.substr(0, n-1) + '&hellip;' : this;
+      };
+
 const myLinker = (function () {
 
     let linkerResultsManager = {
@@ -27,12 +33,14 @@ const myLinker = (function () {
                     render: function(data, type, row) {
                         if (typeof(data) == 'number') {
                             return data.toExponential(4);
+                        } else if (typeof(data) == 'string') {
+                            return data.trunc(50);
                         } else {
                             return data;
                         }
                     }
                 }],
-                "order": [[1, "asc"]],
+                "order": [[2, "asc"]],
                 'buttons': [
                     {
                         extend: 'colvis',
