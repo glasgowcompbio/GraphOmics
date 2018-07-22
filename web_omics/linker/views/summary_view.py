@@ -44,11 +44,8 @@ def get_counts(analysis, data_type):
     analysis_data = AnalysisData.objects.filter(analysis=analysis, data_type=data_type).first()
     json_data = analysis_data.json_data
     df = pd.DataFrame(json_data)
-    cols = [c for c in df.columns if all(s not in c.lower() for s in ['pvalue', 'id', 'pk'])]
-    val = df[cols].values
-    s = np.sum(val, axis=1)
-    observed = np.count_nonzero(s)
-    inferred = len(s) - observed - 1 # -1 to account for dummy item
+    observed = df[df['obs'] == True].shape[0]
+    inferred = df[df['obs'] == False].shape[0] - 1 # -1 to account for dummy item
     total = observed + inferred
     return observed, inferred, total
 

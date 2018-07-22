@@ -9,13 +9,28 @@ const myLinker = (function () {
                 // "scrollY": "400px",
                 // "scrollCollapse": true,
                 "searching": true,
-                // see https://datatables.net/plug-ins/dataRender/ellipsis
                 "columnDefs": [{
-                    targets: 1,
-                    render: $.fn.dataTable.render.ellipsis(50, false)
+                    targets: 0,
+                    render: function(data, type, row) {
+                        if (row.obs === '-') {
+                            return '-';
+                        }
+                        if (data) {
+                            return '🔵';
+                        } else {
+                            return '⚪';
+                        }
+                    }
+                    // render: $.fn.dataTable.render.ellipsis(50, false)
                 }, {
                     "targets": '_all',
-                    render: $.fn.dataTable.render.number( ',', '.', 5, '' )
+                    render: function(data, type, row) {
+                        if (typeof(data) == 'number') {
+                            return data.toExponential(4);
+                        } else {
+                            return data;
+                        }
+                    }
                 }],
                 "order": [[1, "asc"]],
                 'buttons': [

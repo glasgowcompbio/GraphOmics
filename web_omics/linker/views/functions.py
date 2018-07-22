@@ -49,12 +49,10 @@ def reactome_mapping(request, genes_str, proteins_str, compounds_str, species_li
             kegg_2_chebi[cid] = cid
 
     if observed_compound_df is not None:
-        kegg_compound_df = observed_compound_df.copy()
-        chebi_compound_df = observed_compound_df.copy()
-        chebi_compound_df.iloc[:, 0] = chebi_compound_df.iloc[:, 0].map(
-            kegg_2_chebi)  # assume 1st column is id
-        kegg_compound_ids = get_ids_from_dataframe(kegg_compound_df)
-        chebi_compound_ids = get_ids_from_dataframe(chebi_compound_df)
+        if COMPOUND_DATABASE == 'ChEBI':
+            observed_compound_df.iloc[:, 0] = observed_compound_df.iloc[:, 0].map(
+                kegg_2_chebi)  # assume 1st column is id
+        observed_compound_ids = get_ids_from_dataframe(observed_compound_df)
 
     ### map genes -> proteins ###
     print('Mapping genes -> proteins')
@@ -71,13 +69,7 @@ def reactome_mapping(request, genes_str, proteins_str, compounds_str, species_li
 
     ### maps compounds -> reactions ###
     print('Mapping compounds -> reactions')
-    if COMPOUND_DATABASE == 'KEGG':
-        compound_ids = kegg_compound_ids
-        compound_df = kegg_compound_df
-    elif COMPOUND_DATABASE == 'ChEBI':
-        compound_ids = chebi_compound_ids
-        compound_df = chebi_compound_df
-    compound_2_reactions_mapping, _ = compound_to_reaction(compound_ids, species_list)
+    compound_2_reactions_mapping, _ = compound_to_reaction(observed_compound_ids, species_list)
     compound_2_reactions = make_relations(compound_2_reactions_mapping, COMPOUND_PK, REACTION_PK,
                                           value_key='reaction_id')
 
@@ -97,22 +89,22 @@ def reactome_mapping(request, genes_str, proteins_str, compounds_str, species_li
     mapping, _ = reaction_to_uniprot(reaction_ids, species_list)
     reaction_2_proteins = make_relations(mapping, REACTION_PK, PROTEIN_PK, value_key=None)
     protein_2_reactions = reverse_relation(reaction_2_proteins)
-    protein_ids = protein_2_reactions.keys
+    all_protein_ids = protein_2_reactions.keys
 
     ### maps reactions -> compounds ###
     print('Mapping reactions -> compounds')
     reaction_2_compounds_mapping, reaction_to_compound_id_to_names = reaction_to_compound(reaction_ids, species_list)
     reaction_2_compounds = make_relations(reaction_2_compounds_mapping, REACTION_PK, COMPOUND_PK, value_key=None)
     compound_2_reactions = reverse_relation(reaction_2_compounds)
-    compound_ids = compound_2_reactions.keys
+    all_compound_ids = compound_2_reactions.keys
 
     ### map proteins -> genes ###
     print('Mapping proteins -> genes')
-    mapping, _ = uniprot_to_ensembl(protein_ids, species_list)
+    mapping, _ = uniprot_to_ensembl(all_protein_ids, species_list)
     protein_2_genes = make_relations(mapping, PROTEIN_PK, GENE_PK, value_key=None)
     gene_2_proteins = merge_relation(gene_2_proteins, reverse_relation(protein_2_genes))
     inferred_gene_ids = protein_2_genes.values
-    gene_ids = list(set(observed_gene_ids + inferred_gene_ids))
+    all_gene_ids = list(set(observed_gene_ids + inferred_gene_ids))
 
     ### add links ###
 
@@ -123,15 +115,15 @@ def reactome_mapping(request, genes_str, proteins_str, compounds_str, species_li
     reaction_2_pathways = add_links(reaction_2_pathways, REACTION_PK, PATHWAY_PK, [NA], [NA])
 
     # map genes that have no proteins to NA
-    gene_pk_list = [x for x in gene_ids if x not in gene_2_proteins.keys]
+    gene_pk_list = [x for x in all_gene_ids if x not in gene_2_proteins.keys]
     gene_2_proteins = add_links(gene_2_proteins, GENE_PK, PROTEIN_PK, gene_pk_list, [NA])
 
     # map proteins that have no genes to NA
-    protein_pk_list = [x for x in protein_ids if x not in gene_2_proteins.values]
+    protein_pk_list = [x for x in all_protein_ids if x not in gene_2_proteins.values]
     gene_2_proteins = add_links(gene_2_proteins, GENE_PK, PROTEIN_PK, [NA], protein_pk_list)
 
     # map proteins that have no reactions to NA
-    protein_pk_list = [x for x in protein_ids if x not in protein_2_reactions.keys]
+    protein_pk_list = [x for x in all_protein_ids if x not in protein_2_reactions.keys]
     protein_2_reactions = add_links(protein_2_reactions, PROTEIN_PK, REACTION_PK, protein_pk_list, [NA])
 
     # map reactions that have no proteins to NA
@@ -139,7 +131,7 @@ def reactome_mapping(request, genes_str, proteins_str, compounds_str, species_li
     protein_2_reactions = add_links(protein_2_reactions, PROTEIN_PK, REACTION_PK, [NA], reaction_pk_list)
 
     # map compounds that have no reactions to NA
-    compound_pk_list = [x for x in compound_ids if x not in compound_2_reactions.keys]
+    compound_pk_list = [x for x in all_compound_ids if x not in compound_2_reactions.keys]
     compound_2_reactions = add_links(compound_2_reactions, COMPOUND_PK, REACTION_PK, compound_pk_list, [NA])
 
     # map reactions that have no compounds to NA
@@ -157,16 +149,16 @@ def reactome_mapping(request, genes_str, proteins_str, compounds_str, species_li
 
     rel_path = static('data/gene_names.p')
     pickled_url = request.build_absolute_uri(rel_path)
-    metadata_map = get_gene_names(gene_ids, pickled_url)
-    genes_json = pk_to_json(GENE_PK, 'gene_id', gene_ids, metadata_map, observed_gene_df)
+    metadata_map = get_gene_names(all_gene_ids, pickled_url)
+    genes_json = pk_to_json(GENE_PK, 'gene_id', all_gene_ids, metadata_map, observed_gene_df, observed_ids=observed_gene_ids)
 
     # metadata_map = get_uniprot_metadata_online(uniprot_ids)
-    proteins_json = pk_to_json('protein_pk', 'protein_id', protein_ids, metadata_map, observed_protein_df)
+    proteins_json = pk_to_json('protein_pk', 'protein_id', all_protein_ids, metadata_map, observed_protein_df, observed_ids=observed_protein_ids)
 
     rel_path = static('data/compound_names.json')
     json_url = request.build_absolute_uri(rel_path)
-    metadata_map = get_compound_metadata(compound_ids, json_url, reaction_to_compound_id_to_names)
-    compounds_json = pk_to_json('compound_pk', 'compound_id', compound_ids, metadata_map, compound_df)
+    metadata_map = get_compound_metadata(all_compound_ids, json_url, reaction_to_compound_id_to_names)
+    compounds_json = pk_to_json('compound_pk', 'compound_id', all_compound_ids, metadata_map, observed_compound_df, observed_ids=observed_compound_ids)
 
     metadata_map = {}
     for name in reaction_2_pathways_id_to_names:
@@ -352,7 +344,7 @@ def reverse_relation(rel):
     return Relation(keys=rel.values, values=rel.keys, mapping_list=rel.mapping_list)
 
 
-def pk_to_json(pk_label, display_label, data, metadata_map, observed_df, has_species=False):
+def pk_to_json(pk_label, display_label, data, metadata_map, observed_df, has_species=False, observed_ids=None):
     # turn the first column of the dataframe into index
     if observed_df is not None:
         observed_df = observed_df.set_index(observed_df.columns[0])
@@ -365,8 +357,11 @@ def pk_to_json(pk_label, display_label, data, metadata_map, observed_df, has_spe
         if item == NA:
             continue  # handled below after this loop
 
-        # add primary key to row data
-        row = { pk_label: item }
+        # add observed status and the primary key label to row data
+        observed = False
+        if observed_ids and item in observed_ids:
+            observed = True
+        row = {'obs': observed, pk_label: item}
 
         # add display label to row_data
         if len(metadata_map) > 0 and item in metadata_map and metadata_map[item] is not None:
@@ -381,12 +376,12 @@ def pk_to_json(pk_label, display_label, data, metadata_map, observed_df, has_spe
         # add the remaining data columns to row
         if observed_df is not None:
             try:
-                data = observed_df.loc[item].to_dict()
+                observed_values = observed_df.loc[item].to_dict()
             except KeyError:  # missing data
-                data = {}
+                observed_values = {}
                 for col in observed_df.columns:
-                    data.update({col: 0})
-            row.update(data)
+                    observed_values.update({col: 0})
+            row.update(observed_values)
 
         if has_species:
             row['species'] = species
@@ -395,7 +390,7 @@ def pk_to_json(pk_label, display_label, data, metadata_map, observed_df, has_spe
             output.append(row)
 
     # add dummy entry
-    row = {pk_label: NA, display_label: NA}
+    row = {'obs': NA, pk_label: NA, display_label: NA}
     if has_species:
         row['species'] = NA
 

@@ -91,7 +91,7 @@ def inference_t_test(request, analysis_id):
             case = form.cleaned_data['case']
             control = form.cleaned_data['control']
             data_df, design_df = get_dataframes(analysis_data)
-            to_drop = list(filter(lambda x: x.startswith('padj_') or x.startswith('FC_') or x.startswith('significant_'), data_df.columns))
+            to_drop = list(filter(lambda x: x.startswith('padj_') or x.startswith('FC_') or x.startswith('significant_') or x.startswith('obs'), data_df.columns))
             to_drop.append('gene_id')
             data_df = data_df.drop(to_drop, axis=1)
 
