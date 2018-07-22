@@ -6,6 +6,8 @@ import pandas as pd
 
 from django.templatetags.static import static
 from django.conf import settings
+import urllib.request
+import pickle
 
 from linker.models import Analysis, AnalysisData
 from linker.reactome import get_reaction_df
@@ -24,6 +26,8 @@ COMPOUND_PK = 'compound_pk'
 REACTION_PK = 'reaction_pk'
 PATHWAY_PK = 'pathway_pk'
 
+# COMPOUND_DATABASE = 'ChEBI'
+COMPOUND_DATABASE = 'KEGG'
 
 def reactome_mapping(request, genes_str, proteins_str, compounds_str, species_list):
     ### all the ids that we have from the user ###
@@ -34,15 +38,23 @@ def reactome_mapping(request, genes_str, proteins_str, compounds_str, species_li
     # try to convert all kegg ids to chebi ids, if possible
     print('Converting kegg ids -> chebi ids')
     observed_compound_ids = get_ids_from_dataframe(observed_compound_df)
-    try:
-        kegg_2_chebi = kegg_to_chebi(observed_compound_ids)
-    except Exception: # shouldn't happen?
-        kegg_2_chebi = dict(zip(observed_compound_ids, observed_compound_ids))
+    rel_path = static('data/kegg_to_chebi.p')
+    pickled_url = request.build_absolute_uri(rel_path)
+    kegg_2_chebi = {}
+    with urllib.request.urlopen(pickled_url) as url:
+        kegg_2_chebi = pickle.load(url)
+    for cid in observed_compound_ids:
+        if cid not in kegg_2_chebi:
+            print('Not found: %s' % cid)
+            kegg_2_chebi[cid] = cid
 
     if observed_compound_df is not None:
-        observed_compound_df.iloc[:, 0] = observed_compound_df.iloc[:, 0].map(
+        kegg_compound_df = observed_compound_df.copy()
+        chebi_compound_df = observed_compound_df.copy()
+        chebi_compound_df.iloc[:, 0] = chebi_compound_df.iloc[:, 0].map(
             kegg_2_chebi)  # assume 1st column is id
-        observed_compound_ids = get_ids_from_dataframe(observed_compound_df)
+        kegg_compound_ids = get_ids_from_dataframe(kegg_compound_df)
+        chebi_compound_ids = get_ids_from_dataframe(chebi_compound_df)
 
     ### map genes -> proteins ###
     print('Mapping genes -> proteins')
@@ -59,7 +71,13 @@ def reactome_mapping(request, genes_str, proteins_str, compounds_str, species_li
 
     ### maps compounds -> reactions ###
     print('Mapping compounds -> reactions')
-    compound_2_reactions_mapping, _ = compound_to_reaction(observed_compound_ids, species_list)
+    if COMPOUND_DATABASE == 'KEGG':
+        compound_ids = kegg_compound_ids
+        compound_df = kegg_compound_df
+    elif COMPOUND_DATABASE == 'ChEBI':
+        compound_ids = chebi_compound_ids
+        compound_df = chebi_compound_df
+    compound_2_reactions_mapping, _ = compound_to_reaction(compound_ids, species_list)
     compound_2_reactions = make_relations(compound_2_reactions_mapping, COMPOUND_PK, REACTION_PK,
                                           value_key='reaction_id')
 
@@ -148,7 +166,7 @@ def reactome_mapping(request, genes_str, proteins_str, compounds_str, species_li
     rel_path = static('data/compound_names.json')
     json_url = request.build_absolute_uri(rel_path)
     metadata_map = get_compound_metadata(compound_ids, json_url, reaction_to_compound_id_to_names)
-    compounds_json = pk_to_json('compound_pk', 'compound_id', compound_ids, metadata_map, observed_compound_df)
+    compounds_json = pk_to_json('compound_pk', 'compound_id', compound_ids, metadata_map, compound_df)
 
     metadata_map = {}
     for name in reaction_2_pathways_id_to_names:
@@ -294,7 +312,8 @@ def csv_to_dataframe(csv_str):
     data = StringIO(filtered_str)
     try:
         data_df = pd.read_csv(data)
-        id_list = data_df.values[:, 0].tolist()  # id is always the first column
+        data_df.iloc[:, 0] = data_df.iloc[:, 0].astype(str) # assume id is in the first column and is a string
+        id_list = data_df.iloc[:, 0].values.tolist()
     except pd.errors.EmptyDataError:
         data_df = None
         id_list = []
@@ -317,7 +336,7 @@ def get_ids_from_dataframe(df):
     if df is None:
         return []
     else:
-        return df.values[:, 0].tolist()  # id is always the first column
+        return df.iloc[:, 0].values.tolist() # id is always the first column
 
 
 def merge_relation(r1, r2):
