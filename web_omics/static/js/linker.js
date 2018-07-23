@@ -32,7 +32,7 @@ const myLinker = (function () {
                     "targets": '_all',
                     render: function(data, type, row) {
                         if (typeof(data) == 'number') {
-                            return data.toExponential(4);
+                            return data.toFixed(2);
                         } else if (typeof(data) == 'string') {
                             return data.trunc(50);
                         } else {
@@ -67,7 +67,7 @@ const myLinker = (function () {
                         // });
                         x = $(row).find(`td`).filter(function() {
                             // TODO: round to the specified decimal places and compare the string representation. Might not always work.
-                            const dp = 3;
+                            const dp = 2;
                             return parseFloat(this.textContent).toFixed(dp) === filtered_logfc[i].toFixed(dp)
                         });
                         if (x) {
