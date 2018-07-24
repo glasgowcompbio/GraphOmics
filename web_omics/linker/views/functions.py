@@ -82,20 +82,23 @@ def reactome_mapping(request, genes_str, proteins_str, compounds_str, species_li
                                                                                                   species_list)
     reaction_2_pathways = make_relations(reaction_2_pathways_mapping, REACTION_PK, PATHWAY_PK,
                                          value_key='pathway_id')
-    reaction_ids = reaction_2_pathways.keys  # keep only reactions in metabolic pathways
 
     ### maps reactions -> proteins ###
     print('Mapping reactions -> proteins')
     mapping, _ = reaction_to_uniprot(reaction_ids, species_list)
     reaction_2_proteins = make_relations(mapping, REACTION_PK, PROTEIN_PK, value_key=None)
-    protein_2_reactions = reverse_relation(reaction_2_proteins)
+    protein_2_reactions = merge_relation(protein_2_reactions, reverse_relation(reaction_2_proteins))
     all_protein_ids = protein_2_reactions.keys
 
     ### maps reactions -> compounds ###
     print('Mapping reactions -> compounds')
-    reaction_2_compounds_mapping, reaction_to_compound_id_to_names = reaction_to_compound(reaction_ids, species_list)
+    if COMPOUND_DATABASE == 'KEGG':
+        use_kegg = True
+    else:
+        use_kegg = False
+    reaction_2_compounds_mapping, reaction_to_compound_id_to_names = reaction_to_compound(reaction_ids, species_list, use_kegg)
     reaction_2_compounds = make_relations(reaction_2_compounds_mapping, REACTION_PK, COMPOUND_PK, value_key=None)
-    compound_2_reactions = reverse_relation(reaction_2_compounds)
+    compound_2_reactions = merge_relation(compound_2_reactions, reverse_relation(reaction_2_compounds))
     all_compound_ids = compound_2_reactions.keys
 
     ### map proteins -> genes ###
@@ -103,8 +106,7 @@ def reactome_mapping(request, genes_str, proteins_str, compounds_str, species_li
     mapping, _ = uniprot_to_ensembl(all_protein_ids, species_list)
     protein_2_genes = make_relations(mapping, PROTEIN_PK, GENE_PK, value_key=None)
     gene_2_proteins = merge_relation(gene_2_proteins, reverse_relation(protein_2_genes))
-    inferred_gene_ids = protein_2_genes.values
-    all_gene_ids = list(set(observed_gene_ids + inferred_gene_ids))
+    all_gene_ids = gene_2_proteins.keys
 
     ### add links ###
 
@@ -364,6 +366,7 @@ def pk_to_json(pk_label, display_label, data, metadata_map, observed_df, has_spe
         row = {'obs': observed, pk_label: item}
 
         # add display label to row_data
+        species = None
         if len(metadata_map) > 0 and item in metadata_map and metadata_map[item] is not None:
             label = metadata_map[item]['display_name']
             # get the species if it's there too

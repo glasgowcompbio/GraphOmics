@@ -4,6 +4,7 @@ const FiRDI = (function () {
     // set up datatables
     let dataTablesOptionsManager = {
         init: function (tablesInfo) {
+            alasql.options.joinstar = 'underscore'; // https://github.com/agershun/alasql/issues/547
             const colNames = this.getDataTablesColumns(tablesInfo);
             const dataTablesColumnsSettings = this.convertColumnNamesToDataTablesSettings(colNames);
             const filteredTableInfo = this.uniqueDataFilter(tablesInfo);
@@ -113,7 +114,7 @@ const FiRDI = (function () {
                 .filter(isTableVisible)
                 .map(tableInfo => ({'tableName': tableInfo['tableName'], 'firstDataRow': tableInfo['tableData'][0]}))
                 .map(tableData => Object.keys(tableData['firstDataRow'])
-                    .map(e => tableData['tableName'] + "." + e))
+                    .map(e => tableData['tableName'] + "." + e + " AS " + tableData['tableName'] + "_" + e))
                 .reduce((fieldNamesArray, fieldNames) => fieldNamesArray.concat(fieldNames), [])
                 .join(", ");
         },
@@ -428,20 +429,37 @@ const FiRDI = (function () {
                     'fieldNames': Object.keys(tableInfo['tableData'][0])
                 }));
         },
+        prefixQuery: function(tableFieldNames, dataSource) {
+            const tableName = tableFieldNames['tableName'];
+            const prefix = tableName + '_';
+            const fieldNames = tableFieldNames['fieldNames'].map(x => prefix + x);
+
+            const sqlStatement = "SELECT DISTINCT " + fieldNames.join(", ") + " FROM ?";
+            console.log(sqlStatement + ' (queryResult)');
+            const temp = alasql(sqlStatement, [dataSource]);
+
+            temp.map(x => { // for each row in the sql results
+                Object.keys(x).map(key => { // rename the properties to remove the table name in front
+                    const newkey = key.replace(prefix, '');
+                    x[newkey] = x[key];
+                    delete(x[key]);
+                });
+            });
+
+            return temp;
+        },
         getFocusData: function (dataForTables, focusResult, queryResult, tableFieldNames, focus) {
             // Function to get the default constraints for the focus table
+            // debugger;
             const tableName = tableFieldNames['tableName'];
-            const fieldNames = tableFieldNames['fieldNames'];
-            const sqlStatement = "SELECT DISTINCT " + fieldNames.join(", ") + " FROM ?";
-
+            let dataSource = undefined;
             if (focus !== tableName) {
-                console.log(sqlStatement + ' (queryResult)')
-                dataForTables[tableName] = alasql(sqlStatement, [queryResult]);
+                dataSource = queryResult;
             } else {
-                console.log(sqlStatement + ' (focusResult)')
-                dataForTables[tableName] = alasql(sqlStatement, [focusResult]);
+                dataSource = focusResult;
             }
 
+            dataForTables[tableName] = this.prefixQuery(tableFieldNames, dataSource);
             $(this.dataTablesIds[tableName]).DataTable().clear();
             $(this.dataTablesIds[tableName]).DataTable().rows.add(dataForTables[tableName]);
             $(this.dataTablesIds[tableName]).DataTable().draw();
@@ -491,13 +509,9 @@ const FiRDI = (function () {
         },
         resetTable: function (tableFieldNames, dataForTables, queryResult) {
             const tableName = tableFieldNames['tableName'];
-            const fieldNames = tableFieldNames['fieldNames'];
-            const sqlStatement = "SELECT DISTINCT " + fieldNames.join(", ") + " FROM ?";
-            console.log(sqlStatement + ' (resetTable)');
+            dataForTables[tableName] = this.prefixQuery(tableFieldNames, queryResult);
+
             const tableAPI = $(this.dataTablesIds[tableName]).DataTable();
-
-            dataForTables[tableFieldNames['tableName']] = alasql(sqlStatement, [queryResult]);
-
             const oldPageInfo = tableAPI.page.info();
             const oldRowIndex = oldPageInfo['start'];
             const rowID = tableAPI.row(oldRowIndex).id();

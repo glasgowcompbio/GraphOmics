@@ -341,7 +341,7 @@ def reaction_to_uniprot(reaction_ids, species_list):
     return dict(results), id_to_names
 
 
-def reaction_to_compound(reaction_ids, species_list):
+def reaction_to_compound(reaction_ids, species_list, use_kegg=False):
     id_to_names = {}
     results = defaultdict(list)
     try:
@@ -374,10 +374,10 @@ def reaction_to_compound(reaction_ids, species_list):
             reaction_id = record['reaction_id']
             compound_id = record['compound_id']
             display_name = record['display_name']
-            # database_name = record['compound_db']
+            database_name = record['compound_db']
             # TODO: find better ways to remove duplicates between KEGG and ChEBI
-            # if database_name == 'COMPOUND':
-            #     continue
+            if use_kegg and database_name != 'COMPOUND':
+                continue
             results[reaction_id].append(compound_id)
             id_to_names[compound_id] = display_name
     finally:
