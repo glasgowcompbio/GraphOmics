@@ -16,15 +16,14 @@ const myLinker = (function () {
                 // "scrollCollapse": true,
                 "searching": true,
                 "columnDefs": [{
-                    targets: 0,
+                    targets: 2,
                     render: function(data, type, row) {
                         if (row.obs === '-') {
-                            return '-';
-                        }
-                        if (data) {
-                            return '🔵';
+                            return data;
+                        } else if (row.obs) {
+                            return '🔵 ' + data;
                         } else {
-                            return '⚪';
+                            return '⚪ ' + data;
                         }
                     }
                     // render: $.fn.dataTable.render.ellipsis(50, false)
@@ -185,11 +184,11 @@ const myLinker = (function () {
 
             // Hide certain columns
             let columnsToHidePerTable = [
-                {"tableName": "genes_table", "columnNames": ["gene_pk", "significant_all", "significant_any"]},
-                {"tableName": "proteins_table", "columnNames": ["protein_pk", "significant_all", "significant_any"]},
-                {"tableName": "compounds_table", "columnNames": ["compound_pk", "significant_all", "significant_any"]},
-                {"tableName": "reactions_table", "columnNames": ["reaction_pk", "significant_all", "significant_any"]},
-                {"tableName": "pathways_table", "columnNames": ["pathway_pk", "significant_all", "significant_any"]}
+                {"tableName": "genes_table", "columnNames": ["obs", "gene_pk", "significant_all", "significant_any"]},
+                {"tableName": "proteins_table", "columnNames": ["obs", "protein_pk", "significant_all", "significant_any"]},
+                {"tableName": "compounds_table", "columnNames": ["obs", "compound_pk", "significant_all", "significant_any"]},
+                {"tableName": "reactions_table", "columnNames": ["obs", "reaction_pk", "significant_all", "significant_any"]},
+                {"tableName": "pathways_table", "columnNames": ["obs", "pathway_pk", "significant_all", "significant_any"]}
             ];
 
             columnsToHidePerTable.forEach(function (tableInfo) {
