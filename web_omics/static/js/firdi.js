@@ -4,7 +4,6 @@ const FiRDI = (function () {
     // set up datatables
     let dataTablesOptionsManager = {
         init: function (tablesInfo) {
-            alasql.options.joinstar = 'underscore'; // https://github.com/agershun/alasql/issues/547
             const colNames = this.getDataTablesColumns(tablesInfo);
             const dataTablesColumnsSettings = this.convertColumnNamesToDataTablesSettings(colNames);
             const filteredTableInfo = this.uniqueDataFilter(tablesInfo);

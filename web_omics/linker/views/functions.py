@@ -360,10 +360,15 @@ def pk_to_json(pk_label, display_label, data, metadata_map, observed_df, has_spe
             continue  # handled below after this loop
 
         # add observed status and the primary key label to row data
-        observed = False
-        if observed_ids and item in observed_ids:
-            observed = True
-        row = {'obs': observed, pk_label: item}
+        row = {}
+        if observed_ids is not None:
+            if item in observed_ids:
+                row['obs'] = True
+            else:
+                row['obs'] = False
+        else:
+            row['obs'] = None
+        row[pk_label] = item
 
         # add display label to row_data
         species = None

@@ -18,7 +18,7 @@ const myLinker = (function () {
                 "columnDefs": [{
                     targets: 2,
                     render: function(data, type, row) {
-                        if (row.obs === '-') {
+                        if (row.obs === '-' || row.obs === null) {
                             return data;
                         } else if (row.obs) {
                             return '🔵 ' + data;
