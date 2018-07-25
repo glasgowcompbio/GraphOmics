@@ -195,7 +195,7 @@ const FiRDI = (function () {
             return this.constraintTableConstraintKeyNames
                 .map(t => t['tableName'] + "." + t['constraintKeyName'])
         },
-        makeWhereClause: function (tablesInfo, skipConstraints) {
+        makeWhereClause: function (tablesInfo, skipConstraints, whereType) {
             const whereSubClauses = this.makeWhereSubClauses();
             let selectedWhereSubClauses = [];
             whereSubClauses.forEach(function (value, i) {
@@ -203,20 +203,49 @@ const FiRDI = (function () {
                     selectedWhereSubClauses.push(whereSubClauses[i] + " IN @(?)");
                 }
             });
+            const whereSubClauses2 = this.constraintTableConstraintKeyNames
+             .map(t => t['tableName'] + "." + whereType + "=TRUE").join(" OR ");
+
             if (selectedWhereSubClauses.length > 0) {
-                return "WHERE " + selectedWhereSubClauses.join(" AND ");
+                const whereSubClauses1 = selectedWhereSubClauses.join(" AND ");
+                if (whereType) {
+                    return "WHERE (" + whereSubClauses1 + ") AND (" + whereSubClauses2 + ")";
+                } else {
+                    return "WHERE " + whereSubClauses1;
+                }
+            } else {
+                if (whereType) {
+                    return "WHERE " + whereSubClauses2;
+                } else {
+                    return "";
+                }
+            }
+        },
+        makeSQLquery: function (tablesInfo, skipConstraints, whereType) {
+            const selectClause = this.makeSelectClause(tablesInfo);
+            const innerJoinClause = this.makeInnerJoinClause();
+            const whereClause = this.makeWhereClause(tablesInfo, skipConstraints, whereType);
+
+            return [selectClause, innerJoinClause, whereClause].join(" ");
+        },
+        makeSignificantWhereClause: function (tablesInfo, whereType) {
+            if (whereType) {
+                const whereSubClauses = this.constraintTableConstraintKeyNames
+                    .map(t => t['tableName'] + "." + whereType + "=TRUE");
+                const whereClauses = "WHERE " + whereSubClauses.join(" OR ");
+                return whereClauses;
             } else {
                 return "";
             }
         },
-        makeSQLquery: function (tablesInfo, skipConstraints) {
+        makeSignificantFilterSQLquery: function (tablesInfo, whereType) {
             const selectClause = this.makeSelectClause(tablesInfo);
             const innerJoinClause = this.makeInnerJoinClause();
-            const whereClause = this.makeWhereClause(tablesInfo, skipConstraints);
+            const whereClause = this.makeSignificantWhereClause(tablesInfo, whereType);
 
             return [selectClause, innerJoinClause, whereClause].join(" ");
         },
-        queryDatabase: function (tablesInfo, constraints) {
+        queryDatabase: function (tablesInfo, constraints, whereType) {
 
             const constraintTableNames = this.constraintTableConstraintKeyNames.map(t => t['tableName']);
             const unpackedConstraints = constraintTableNames.map(n => constraints[n]);
@@ -241,7 +270,7 @@ const FiRDI = (function () {
             });
 
             // debugger;
-            const sqlQuery = this.makeSQLquery(tablesInfo, skipConstraints);
+            const sqlQuery = this.makeSQLquery(tablesInfo, skipConstraints, whereType);
             console.log(sqlQuery);
             const compiledSQLQuery = alasql.compile(sqlQuery);
 
@@ -294,6 +323,7 @@ const FiRDI = (function () {
 
             this.constraintTablesConstraintKeyNames = sqlManager.getConstraintTablesConstraintKeyName(tablesInfo)
             this.tableIdToIdColumnMap = this.getTableKeysAsSingleObject(tablesInfo);
+            this.whereType = undefined;
 
             return this;
         },
@@ -390,6 +420,7 @@ const FiRDI = (function () {
             }, {});
 
             this.initTableClicks();
+            this.initTableFilters();
 
             return this;
         },
@@ -471,12 +502,12 @@ const FiRDI = (function () {
 
                 console.log('queryResult');
                 let dataForTables = this.constraintsManager.makeEmptyConstraint(this.tablesInfo);
-                const queryResult = this.sqlManager.queryDatabase(this.tablesInfo, this.constraintsManager.constraints);
+                const queryResult = this.sqlManager.queryDatabase(this.tablesInfo, this.constraintsManager.constraints, this.constraintsManager.whereType);
 
                 console.log('focusResult');
                 const focus = this.stackManager.peek();
                 const focusConstraints = this.constraintsManager.getFocusConstraints(focus, this.tablesInfo);
-                const focusResult = this.sqlManager.queryDatabase(this.tablesInfo, focusConstraints);
+                const focusResult = this.sqlManager.queryDatabase(this.tablesInfo, focusConstraints, this.constraintsManager.whereType);
 
                 this.tableFieldNames.forEach(tableFieldNames => this.getFocusData(dataForTables, focusResult, queryResult, tableFieldNames, focus));
             } else {
@@ -531,7 +562,8 @@ const FiRDI = (function () {
         resetTables: function () {
             let dataForTables = this.constraintsManager.makeEmptyConstraint(this.tablesInfo);
             console.log('resetTable');
-            const queryResult = this.sqlManager.queryDatabase(this.tablesInfo, this.constraintsManager.constraints);
+            const queryResult = this.sqlManager.queryDatabase(this.tablesInfo, this.constraintsManager.constraints,
+                this.constraintsManager.whereType);
             this.tableFieldNames.forEach(tableFieldNames => this.resetTable(tableFieldNames, dataForTables, queryResult));
         },
         trClickHandler: function (e, dt, type, cell, originalEvent) {
@@ -558,6 +590,30 @@ const FiRDI = (function () {
                 this.updateTables();
             }
             // console.log("after", this.stackManager.stack, this.constraintsManager.constraints);
+        },
+        initTableFilters: function () {
+            function filterTable(tableManager) {
+                return function(e) {
+                    let filterColumnName = undefined;
+                    if (this.value == 'all') {
+                        filterColumnName = 'significant_all';
+                    } else if (this.value == 'any') {
+                        filterColumnName = 'significant_any';
+                    }
+                    Object.keys(tableManager.constraintsManager.constraints).forEach(x => {
+                        tableManager.constraintsManager.constraints[x] = []
+                    });
+                    tableManager.resetTables();
+                    const sqlQuery = tableManager.sqlManager.makeSignificantFilterSQLquery(tableManager.tablesInfo, filterColumnName);
+                    const queryResult = alasql(sqlQuery);
+                    let dataForTables = tableManager.constraintsManager.makeEmptyConstraint(tableManager.tablesInfo);
+                    tableManager.tableFieldNames.forEach(x => tableManager.getFocusData(dataForTables, undefined,
+                        queryResult, x, ''));
+                    tableManager.constraintsManager.constraints = tableManager.constraintsManager.initConstraints();
+                    tableManager.constraintsManager.whereType = filterColumnName;
+                };
+            }
+            $('input[type=radio][name=inlineRadioOptions]').change(filterTable(this));
         }
     };
 

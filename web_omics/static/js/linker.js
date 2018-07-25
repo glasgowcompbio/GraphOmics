@@ -10,7 +10,8 @@ const myLinker = (function () {
         init: function (data) {
 
             const defaultDataTablesSettings = {
-                "dom": "Brftip",
+                // "dom": "Brftip",
+                "dom": "Brpit",
                 "pageLength": 10,
                 // "scrollY": "400px",
                 // "scrollCollapse": true,
@@ -242,41 +243,37 @@ const myLinker = (function () {
                 $.fn.dataTable.tables({api: true}).search(val).draw();
             });
 
-            function setColumnFilter(tables, i, colNames, colName, value) {
-                let idx = colNames.indexOf(colName);
-                if (idx > -1) {
-                    tables.table(i).column(idx).search(value).draw();
-                }
-            }
+            // function setColumnFilter(tables, i, colNames, colName, value) {
+            //     let idx = colNames.indexOf(colName);
+            //     if (idx > -1) {
+            //         tables.table(i).column(idx).search(value).draw();
+            //     }
+            // }
 
             // enable the significant items filter radio button
-            $('input[type=radio][name=inlineRadioOptions]').change(function () {
-                let filterColumnName = ''
-                if (this.value == 'all') {
-                    filterColumnName = 'significant_all';
-                } else if (this.value == 'any') {
-                    filterColumnName = 'significant_any';
-                }
-                const tables = $.fn.dataTable.tables({api: true}).tables();
-                for (let i = 0; i < tables.context.length; i++) {
-                    t = tables.context[i];
-                    const colNames = t.aoColumns.map(x => x.name);
-                    if (this.value == 'all') {
-                        setColumnFilter(tables, i, colNames, 'significant_all', 'true');
-                        setColumnFilter(tables, i, colNames, 'significant_any', '');
-                    } else if (this.value == 'any') {
-                        setColumnFilter(tables, i, colNames, 'significant_all', '');
-                        setColumnFilter(tables, i, colNames, 'significant_any', 'true');
-                    } else {
-                        setColumnFilter(tables, i, colNames, 'significant_all', '');
-                        setColumnFilter(tables, i, colNames, 'significant_any', '');
-                    }
-                }
-            });
-            // const tables = $.fn.dataTable.tables({api: true}).tables();
-            // colNames = table.context[0].aoColumns.map(x => x.name)
-            // idx = colNames.indexOf('significant_all')
-            // table.column(idx).search('true').draw()
+            // $('input[type=radio][name=inlineRadioOptions]').change(function () {
+            //     let filterColumnName = ''
+            //     if (this.value == 'all') {
+            //         filterColumnName = 'significant_all';
+            //     } else if (this.value == 'any') {
+            //         filterColumnName = 'significant_any';
+            //     }
+            //     const tables = $.fn.dataTable.tables({api: true}).tables();
+            //     for (let i = 0; i < tables.context.length; i++) {
+            //         t = tables.context[i];
+            //         const colNames = t.aoColumns.map(x => x.name);
+            //         if (this.value == 'all') {
+            //             setColumnFilter(tables, i, colNames, 'significant_all', 'true');
+            //             setColumnFilter(tables, i, colNames, 'significant_any', '');
+            //         } else if (this.value == 'any') {
+            //             setColumnFilter(tables, i, colNames, 'significant_all', '');
+            //             setColumnFilter(tables, i, colNames, 'significant_any', 'true');
+            //         } else {
+            //             setColumnFilter(tables, i, colNames, 'significant_all', '');
+            //             setColumnFilter(tables, i, colNames, 'significant_any', '');
+            //         }
+            //     }
+            // });
 
         }, // end init
 
