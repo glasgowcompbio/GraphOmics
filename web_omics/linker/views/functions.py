@@ -388,7 +388,7 @@ def pk_to_json(pk_label, display_label, data, metadata_map, observed_df, has_spe
             except KeyError:  # missing data
                 observed_values = {}
                 for col in observed_df.columns:
-                    observed_values.update({col: 0})
+                    observed_values.update({col: None})
             row.update(observed_values)
 
         if has_species:

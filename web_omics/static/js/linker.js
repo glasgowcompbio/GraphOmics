@@ -35,6 +35,8 @@ const myLinker = (function () {
                             return data.toFixed(2);
                         } else if (typeof(data) == 'string') {
                             return data.trunc(50);
+                        } else if (data === null) {
+                            return '-'
                         } else {
                             return data;
                         }
@@ -69,7 +71,12 @@ const myLinker = (function () {
                             // TODO: round to the specified decimal places and compare the string representation. Might not always work.
                             const dp = 2;
                             const val1 = parseFloat(this.textContent).toFixed(dp);
-                            let val2 = filtered_logfc[i].toFixed(dp);
+                            let val2 = filtered_logfc[i];
+                            if (val2 === null) {
+                                return false;
+                            } else {
+                                val2 = val2.toFixed(dp);
+                            }
                             if (val2 === '-0.00') {
                                 val2 = '0.00'
                             }

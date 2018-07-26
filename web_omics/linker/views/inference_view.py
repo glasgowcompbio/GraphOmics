@@ -95,6 +95,11 @@ def inference_t_test(request, analysis_id):
             to_drop.append('gene_id')
             data_df = data_df.drop(to_drop, axis=1)
 
+            # drop rows with all NAs and 0s
+            data_df = data_df.dropna(how='all')
+            data_df = data_df.loc[~(data_df==0).all(axis=1)]
+
+            # run deseq2 here
             pd_df, rld_df, res_ordered = run_deseq(data_df, design_df, 10, case, control)
             deseq_df = pd_df[['padj', 'log2FoldChange']]
 
@@ -104,20 +109,30 @@ def inference_t_test(request, analysis_id):
             for i in range(len(json_data)):
                 item = json_data[i]
                 key = item['gene_pk']
-                padj = res['padj'][key]
-                lfc = res['log2FoldChange'][key]
-                if np.isnan(padj):
-                    padj = 0
-                if np.isnan(lfc):
-                    lfc = 0
+                try:
+                    padj = res['padj'][key]
+                    if np.isnan(padj):
+                        padj = None
+                except KeyError:
+                    padj = None
+                try:
+                    lfc = res['log2FoldChange'][key]
+                    if np.isnan(lfc):
+                        lfc = None
+                except KeyError:
+                    lfc = None
                 item['padj_%s' % label] = padj
                 item['FC_%s' % label] = lfc
 
                 # check if item is statistically significant
-                padj_values = np.array([item[k] for k in item.keys() if 'padj' in k])
-                check = (padj_values > 0) & (padj_values < 0.05)
-                item['significant_all'] = np.all(check)
-                item['significant_any'] = np.any(check)
+                padj_values = np.array([item[k] for k in item.keys() if 'padj' in k and item[k] is not None])
+                check = (padj_values > 0) & (padj_values < T_TEST_THRESHOLD)
+                if len(check) == 0:
+                    item['significant_all'] = False
+                    item['significant_any'] = False
+                else:
+                    item['significant_all'] = np.all(check)
+                    item['significant_any'] = np.any(check)
 
             # creates a copy of analysis_data
             parent_pk = analysis_data.pk

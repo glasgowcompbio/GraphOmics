@@ -40,3 +40,5 @@ InferenceTypeChoices = (
     # (PLSDA, 'Partial Least Square - Disciminant Analysis'),
     # (KMEANS, 'K-Means')
 )
+
+T_TEST_THRESHOLD = 0.05
