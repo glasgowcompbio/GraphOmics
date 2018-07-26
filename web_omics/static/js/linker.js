@@ -281,10 +281,6 @@ const myLinker = (function () {
             // calls the appropriate info pane functions
             e.preventDefault();
 
-            // clear search result
-            // $('#global_filter').val('');
-            // $.fn.dataTable.tables({api: true}).search('').draw();
-
             // update table
             const tableId = e.currentTarget.id;
             const tables = $('.dataTable').DataTable();

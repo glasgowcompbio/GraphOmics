@@ -567,9 +567,14 @@ const FiRDI = (function () {
             this.tableFieldNames.forEach(tableFieldNames => this.resetTable(tableFieldNames, dataForTables, queryResult));
         },
         trClickHandler: function (e, dt, type, cell, originalEvent) {
-            // Calls the appropriate constraint function depending on the state of the bound table
             // debugger;
             e.preventDefault();
+
+            // clear search result
+            $('#global_filter').val('');
+            $.fn.dataTable.tables({api: true}).search('').draw();
+
+            // Calls the appropriate constraint function depending on the state of the bound table
             const tableName = e.currentTarget.id;
             const tableAPI = $(this.dataTablesIds[tableName]).DataTable()
             targetTr = $(originalEvent.target).closest('tr'),
@@ -589,6 +594,7 @@ const FiRDI = (function () {
                 this.constraintsManager.addConstraint(tableName, rowObject);
                 this.updateTables();
             }
+
             // console.log("after", this.stackManager.stack, this.constraintsManager.constraints);
         },
         initTableFilters: function () {
