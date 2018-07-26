@@ -98,3 +98,11 @@ button.dt-button {
 .annotation {
     color: red;
 }
+.observed::before {
+    content: '🔵';
+    padding-right: 5px;
+}
+.inferred::before {
+    content: '⚪';
+    padding-right: 5px;
+}

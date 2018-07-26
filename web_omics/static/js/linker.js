@@ -18,13 +18,13 @@ const myLinker = (function () {
                 "searching": true,
                 "columnDefs": [{
                     targets: 2,
-                    render: function(data, type, row) {
-                        if (row.obs === '-' || row.obs === null) {
-                            return data;
-                        } else if (row.obs) {
-                            return '🔵 ' + data;
+                    createdCell: function(td, cellData, rowData, row, col) {
+                        if (rowData.obs === '-' || rowData.obs === null) {
+                            // do nothing
+                        } else if (rowData.obs) {
+                            $(td).addClass('observed');
                         } else {
-                            return '⚪ ' + data;
+                            $(td).addClass('inferred');
                         }
                     }
                     // render: $.fn.dataTable.render.ellipsis(50, false)
@@ -68,7 +68,12 @@ const myLinker = (function () {
                         x = $(row).find(`td`).filter(function() {
                             // TODO: round to the specified decimal places and compare the string representation. Might not always work.
                             const dp = 2;
-                            return parseFloat(this.textContent).toFixed(dp) === filtered_logfc[i].toFixed(dp)
+                            const val1 = parseFloat(this.textContent).toFixed(dp);
+                            let val2 = filtered_logfc[i].toFixed(dp);
+                            if (val2 === '-0.00') {
+                                val2 = '0.00'
+                            }
+                            return val1 === val2;
                         });
                         if (x) {
                             x.css({
@@ -242,7 +247,7 @@ const myLinker = (function () {
                 const val = $('#global_filter').val();
                 $.fn.dataTable.tables({api: true}).search(val).draw();
             });
-            
+
         }, // end init
 
         dataTablesDrawFunction: function (e, dt, type, cell, originalEvent) {
