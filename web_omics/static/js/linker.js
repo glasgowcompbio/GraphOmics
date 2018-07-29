@@ -21,6 +21,8 @@ const myLinker = (function () {
                     createdCell: function(td, cellData, rowData, row, col) {
                         if (rowData.obs === '-' || rowData.obs === null) {
                             // do nothing
+                        } else if (rowData['significant_' + $('input[type=radio][name=inlineRadioOptions]:checked').val()]) {
+                            $(td).addClass('significant');
                         } else if (rowData.obs) {
                             $(td).addClass('observed');
                         } else {
@@ -88,6 +90,20 @@ const myLinker = (function () {
                                 'color': 'white'
                             });
                         }
+
+                        // set tooltip
+                        function objToString (obj) {
+                            let str = '';
+                            for (let p in obj) {
+                                if (obj.hasOwnProperty(p) && obj[p] !== null && p.startsWith('padj')) {
+                                    str += p + ': ' + obj[p].toFixed(4) + '\n';
+                                }
+                            }
+                            return str;
+                        }
+                        $(row).attr({
+                            'title': objToString(data)
+                        })
 
                     }
                 }

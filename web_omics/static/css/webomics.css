@@ -127,3 +127,7 @@ button.dt-button {
     content: '⚪';
     padding-right: 5px;
 }
+.significant::before {
+    content: '❗';
+    padding-right: 5px;
+}
