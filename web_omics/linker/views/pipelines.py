@@ -6,6 +6,8 @@ from IPython.display import display, HTML, Image
 
 import numpy as np
 import pandas as pd
+from scipy import stats
+from statsmodels.sandbox.stats.multicomp import multipletests
 from sklearn.decomposition import PCA
 
 from rpy2.robjects.packages import importr
@@ -56,6 +58,38 @@ def run_deseq(count_data, col_data, keep_threshold, case, control):
     rld_df = to_pd_df(results[1])
     res_ordered = results[2]
     return pd_df, rld_df, res_ordered
+
+
+def run_ttest(count_data, col_data, case, control):
+    sample_group = col_data[col_data['group'] == case]
+    case_data = count_data[sample_group.index]
+    sample_group = col_data[col_data['group'] == control]
+    control_data = count_data[sample_group.index]
+
+    nrow, _ = count_data.shape
+    pvalues = []
+    lfcs = []
+    for i in range(nrow):
+
+        # T - test for the means of two independent samples.
+        case_df = case_data.iloc[i, :]
+        control_df = control_data.iloc[i, :]
+        statistics, pvalue = stats.ttest_ind(np.log(case_df), np.log(control_df)) #
+
+        # log2 FC (case/control)
+        case_avg = np.log(np.mean(case_df.values))
+        control_avg = np.log(np.mean(control_df.values))
+        lfc = case_avg - control_avg
+        pvalues.append(pvalue)
+        lfcs.append(lfc)
+
+    # correct p-values
+    reject, pvals_corrected, _, _ = multipletests(pvalues, method='fdr_bh')
+    result_df = pd.DataFrame({
+        'padj': pvals_corrected,
+        'log2FoldChange': lfcs
+    }, index=count_data.index)
+    return result_df
 
 
 def plot_notebook(rfunc, res):

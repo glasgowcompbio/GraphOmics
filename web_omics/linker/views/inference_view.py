@@ -12,7 +12,7 @@ import jsonpickle
 from linker.constants import *
 from linker.forms import BaseInferenceForm, T_test_Form, HierarchicalClusteringForm
 from linker.models import Analysis, AnalysisData
-from linker.views.pipelines import run_deseq
+from linker.views.pipelines import run_deseq, run_ttest
 
 
 def inference(request, analysis_id):
@@ -90,25 +90,27 @@ def inference_t_test(request, analysis_id):
         if form.is_valid():
             case = form.cleaned_data['case']
             control = form.cleaned_data['control']
-            data_df, design_df = get_dataframes(analysis_data)
+            data_df, design_df = get_dataframes(analysis_data, PKS[data_type], SAMPLE_COL)
             to_drop = list(filter(lambda x: x.startswith('padj_') or x.startswith('FC_') or x.startswith('significant_') or x.startswith('obs'), data_df.columns))
-            to_drop.append('gene_id')
+            to_drop.append(IDS[data_type])
             data_df = data_df.drop(to_drop, axis=1)
 
             # drop rows with all NAs and 0s
             data_df = data_df.dropna(how='all')
             data_df = data_df.loc[~(data_df==0).all(axis=1)]
 
-            # run deseq2 here
-            pd_df, rld_df, res_ordered = run_deseq(data_df, design_df, 10, case, control)
-            deseq_df = pd_df[['padj', 'log2FoldChange']]
+            if data_type == GENOMICS: # run deseq2 here
+                pd_df, rld_df, res_ordered = run_deseq(data_df, design_df, 10, case, control)
+                result_df = pd_df[['padj', 'log2FoldChange']]
+            elif data_type == PROTEOMICS or data_type == METABOLOMICS:
+                result_df = run_ttest(data_df, design_df, case, control)
 
-            res = deseq_df.to_dict()
+            res = result_df.to_dict()
             json_data = analysis_data.json_data
             label = '%s_vs_%s' % (case, control)
             for i in range(len(json_data)):
                 item = json_data[i]
-                key = item['gene_pk']
+                key = item[PKS[data_type]]
                 try:
                     padj = res['padj'][key]
                     if np.isnan(padj):
@@ -139,15 +141,18 @@ def inference_t_test(request, analysis_id):
             analysis_data.pk = None
             analysis_data.json_data = json_data
             analysis_data.parent = get_object_or_404(AnalysisData, pk=parent_pk)
-            analysis_data.display_name = 'DeSeq2 %s (case) vs %s (control)' % (case, control)
             analysis_data.inference_type = T_TEST
             analysis_data.timestamp = timezone.localtime()
-            analysis_data.metadata = {
-                'rld_df': rld_df.to_json(),
-                'res_ordered': jsonpickle.encode(res_ordered)
-            }
-            analysis_data.save()
+            if data_type == GENOMICS:
+                analysis_data.display_name = 'DeSeq2 %s (case) vs %s (control)' % (case, control)
+                analysis_data.metadata = {
+                    'rld_df': rld_df.to_json(),
+                    'res_ordered': jsonpickle.encode(res_ordered)
+                }
+            elif data_type == PROTEOMICS or data_type == METABOLOMICS:
+                analysis_data.display_name = 't-test %s (case) vs %s (control)' % (case, control)
 
+            analysis_data.save()
             messages.success(request, 'Add new inference successful.', extra_tags='primary')
             return inference(request, analysis_id)
         else:
@@ -183,9 +188,9 @@ def get_analysis_data(analysis, data_type):
     return analysis_data
 
 
-def get_dataframes(analysis_data):
-    data_df = pd.DataFrame(analysis_data.json_data).set_index('gene_pk')
-    design_df = pd.read_json(analysis_data.json_design).set_index('sample')
+def get_dataframes(analysis_data, pk_col, sample_col):
+    data_df = pd.DataFrame(analysis_data.json_data).set_index(pk_col)
+    design_df = pd.read_json(analysis_data.json_design).set_index(sample_col)
     return data_df, design_df
 
 

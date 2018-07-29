@@ -42,3 +42,14 @@ InferenceTypeChoices = (
 )
 
 T_TEST_THRESHOLD = 0.05
+PKS = {
+    GENOMICS: 'gene_pk',
+    PROTEOMICS: 'protein_pk',
+    METABOLOMICS: 'compound_pk'
+}
+IDS = {
+    GENOMICS: 'gene_id',
+    PROTEOMICS: 'protein_id',
+    METABOLOMICS: 'compound_id'
+}
+SAMPLE_COL = 'sample'
