@@ -33,11 +33,16 @@
                     Create a new data integration analysis by uploading data.
                     Analysis description is optional and can be left blank.
                     Other fields for the data should be provided in a comma-separated
-                    format. For each omics data, the following two files should be provided:
+                    format. For each omics data available, the following two files should be provided,
+                    otherwise they can be left blank.
                 </p>
                 <ul>
-                    <li>Sample measurements</li>
-                    <li>Design matrix</li>
+                    <li>
+                        Sample measurements (<a href="{% static 'data/uploads/gene_data.csv' %}">example</a>)
+                    </li>
+                    <li>
+                        Design matrix (<a href="{% static 'data/uploads/gene_design.csv' %}">example</a>)
+                    </li>
                 </ul>
                 <form id="analysis_form"
                       method="post"

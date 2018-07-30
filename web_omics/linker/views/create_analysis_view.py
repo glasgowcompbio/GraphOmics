@@ -25,38 +25,11 @@ class CreateAnalysisView(FormView):
         compounds_str = form.cleaned_data['compounds']
         species_dict = get_species_dict()
         species_list = [species_dict[x] for x in form.cleaned_data['species']]
-
         current_user = self.request.user
-        results = reactome_mapping(self.request, genes_str, proteins_str, compounds_str, species_list)
-        analysis, data = save_analysis(analysis_name, analysis_desc,
-                                       genes_str, proteins_str, compounds_str,
-                                       results, species_list, current_user)
 
-        table_names = {
-            GENOMICS: 'genes_table',
-            PROTEOMICS: 'proteins_table',
-            METABOLOMICS: 'compounds_table'
-        }
-        data_fields = {}
-        for k, v in DataRelationType:
-            try:
-                analysis_data = AnalysisData.objects.filter(analysis=analysis, data_type=k).order_by('-timestamp')[0]
-                if analysis_data.json_design:
-                    data_fields[table_names[k]] = list(
-                        set(pd.DataFrame(json.loads(analysis_data.json_design))['sample']))
-            except IndexError:
-                continue
-            except KeyError:
-                continue
-
-        context = {
-            'data': data,
-            'data_fields': json.dumps(data_fields),
-            'analysis_id': analysis.pk,
-            'analysis_name': analysis.name,
-            'analysis_description': analysis.description,
-            'analysis_species': analysis.get_species_str()
-        }
+        analysis, data, data_fields = get_data(self.request, analysis_desc, analysis_name, compounds_str, current_user,
+                                               genes_str, proteins_str, species_list)
+        context = get_context(analysis, data, data_fields)
         return render(self.request, self.success_url, context)
 
 
@@ -75,17 +48,9 @@ class UploadAnalysisView(FormView):
         species_list = [species_dict[x] for x in form.cleaned_data['species']]
         current_user = self.request.user
 
-        results = reactome_mapping(self.request, genes_str, proteins_str, compounds_str, species_list)
-        analysis, data = save_analysis(analysis_name, analysis_desc,
-                                       genes_str, proteins_str, compounds_str,
-                                       results, species_list, current_user)
-        context = {
-            'data': data,
-            'analysis_id': analysis.pk,
-            'analysis_name': analysis.name,
-            'analysis_description': analysis.description,
-            'analysis_species': analysis.get_species_str()
-        }
+        analysis, data, data_fields = get_data(self.request, analysis_desc, analysis_name, compounds_str, current_user,
+                                               genes_str, proteins_str, species_list)
+        context = get_context(analysis, data, data_fields)
         return render(self.request, self.success_url, context)
 
 
@@ -118,18 +83,48 @@ class AddPathwayView(FormView):
         genes_str = '\n'.join(['identifier'] + all_genes)
         proteins_str = '\n'.join(['identifier'] + all_proteins)
         compounds_str = '\n'.join(['identifier'] + all_compounds)
-        results = reactome_mapping(self.request, genes_str, proteins_str, compounds_str, species_list)
-        analysis, data = save_analysis(analysis_name, analysis_desc,
-                                       genes_str, proteins_str, compounds_str,
-                                       results, species_list, current_user)
-        context = {
-            'data': data,
-            'analysis_id': analysis.pk,
-            'analysis_name': analysis.name,
-            'analysis_description': analysis.description,
-            'analysis_species': analysis.get_species_str()
-        }
+
+        analysis, data, data_fields = get_data(self.request, analysis_desc, analysis_name, compounds_str, current_user,
+                                               genes_str, proteins_str, species_list)
+        context = get_context(analysis, data, data_fields)
         return render(self.request, self.success_url, context)
+
+
+def get_data(request, analysis_desc, analysis_name, compounds_str, current_user, genes_str, proteins_str,
+             species_list):
+    results = reactome_mapping(request, genes_str, proteins_str, compounds_str, species_list)
+    analysis, data = save_analysis(analysis_name, analysis_desc,
+                                   genes_str, proteins_str, compounds_str,
+                                   results, species_list, current_user)
+    table_names = {
+        GENOMICS: 'genes_table',
+        PROTEOMICS: 'proteins_table',
+        METABOLOMICS: 'compounds_table'
+    }
+    data_fields = {}
+    for k, v in DataRelationType:
+        try:
+            analysis_data = AnalysisData.objects.filter(analysis=analysis, data_type=k).order_by('-timestamp')[0]
+            if analysis_data.json_design:
+                data_fields[table_names[k]] = list(
+                    set(pd.DataFrame(json.loads(analysis_data.json_design))['sample']))
+        except IndexError:
+            continue
+        except KeyError:
+            continue
+    return analysis, data, data_fields
+
+
+def get_context(analysis, data, data_fields):
+    context = {
+        'data': data,
+        'data_fields': json.dumps(data_fields),
+        'analysis_id': analysis.pk,
+        'analysis_name': analysis.name,
+        'analysis_description': analysis.description,
+        'analysis_species': analysis.get_species_str()
+    }
+    return context
 
 
 def get_uploaded_data(form_dict, data_key, design_key):
