@@ -35,14 +35,15 @@
             </ul>
         </div>
 
-        {% if analysis_data.count > 0 %}
+        {% if analysis_data_list.count > 0 %}
             <div class="m-1 mb-3">
                 <div class="card">
                     <div class="card-body">
                             <h5>Inference Results</h5>
                             <p>
-                                The following table shows all inference results that have been created.
-                                To add a new inference, see the panel at the bottom.
+                                The following table shows all inferences that have been created for this analysis.
+                                To add a new inference, see the panel at the bottom. Inference results
+                                are shown in the <strong>Explore Data</strong> and <strong>Summary</strong> tabs.
                             </p>
                             <table class="table table-sm">
                                 <tr>
@@ -51,7 +52,7 @@
                                     <th>Type</th>
                                     <th>Date</th>
                                 </tr>
-                                {% for ad in analysis_data %}
+                                {% for ad in analysis_data_list %}
                                     <tr>
                                         <td>{{ ad.display_name }}</td>
                                         <td>{{ ad.get_data_type_str }}</td>

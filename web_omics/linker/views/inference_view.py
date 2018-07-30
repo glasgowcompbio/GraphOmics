@@ -17,7 +17,7 @@ from linker.views.pipelines import run_deseq, run_ttest
 
 def inference(request, analysis_id):
     analysis = get_object_or_404(Analysis, pk=analysis_id)
-    analysis_data = AnalysisData.objects.filter(analysis=analysis).exclude(inference_type__isnull=True).order_by('timestamp')
+    analysis_data_list = AnalysisData.objects.filter(analysis=analysis).exclude(inference_type__isnull=True).order_by('timestamp')
     if request.method == 'POST':
         form = BaseInferenceForm(request.POST)
         if form.is_valid():
@@ -57,7 +57,7 @@ def inference(request, analysis_id):
 
             context = {
                 'analysis_id': analysis.pk,
-                'analysis_data': analysis_data,
+                'analysis_data_list': analysis_data_list,
                 'form': selected_form,
                 'action_url': action_url
             }
@@ -69,7 +69,7 @@ def inference(request, analysis_id):
         base_form = BaseInferenceForm()
         context = {
             'analysis_id': analysis.pk,
-            'analysis_data': analysis_data,
+            'analysis_data_list': analysis_data_list,
             'form': base_form,
             'action_url': action_url
         }
