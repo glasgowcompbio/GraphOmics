@@ -62,7 +62,7 @@ def get_samples(analysis, data_type):
     analysis_data = AnalysisData.objects.filter(analysis=analysis, data_type=data_type).first()
     if analysis_data.json_design is not None:
         df = pd.DataFrame(json.loads(analysis_data.json_design))
-        df.insert(1, 'factor', 'group')
+        df.insert(1, FACTOR_COL, GROUP_COL)
         results = df.values
     else:
         results = []

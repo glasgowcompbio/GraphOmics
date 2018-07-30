@@ -1,4 +1,5 @@
 import json
+import re
 from io import StringIO
 
 import collections
@@ -12,7 +13,7 @@ import pickle
 from linker.models import Analysis, AnalysisData
 from linker.reactome import get_reaction_df
 from linker.constants import GENOMICS, PROTEOMICS, METABOLOMICS, REACTIONS, PATHWAYS, GENES_TO_PROTEINS, \
-    PROTEINS_TO_REACTIONS, COMPOUNDS_TO_REACTIONS, REACTIONS_TO_PATHWAYS
+    PROTEINS_TO_REACTIONS, COMPOUNDS_TO_REACTIONS, REACTIONS_TO_PATHWAYS, SAMPLE_COL, GROUP_COL
 from linker.metadata import kegg_to_chebi, get_gene_names, get_compound_metadata, clean_label
 from linker.reactome import ensembl_to_uniprot, uniprot_to_reaction, compound_to_reaction, \
     reaction_to_metabolite_pathway, reaction_to_uniprot, reaction_to_compound, uniprot_to_ensembl
@@ -297,7 +298,7 @@ def csv_to_dataframe(csv_str):
     filtered_str = ''
     group_str = None
     for line in csv_str.splitlines():
-        if line.startswith('group'):
+        if re.match(GROUP_COL, line, re.I):
             group_str = line
         else:
             filtered_str += line + '\n'
@@ -319,9 +320,9 @@ def csv_to_dataframe(csv_str):
         if group_str is not None:
             print(group_str)
             group_data = group_str.split(',')
-            group_df = pd.DataFrame(list(zip(sample_data[1:], group_data[1:])), columns=['sample', 'group'])
+            group_df = pd.DataFrame(list(zip(sample_data[1:], group_data[1:])), columns=[SAMPLE_COL, GROUP_COL])
         else:
-            group_df = pd.DataFrame(sample_data[1:], columns=['sample'])
+            group_df = pd.DataFrame(sample_data[1:], columns=[SAMPLE_COL])
 
     return data_df, group_df, id_list
 

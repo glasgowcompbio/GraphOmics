@@ -195,9 +195,12 @@ def get_dataframes(analysis_data, pk_col, sample_col):
 
 
 def get_groups(analysis_data):
-    df = pd.read_json(analysis_data.json_design)
-    analysis_groups = set(df['group'])
-    groups = ((None, NA),) + tuple(zip(analysis_groups, analysis_groups))
+    if analysis_data.json_design:
+        df = pd.read_json(analysis_data.json_design)
+        analysis_groups = set(df[GROUP_COL])
+        groups = ((None, NA),) + tuple(zip(analysis_groups, analysis_groups))
+    else:
+        groups = ((None, NA),)
     return groups
 
 

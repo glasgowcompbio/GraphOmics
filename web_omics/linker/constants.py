@@ -34,7 +34,7 @@ T_TEST, CORRELATION, PCA, PLSDA, HIERARCHICAL, KMEANS = range(0, 6)
 InferenceTypeChoices = (
     (None, NA),
     (T_TEST, 't-test'),
-    (HIERARCHICAL, 'Hierarchical Clustering'),
+    # (HIERARCHICAL, 'Hierarchical Clustering'),
     # (CORRELATION, 'Correlation Analysis'),
     # (PCA, 'Principal Component Analysis'),
     # (PLSDA, 'Partial Least Square - Disciminant Analysis'),
@@ -53,3 +53,5 @@ IDS = {
     METABOLOMICS: 'compound_id'
 }
 SAMPLE_COL = 'sample'
+GROUP_COL = 'group'
+FACTOR_COL = 'factor'

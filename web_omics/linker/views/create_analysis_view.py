@@ -107,7 +107,7 @@ def get_data(request, analysis_desc, analysis_name, compounds_str, current_user,
             analysis_data = AnalysisData.objects.filter(analysis=analysis, data_type=k).order_by('-timestamp')[0]
             if analysis_data.json_design:
                 data_fields[table_names[k]] = list(
-                    set(pd.DataFrame(json.loads(analysis_data.json_design))['sample']))
+                    set(pd.DataFrame(json.loads(analysis_data.json_design))[SAMPLE_COL]))
         except IndexError:
             continue
         except KeyError:
@@ -145,9 +145,10 @@ def get_uploaded_data(form_dict, data_key, design_key):
 
 def get_uploaded_str(data_df, design_df):
     data_list = data_df.to_csv(index=False).splitlines()
-    sample_2_group = design_df.set_index('sample').to_dict()['group']
+    design_df.columns = design_df.columns.str.lower()
+    sample_2_group = design_df.set_index(SAMPLE_COL).to_dict()[GROUP_COL]
     first_line = data_list[0].split(',')
-    second_line = ['group'] + [sample_2_group[x] for x in first_line[1:]]
+    second_line = [GROUP_COL] + [sample_2_group[x] for x in first_line[1:]]
     new_data_list = []
     new_data_list.append(','.join(first_line))
     new_data_list.append(','.join(second_line))

@@ -52,7 +52,7 @@ def explore_data(request, analysis_id):
             label = mapping[k]
             data[label] = json.dumps(analysis_data.json_data)
             if analysis_data.json_design:
-                data_fields[table_names[k]] = list(set(pd.DataFrame(json.loads(analysis_data.json_design))['sample']))
+                data_fields[table_names[k]] = list(set(pd.DataFrame(json.loads(analysis_data.json_design))[SAMPLE_COL]))
         except IndexError:
             continue
         except KeyError:

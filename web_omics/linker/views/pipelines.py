@@ -14,6 +14,9 @@ from rpy2.robjects.packages import importr
 from rpy2 import robjects
 from rpy2.robjects import Formula
 from rpy2.robjects import pandas2ri
+
+from linker.constants import GROUP_COL
+
 pandas2ri.activate()
 
 deseq = importr('DESeq2')
@@ -29,7 +32,7 @@ def to_pd_df(r_df):
 def run_deseq(count_data, col_data, keep_threshold, case, control):
     design = Formula("~ group")
     dds = deseq.DESeqDataSetFromMatrix(countData=count_data, colData=col_data, design=design)
-    sv = robjects.StrVector(col_data['group'].values)
+    sv = robjects.StrVector(col_data[GROUP_COL].values)
     condition = robjects.FactorVector(sv)
     runs = col_data.index
     rstring = """
@@ -61,9 +64,9 @@ def run_deseq(count_data, col_data, keep_threshold, case, control):
 
 
 def run_ttest(count_data, col_data, case, control):
-    sample_group = col_data[col_data['group'] == case]
+    sample_group = col_data[col_data[GROUP_COL] == case]
     case_data = count_data[sample_group.index]
-    sample_group = col_data[col_data['group'] == control]
+    sample_group = col_data[col_data[GROUP_COL] == control]
     control_data = count_data[sample_group.index]
 
     nrow, _ = count_data.shape
