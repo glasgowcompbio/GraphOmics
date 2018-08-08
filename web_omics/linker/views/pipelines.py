@@ -64,6 +64,7 @@ def run_deseq(count_data, col_data, keep_threshold, case, control):
 
 
 def run_ttest(count_data, col_data, case, control):
+    count_data = count_data.replace(0, 1) # replace 0 with a small number
     sample_group = col_data[col_data[GROUP_COL] == case]
     case_data = count_data[sample_group.index]
     sample_group = col_data[col_data[GROUP_COL] == control]

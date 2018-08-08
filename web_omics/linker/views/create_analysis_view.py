@@ -138,23 +138,64 @@ def get_uploaded_data(form_dict, data_key, design_key):
         design = None
 
     output_str = ''
-    if data is not None and design is not None:
+    if data is not None:
         output_str = get_uploaded_str(data, design)
     return output_str
 
 
 def get_uploaded_str(data_df, design_df):
+    # check if it's a PiMP peak-table export format
+    if 'Peak id' in data_df.columns:
+        # remove unwanted columns
+        to_drop = ['Peak id', 'Mass', 'RT', 'Polarity']
+        if 'FrAnK Annotation' in data_df.columns:
+            to_drop.append('FrAnK Annotation')
+        if 'PiMP Annotation' in data_df.columns:
+            to_drop.append('PiMP Annotation')
+        data_df = data_df.drop(to_drop, axis=1)
+        # format dataframe: each kegg compound is a row by itself
+        data_list = []
+        for i, row in data_df.iterrows():
+            compound_ids = row['KEGG ID']
+            try:
+                for compound_id in compound_ids.split(','):
+                    if compound_id.strip().startswith('C'):
+                        row_dict = row.drop('KEGG ID').to_dict()
+                        row_dict[IDENTIFIER_COL] = compound_id
+                        data_list.append(row_dict)
+            except TypeError:
+                continue
+            except AttributeError:
+                continue
+        data_df = pd.DataFrame(data_list)
+        data_df = change_column_order(data_df, IDENTIFIER_COL, 0) # assume it's the first column always
+
+    # convert to csv since that's what subsequent methods want, adding the second grouping line if necessary
     data_list = data_df.to_csv(index=False).splitlines()
-    design_df.columns = design_df.columns.str.lower()
-    sample_2_group = design_df.set_index(SAMPLE_COL).to_dict()[GROUP_COL]
     first_line = data_list[0].split(',')
-    second_line = [GROUP_COL] + [sample_2_group[x] for x in first_line[1:]]
+
+    if design_df is not None:
+        design_df.columns = design_df.columns.str.lower()
+        sample_2_group = design_df.set_index(SAMPLE_COL).to_dict()[GROUP_COL]
+        second_line = [GROUP_COL] + [sample_2_group[x] for x in first_line[1:]]
+    else: # assigns a default group if the design matrix is not provided
+        second_line = [GROUP_COL] + ['default' for x in first_line[1:]]
+
+    # remove period from sample name since this can break alasql
+    first_line = [w.replace('.', '_') for w in first_line]
     new_data_list = []
     new_data_list.append(','.join(first_line))
     new_data_list.append(','.join(second_line))
     new_data_list.extend(data_list[1:])
     data_str = '\n'.join(new_data_list)
     return data_str
+
+
+def change_column_order(df, col_name, index):
+    cols = df.columns.tolist()
+    cols.remove(col_name)
+    cols.insert(index, col_name)
+    return df[cols]
 
 
 def get_unique_items(mapping):

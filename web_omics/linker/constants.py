@@ -52,6 +52,7 @@ IDS = {
     PROTEOMICS: 'protein_id',
     METABOLOMICS: 'compound_id'
 }
+IDENTIFIER_COL = 'identifier'
 SAMPLE_COL = 'sample'
 GROUP_COL = 'group'
 FACTOR_COL = 'factor'

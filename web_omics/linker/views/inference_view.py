@@ -119,7 +119,7 @@ def inference_t_test(request, analysis_id):
                     padj = None
                 try:
                     lfc = res['log2FoldChange'][key]
-                    if np.isnan(lfc):
+                    if np.isnan(lfc) or np.isinf(lfc):
                         lfc = None
                 except KeyError:
                     lfc = None

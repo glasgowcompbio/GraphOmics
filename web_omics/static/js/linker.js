@@ -52,6 +52,24 @@ const myLinker = (function () {
                     }
                 ],
                 'rowCallback': function (row, data, index) {
+                    // set tooltip
+                    function objToString (obj) {
+                        let str = '';
+                        for (let p in obj) {
+                            if (obj.hasOwnProperty(p) && obj[p] !== null && p.startsWith('padj')) {
+                                str += p + ': ' + obj[p].toFixed(4) + '\n';
+                            }
+                        }
+                        return str;
+                    }
+                    const tooltip = objToString(data);
+                    if (tooltip.length > 0) {
+                        $(row).attr({
+                            'title': objToString(data)
+                        })
+                    }
+
+                    // set cell colours
                     const colNames = Object.keys(data);
                     const filtered = colNames.filter(x => x.indexOf('FC') > -1);
                     const filteredIdx = filtered.map(x => {
@@ -90,21 +108,6 @@ const myLinker = (function () {
                                 'color': 'white'
                             });
                         }
-
-                        // set tooltip
-                        function objToString (obj) {
-                            let str = '';
-                            for (let p in obj) {
-                                if (obj.hasOwnProperty(p) && obj[p] !== null && p.startsWith('padj')) {
-                                    str += p + ': ' + obj[p].toFixed(4) + '\n';
-                                }
-                            }
-                            return str;
-                        }
-                        $(row).attr({
-                            'title': objToString(data)
-                        })
-
                     }
                 }
                 // 'responsive': true
