@@ -11,10 +11,12 @@ const myLinker = (function () {
 
             const defaultDataTablesSettings = {
                 // "dom": "Brftip",
-                "dom": "Brpit",
+                // "dom": "Brpit",
+                "dom": "Brtip",
                 "pageLength": 10,
-                // "scrollY": "400px",
+                // "scrollY": "800px",
                 // "scrollCollapse": true,
+                "pagingType": "simple",
                 "searching": true,
                 "columnDefs": [{
                     targets: 2,

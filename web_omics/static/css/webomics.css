@@ -21,8 +21,8 @@
     clear: both;
     *zoom: 1;
     zoom: 1;
-    border: 1px dotted;
-    border-color: black;
+    /*border: 1px dotted;*/
+    /*border-color: black;*/
     padding: 5px;
     font-size: 1em;
 }
@@ -69,6 +69,9 @@
 
 table.dataTable tbody tr {
     cursor: pointer;
+}
+table.dataTable tbody tr td {
+    white-space: nowrap; /* https://datatables.net/forums/discussion/11828/how-do-i-set-the-row-height-in-datatables */
 }
 .card {
     max-width: 100%;
