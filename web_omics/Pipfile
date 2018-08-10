@@ -37,6 +37,7 @@ pywinpty = "*"
 tzlocal = "*"
 jsonpickle = "*"
 statsmodels = "*"
+"rpy2" = "*"
 
 [requires]
 python_version = "3.6"
