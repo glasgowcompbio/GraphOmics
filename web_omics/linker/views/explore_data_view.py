@@ -101,7 +101,6 @@ def get_ensembl_gene_info(request, analysis_id):
 
         display_name = metadata['display_name']
         summary = get_entrez_summary(ensembl_id)
-        print(summary)
         infos.append({'key': 'Summary', 'value': truncate(summary)})
 
         # try:
