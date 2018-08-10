@@ -13,7 +13,7 @@ from django.core.exceptions import ObjectDoesNotExist
 import pandas as pd
 
 from linker.metadata import get_single_ensembl_metadata_online, get_single_uniprot_metadata_online, \
-    get_single_compound_metadata_online
+    get_single_compound_metadata_online, get_entrez_summary
 from linker.models import Analysis, AnalysisData, AnalysisAnnotation
 from linker.reactome import get_reactome_description, get_reaction_entities, pathway_to_reactions
 from linker.constants import *
@@ -100,14 +100,18 @@ def get_ensembl_gene_info(request, analysis_id):
             infos.append({'key': key.title(), 'value': value})
 
         display_name = metadata['display_name']
-        try:
-            summary = wikipedia.summary(display_name)
-            if 'gene' in summary.lower() or 'protein' in summary.lower():
-                infos.append({'key': 'Summary', 'value': truncate(summary)})
-        except wikipedia.exceptions.DisambiguationError:
-            pass
-        except ValueError:
-            pass
+        summary = get_entrez_summary(ensembl_id)
+        print(summary)
+        infos.append({'key': 'Summary', 'value': truncate(summary)})
+
+        # try:
+        #     summary = wikipedia.summary(display_name)
+        #     if 'gene' in summary.lower() or 'protein' in summary.lower():
+        #         infos.append({'key': 'Summary', 'value': truncate(summary)})
+        # except wikipedia.exceptions.DisambiguationError:
+        #     pass
+        # except ValueError:
+        #     pass
 
         images = []
         links = [

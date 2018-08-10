@@ -2,6 +2,7 @@ from bioservices.kegg import KEGG
 from bioservices import Ensembl
 from bioservices import UniProt
 from bioservices import ChEBI
+from bioservices import EUtils
 import json
 import urllib.request
 import pickle
@@ -41,6 +42,13 @@ def get_single_ensembl_metadata_online(ensembl_id):
     ens = Ensembl()
     res = ens.get_lookup_by_id(ensembl_id, expand=True)
     return res
+
+
+def get_entrez_summary(gene_id):
+    e = EUtils()
+    ret = e.ESearch('gene', gene_id)
+    ret = e.EFetch('gene', ret['idlist'])
+    return ret.decode("utf-8")
 
 
 def get_gene_names(ensembl_ids, pickled_gene_names_url):
