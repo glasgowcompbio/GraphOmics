@@ -12,10 +12,6 @@
     height: 320px;
 }
 
-.dataTables_wrapper .dataTables_paginate {
-    height: 65px;
-}
-
 .dataTables_wrapper {
     position: relative;
     clear: both;
@@ -25,13 +21,13 @@
     /*border-color: black;*/
     padding: 5px;
     font-size: 1em;
+    height: 410px;
 }
 
 .dataTables_wrapper .dataTables_paginate {
     float: right;
     text-align: right;
     padding-top: 0.25em;
-    height: 60px;
 }
 
 .dataTables_wrapper .dataTables_paginate .paginate_button {
