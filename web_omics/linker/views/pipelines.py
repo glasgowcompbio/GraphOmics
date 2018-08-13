@@ -64,7 +64,6 @@ def run_deseq(count_data, col_data, keep_threshold, case, control):
 
 
 def run_ttest(count_data, col_data, case, control):
-    count_data = count_data.replace(0, 1) # replace 0 with a small number
     sample_group = col_data[col_data[GROUP_COL] == case]
     case_data = count_data[sample_group.index]
     sample_group = col_data[col_data[GROUP_COL] == control]
@@ -73,26 +72,33 @@ def run_ttest(count_data, col_data, case, control):
     nrow, _ = count_data.shape
     pvalues = []
     lfcs = []
+    indices = []
     for i in range(nrow):
 
-        # T - test for the means of two independent samples.
-        case_df = case_data.iloc[i, :]
-        control_df = control_data.iloc[i, :]
-        statistics, pvalue = stats.ttest_ind(np.log(case_df), np.log(control_df)) #
+        case = case_data.iloc[i, :].values
+        control = control_data.iloc[i, :].values
+        idx = count_data.index[i]
 
-        # log2 FC (case/control)
-        case_avg = np.log(np.mean(case_df.values))
-        control_avg = np.log(np.mean(control_df.values))
-        lfc = case_avg - control_avg
-        pvalues.append(pvalue)
-        lfcs.append(lfc)
+        # remove 0 values, which were originally NA when exported from PiMP
+        case = case[case != 0]
+        control = control[control != 0]
+
+        # T-test for the means of two independent samples
+        case_log = np.log(case)
+        control_log = np.log(control)
+        statistics, pvalue = stats.ttest_ind(case_log, control_log)
+        if not np.isnan(pvalue):
+            lfc = np.mean(case_log) - np.mean(control_log)
+            pvalues.append(pvalue)
+            lfcs.append(lfc)
+            indices.append(idx)
 
     # correct p-values
     reject, pvals_corrected, _, _ = multipletests(pvalues, method='fdr_bh')
     result_df = pd.DataFrame({
         'padj': pvals_corrected,
         'log2FoldChange': lfcs
-    }, index=count_data.index)
+    }, index=indices)
     return result_df
 
 
