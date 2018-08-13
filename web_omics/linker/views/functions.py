@@ -470,3 +470,20 @@ def add_links(relation, source_pk_label, target_pk_label, source_pk_list, target
             if s2 not in rel_keys: rel_values.append(s2)
 
     return Relation(keys=rel_keys, values=rel_values, mapping_list=rel_mapping_list)
+
+
+def change_column_order(df, col_name, index):
+    cols = df.columns.tolist()
+    cols.remove(col_name)
+    cols.insert(index, col_name)
+    return df[cols]
+
+
+# https://stackoverflow.com/questions/19798112/convert-pandas-dataframe-to-a-nested-dict
+def recur_dictify(frame):
+    if len(frame.columns) == 1:
+        if frame.values.size == 1: return frame.values[0][0]
+        return frame.values.squeeze()
+    grouped = frame.groupby(frame.columns[0])
+    d = {k: recur_dictify(g.ix[:,1:]) for k,g in grouped}
+    return d

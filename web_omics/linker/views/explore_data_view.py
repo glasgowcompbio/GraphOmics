@@ -16,6 +16,7 @@ from linker.metadata import get_single_ensembl_metadata_online, get_single_unipr
     get_single_compound_metadata_online, get_entrez_summary
 from linker.models import Analysis, AnalysisData, AnalysisAnnotation
 from linker.reactome import get_reactome_description, get_reaction_entities, pathway_to_reactions
+from linker.views.functions import change_column_order, recur_dictify
 from linker.constants import *
 
 
@@ -48,7 +49,7 @@ def explore_data(request, analysis_id):
     data_fields = {}
     for k, v in DataRelationType:
         try:
-            analysis_data = AnalysisData.objects.filter(analysis=analysis, data_type=k).order_by('-timestamp')[0]
+            analysis_data = get_last_data(analysis, k)
             label = mapping[k]
             data[label] = json.dumps(analysis_data.json_data)
             if analysis_data.json_design:
@@ -138,6 +139,9 @@ def get_ensembl_gene_info(request, analysis_id):
             'annotation_url': annotation_url,
             'annotation_id': ensembl_id
         }
+        measurements = get_grouped_measurements(analysis_id, ensembl_id, GENOMICS)
+        if measurements is not None:
+            data['plot_data'] = measurements
         return JsonResponse(data)
 
 
@@ -225,6 +229,9 @@ def get_uniprot_protein_info(request, analysis_id):
             'annotation_url': annotation_url,
             'annotation_id': uniprot_id
         }
+        measurements = get_grouped_measurements(analysis_id, uniprot_id, PROTEOMICS)
+        if measurements is not None:
+            data['plot_data'] = measurements
         return JsonResponse(data)
 
 
@@ -317,6 +324,9 @@ def get_kegg_metabolite_info(request, analysis_id):
             'annotation_url': annotation_url,
             'annotation_id': compound_id
         }
+        measurements = get_grouped_measurements(analysis_id, compound_id, METABOLOMICS)
+        if measurements is not None:
+            data['plot_data'] = measurements
         return JsonResponse(data)
 
 
@@ -447,6 +457,11 @@ def get_reactome_pathway_info(request, analysis_id):
         return JsonResponse(data)
 
 
+def get_last_data(analysis, data_type):
+    analysis_data = AnalysisData.objects.filter(analysis=analysis, data_type=data_type).order_by('-timestamp')[0]
+    return analysis_data
+
+
 def get_annotation(analysis_id, database_id, data_type):
     analysis = Analysis.objects.get(id=analysis_id)
     try:
@@ -487,3 +502,32 @@ def update_annotation(request, analysis_id, database_id, data_type):
     return JsonResponse(data)
 
 
+def get_grouped_measurements(analysis_id, database_id, data_type):
+    analysis = Analysis.objects.get(id=analysis_id)
+    analysis_data = get_last_data(analysis, data_type)
+    if analysis_data.json_design is None:
+        return None
+
+    exclude_colnames = ['obs', '_pk', '_id', 'significant_', 'padj_', 'FC_']
+    for row in analysis_data.json_data:
+        for key in row.keys():
+            if '_id' in key or '_pk' in key:
+                if row[key] == database_id: # if found
+                    # filter this row to remove exclude_colnames
+                    filtered_data = filter_dict(row, exclude_colnames)
+                    # then merge with the design matrix
+                    filtered_df = pd.DataFrame([filtered_data]).astype(float)
+                    design_df = pd.DataFrame(json.loads(analysis_data.json_design))
+                    merged_df = pd.merge(filtered_df.transpose(), design_df, left_index=True, right_on=SAMPLE_COL)
+                    # put the columns in the right order, then return as dictionary
+                    merged_df = change_column_order(merged_df, GROUP_COL, 0)
+                    merged_df = change_column_order(merged_df, SAMPLE_COL, 1)
+                    merged_dict = recur_dictify(merged_df)
+                    return merged_dict
+    return None
+
+
+def filter_dict(my_dict, exclude_keys):
+    filtered_dict = {key: my_dict[key] for key in my_dict if
+                     all(substring not in key for substring in exclude_keys)}
+    return filtered_dict

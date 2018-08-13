@@ -8,7 +8,7 @@ from linker.forms import CreateAnalysisForm, UploadAnalysisForm, AddPathwayForm,
 from linker.models import AnalysisData
 from linker.reactome import get_species_dict, pathway_to_reactions, reaction_to_uniprot, reaction_to_compound, \
     uniprot_to_ensembl
-from linker.views.functions import reactome_mapping, save_analysis
+from linker.views.functions import reactome_mapping, save_analysis, change_column_order
 from linker.constants import *
 
 
@@ -189,13 +189,6 @@ def get_uploaded_str(data_df, design_df):
     new_data_list.extend(data_list[1:])
     data_str = '\n'.join(new_data_list)
     return data_str
-
-
-def change_column_order(df, col_name, index):
-    cols = df.columns.tolist()
-    cols.remove(col_name)
-    cols.insert(index, col_name)
-    return df[cols]
 
 
 def get_unique_items(mapping):
