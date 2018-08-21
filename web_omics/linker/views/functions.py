@@ -1,22 +1,21 @@
+import collections
 import json
+import pickle
 import re
+import urllib.request
 from io import StringIO
 
-import collections
 import pandas as pd
-
+import requests
 from django.templatetags.static import static
-from django.conf import settings
-import urllib.request
-import pickle
 
-from linker.models import Analysis, AnalysisData
-from linker.reactome import get_reaction_df
 from linker.constants import GENOMICS, PROTEOMICS, METABOLOMICS, REACTIONS, PATHWAYS, GENES_TO_PROTEINS, \
     PROTEINS_TO_REACTIONS, COMPOUNDS_TO_REACTIONS, REACTIONS_TO_PATHWAYS, SAMPLE_COL, GROUP_COL
-from linker.metadata import kegg_to_chebi, get_gene_names, get_compound_metadata, clean_label
+from linker.metadata import get_gene_names, get_compound_metadata, clean_label, get_species_name_to_id
+from linker.models import Analysis, AnalysisData
 from linker.reactome import ensembl_to_uniprot, uniprot_to_reaction, compound_to_reaction, \
     reaction_to_metabolite_pathway, reaction_to_uniprot, reaction_to_compound, uniprot_to_ensembl
+from linker.reactome import get_reaction_df
 
 Relation = collections.namedtuple('Relation', 'keys values mapping_list')
 NA = '-'  # this should be something that will appear first in the table when sorted alphabetically
@@ -170,12 +169,18 @@ def reactome_mapping(request, genes_str, proteins_str, compounds_str, species_li
         species = reaction_2_pathways_id_to_names[name]['species']
         metadata_map[name] = {'display_name': filtered, 'species': species}
 
+    reaction_count_df = None
+    pathway_count_df = None
+
+    # TODO: old, unfinished method
     # print('Computing reaction and pathway counts')
     # reaction_count_df, pathway_count_df = get_count_df(gene_2_proteins_mapping, protein_2_reactions_mapping,
     #                                                    compound_2_reactions_mapping, reaction_2_pathways_mapping,
     #                                                    species_list)
-    reaction_count_df = None
-    pathway_count_df = None
+
+    if not use_kegg: # below works best for ChEBI
+        identifiers = observed_protein_ids + observed_compound_ids
+        pathway_count_df = get_reactome_overrepresentation_df(identifiers, species_list)
 
     pathway_ids = reaction_2_pathways.values
     reactions_json = pk_to_json('reaction_pk', 'reaction_id', reaction_ids, metadata_map, reaction_count_df, has_species=True)
@@ -242,6 +247,7 @@ def save_analysis(analysis_name, analysis_desc,
     return analysis, data
 
 
+# TODO: no longer used, can remove?
 def get_count_df(gene_2_proteins_mapping, protein_2_reactions_mapping, compound_2_reactions_mapping,
                  reaction_2_pathways_mapping, species_list):
     count_df, pathway_compound_counts, pathway_protein_counts = get_reaction_df(
@@ -285,6 +291,41 @@ def get_count_df(gene_2_proteins_mapping, protein_2_reactions_mapping, compound_
     pathway_count_df = pd.DataFrame(data, columns=['pathway_pk', 'P_E', 'P_C'])
 
     return reaction_count_df, pathway_count_df
+
+
+def get_reactome_overrepresentation_df(identifiers, species_list):
+    try:
+        headers = {'content-type': 'text/plain', 'accept': 'application/json'}
+        r = requests.post('https://reactome.org/AnalysisService/identifiers/', data=','.join(identifiers), headers=headers)
+        if r.status_code == 200:
+            results = r.json()
+            token = results['summary']['token']
+
+        # TODO: the dictionary below is a workaround, since we should pass the species id from the form, not species name!
+        species_name_to_id = get_species_name_to_id()
+
+        data = []
+        for species_name in species_list:
+            species_id = species_name_to_id[species_name]
+            filter_url = 'https://reactome.org/AnalysisService/token/%s/filter/species/%d' % (token, species_id)
+            r = requests.get(filter_url)
+            if r.status_code == 200:
+                temp = r.json()['pathways']
+                for x in temp:
+                    stId = x['stId']
+                    found = x['entities']['found']
+                    total = x['entities']['total']
+                    fdr = x['entities']['fdr']
+                    row = [stId, found, total, fdr]
+                    data.append(row)
+
+        if len(data) > 0:
+            pathway_count_df = pd.DataFrame(data, columns=['Identifier', 'found', 'total', 'padj_fdr'])
+            return pathway_count_df
+        else:
+            return None
+    except requests.exceptions.RequestException:
+        return None
 
 
 def save_json_string(data, outfile):

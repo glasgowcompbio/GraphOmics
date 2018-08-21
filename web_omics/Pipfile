@@ -38,6 +38,7 @@ tzlocal = "*"
 jsonpickle = "*"
 statsmodels = "*"
 "rpy2" = "*"
+deprecated = "*"
 
 [requires]
 python_version = "3.6"

@@ -73,42 +73,57 @@ const myLinker = (function () {
 
                     // set cell colours
                     const colNames = Object.keys(data);
-                    const filtered = colNames.filter(x => x.indexOf('FC') > -1);
-                    const filteredIdx = filtered.map(x => {
-                        return colNames.indexOf(x);
-                    });
-                    const filtered_logfc = filtered.map(x => data[x]);
-                    var colorScale = d3.scaleLinear()
-                        .range(["red", "green"])
-                        .domain([-2, 2]);
-                    const filteredColours = filtered_logfc.map(x => colorScale(x));
-                    for (let i = 0; i < filteredIdx.length; i++) {
-                        const idx = filteredIdx[i];
-                        const colour = filteredColours[i];
-                        // $(row).find(`td:eq(${idx})`).css({
-                        //     'background-color': colour,
-                        //     'color': 'white'
-                        // });
-                        x = $(row).find(`td`).filter(function() {
-                            // TODO: round to the specified decimal places and compare the string representation. Might not always work.
-                            const dp = 2;
-                            const val1 = parseFloat(this.textContent).toFixed(dp);
-                            let val2 = filtered_logfc[i];
-                            if (val2 === null) {
-                                return false;
-                            } else {
-                                val2 = val2.toFixed(dp);
-                            }
-                            if (val2 === '-0.00') {
-                                val2 = '0.00'
-                            }
-                            return val1 === val2;
+                    if (colNames.includes('pathway_id') && colNames.includes('padj_fdr')) {
+                        // // colour pathway table
+                        // const idx = colNames.indexOf('pathway_id');
+                        // const pathway_id = data['pathway_id'];
+                        // const padj = data['padj_fdr'];
+                        // if (pathway_id !== '-' && padj !== null) {
+                        //     const colorScale = d3.scaleLinear()
+                        //         .range(["red", "green"])
+                        //         .domain([1, 0]);
+                        //     const colour = colorScale(padj);
+                        //     const idx = 2;
+                        //     $(row).find(`td:eq(${idx})`).css({
+                        //         'background-color': colour,
+                        //         'color': 'white'
+                        //     });
+                        // }
+                    } else {
+                        // colour other tables that have t-tests done
+                        const filtered = colNames.filter(x => x.indexOf('FC') > -1);
+                        const filteredIdx = filtered.map(x => {
+                            return colNames.indexOf(x);
                         });
-                        if (x) {
-                            x.css({
-                                'background-color': colour,
-                                'color': 'white'
+                        const filtered_logfc = filtered.map(x => data[x]);
+                        const colorScale = d3.scaleLinear()
+                            .range(["red", "green"])
+                            .domain([-2, 2]);
+                        const filteredColours = filtered_logfc.map(x => colorScale(x));
+                        for (let i = 0; i < filteredIdx.length; i++) {
+                            const idx = filteredIdx[i];
+                            const colour = filteredColours[i];
+                            x = $(row).find(`td`).filter(function() {
+                                // TODO: round to the specified decimal places and compare the string representation. Might not always work.
+                                const dp = 2;
+                                const val1 = parseFloat(this.textContent).toFixed(dp);
+                                let val2 = filtered_logfc[i];
+                                if (val2 === null) {
+                                    return false;
+                                } else {
+                                    val2 = val2.toFixed(dp);
+                                }
+                                if (val2 === '-0.00') {
+                                    val2 = '0.00'
+                                }
+                                return val1 === val2;
                             });
+                            if (x) {
+                                x.css({
+                                    'background-color': colour,
+                                    'color': 'white'
+                                });
+                            }
                         }
                     }
                 }
@@ -522,12 +537,12 @@ const myLinker = (function () {
                 $(selector).append(infoDiv);
                 $(selector).append(dataDiv);
             } else {
-                $(selector).text('Select an entry below.');
+                $(selector).text('Select an entry above.');
             }
         },
         clearInfoPanel: function (rowId, title) {
             let content = $('<p/>', {
-                'text': 'Select an entry below.'
+                'text': 'Select an entry above.'
             });
             const selector = '#' + rowId;
             $(selector).empty().append(content);

@@ -3,6 +3,7 @@ from bioservices import Ensembl
 from bioservices import UniProt
 from bioservices import ChEBI
 from bioservices import EUtils
+from bioservices import Reactome
 import json
 import urllib.request
 import pickle
@@ -220,3 +221,14 @@ def get_reactome_content_service(reactome_id):
 ################################################################################
 ### Pathway-related functions                                                ###
 ################################################################################
+
+
+################################################################################
+### Species-related functions                                                ###
+################################################################################
+
+
+def get_species_name_to_id():
+    r = Reactome()
+    species_name_to_id = {x['displayName']: x['dbId'] for x in r.data_species_all()}
+    return species_name_to_id

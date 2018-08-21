@@ -3,7 +3,6 @@ import json
 from django.shortcuts import render
 from django.views.generic.edit import FormView
 
-from linker.constants import DataRelationType
 from linker.forms import CreateAnalysisForm, UploadAnalysisForm, AddPathwayForm, pathway_species_dict
 from linker.models import AnalysisData
 from linker.reactome import get_species_dict, pathway_to_reactions, reaction_to_uniprot, reaction_to_compound, \
