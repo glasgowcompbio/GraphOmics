@@ -22,12 +22,14 @@ class CreateAnalysisView(FormView):
         genes_str = form.cleaned_data['genes']
         proteins_str = form.cleaned_data['proteins']
         compounds_str = form.cleaned_data['compounds']
+        compound_database_str = form.cleaned_data['compound_database']
         species_dict = get_species_dict()
         species_list = [species_dict[x] for x in form.cleaned_data['species']]
         current_user = self.request.user
 
-        analysis, data, data_fields = get_data(self.request, analysis_desc, analysis_name, compounds_str, current_user,
-                                               genes_str, proteins_str, species_list)
+        analysis, data, data_fields = get_data(self.request, analysis_desc, analysis_name, compounds_str,
+                                               compound_database_str, current_user, genes_str, proteins_str,
+                                               species_list)
         context = get_context(analysis, data, data_fields)
         return render(self.request, self.success_url, context)
 
@@ -43,12 +45,14 @@ class UploadAnalysisView(FormView):
         genes_str = get_uploaded_data(form.cleaned_data, 'gene_data', 'gene_design')
         proteins_str = get_uploaded_data(form.cleaned_data, 'protein_data', 'protein_design')
         compounds_str = get_uploaded_data(form.cleaned_data, 'compound_data', 'compound_design')
+        compound_database_str = form.cleaned_data['compound_database']
         species_dict = get_species_dict()
         species_list = [species_dict[x] for x in form.cleaned_data['species']]
         current_user = self.request.user
 
-        analysis, data, data_fields = get_data(self.request, analysis_desc, analysis_name, compounds_str, current_user,
-                                               genes_str, proteins_str, species_list)
+        analysis, data, data_fields = get_data(self.request, analysis_desc, analysis_name, compounds_str,
+                                               compound_database_str, current_user, genes_str, proteins_str,
+                                               species_list)
         context = get_context(analysis, data, data_fields)
         return render(self.request, self.success_url, context)
 
@@ -89,11 +93,11 @@ class AddPathwayView(FormView):
         return render(self.request, self.success_url, context)
 
 
-def get_data(request, analysis_desc, analysis_name, compounds_str, current_user, genes_str, proteins_str,
-             species_list):
-    results = reactome_mapping(request, genes_str, proteins_str, compounds_str, species_list)
+def get_data(request, analysis_desc, analysis_name, compounds_str, compound_database_str,
+             current_user, genes_str, proteins_str, species_list):
+    results = reactome_mapping(request, genes_str, proteins_str, compounds_str, compound_database_str, species_list)
     analysis, data = save_analysis(analysis_name, analysis_desc,
-                                   genes_str, proteins_str, compounds_str,
+                                   genes_str, proteins_str, compounds_str, compound_database_str,
                                    results, species_list, current_user)
     table_names = {
         GENOMICS: 'genes_table',

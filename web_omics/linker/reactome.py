@@ -376,9 +376,13 @@ def reaction_to_compound(reaction_ids, species_list, use_kegg=False):
             display_name = record['display_name']
             database_name = record['compound_db']
             # TODO: find better ways to remove duplicates between KEGG and ChEBI?
-            valid = True
-            if not use_kegg and database_name == 'COMPOUND':
-                valid = False
+            valid = False
+            if use_kegg:
+                if database_name == 'COMPOUND':
+                    valid = True
+            else:
+                if database_name == 'ChEBI':
+                    valid = True
             if valid:
                 results[reaction_id].append(compound_id)
                 id_to_names[compound_id] = display_name

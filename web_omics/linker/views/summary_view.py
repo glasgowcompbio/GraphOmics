@@ -18,6 +18,7 @@ def summary(request, analysis_id):
     protein_samples = get_samples(analysis, PROTEOMICS)
     compound_samples = get_samples(analysis, METABOLOMICS)
     annotations = get_annotations(analysis)
+    compound_database = analysis.metadata['compound_database_str']
     context = {
         'analysis_id': analysis.pk,
         'observed_genes': observed_genes,
@@ -34,8 +35,8 @@ def summary(request, analysis_id):
         'gene_samples': gene_samples,
         'protein_samples': protein_samples,
         'compound_samples': compound_samples,
-        'annotations': annotations
-
+        'annotations': annotations,
+        'compound_database': compound_database
     }
     return render(request, 'linker/summary.html', context)
 

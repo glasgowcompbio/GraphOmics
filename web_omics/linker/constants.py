@@ -56,3 +56,10 @@ IDENTIFIER_COL = 'identifier'
 SAMPLE_COL = 'sample'
 GROUP_COL = 'group'
 FACTOR_COL = 'factor'
+
+COMPOUND_DATABASE_KEGG = 'KEGG'
+COMPOUND_DATABASE_CHEBI = 'ChEBI'
+CompoundDatabaseChoices = (
+    (COMPOUND_DATABASE_KEGG, 'KEGG identifiers'),
+    (COMPOUND_DATABASE_CHEBI, 'ChEBI identifiers'),
+)

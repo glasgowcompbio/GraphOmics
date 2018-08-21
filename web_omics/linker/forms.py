@@ -3,7 +3,7 @@ import os
 from django import forms
 from django_select2.forms import Select2Widget, Select2MultipleWidget
 
-from linker.constants import AddNewDataChoices, InferenceTypeChoices
+from linker.constants import AddNewDataChoices, InferenceTypeChoices, CompoundDatabaseChoices
 from linker.reactome import get_species_dict, get_all_pathways
 from linker.models import Analysis, AnalysisUpload
 
@@ -65,12 +65,22 @@ class CreateAnalysisForm(forms.Form):
     compounds = forms.CharField(required=False,
                                 widget=forms.Textarea(attrs={'rows': 6, 'cols': 100, 'style': 'width: 100%'}),
                                 initial=example_compounds)
+    compound_database = forms.ChoiceField(required=True, choices=CompoundDatabaseChoices,
+                                widget=Select2Widget,
+                                label='Query compounds by',
+                                help_text='<div style="color: gray"><small>When querying the Reactome knowledge base, '
+                                          'compounds will be matched using the identifiers specified above.</small></div>')
 
 
 class UploadAnalysisForm(forms.ModelForm):
     analysis_name = forms.CharField(required=False, widget=forms.TextInput(attrs={'style': 'width: 100%'}))
     analysis_description = forms.CharField(required=False, widget=forms.TextInput(attrs={'style': 'width: 100%'}))
     species = forms.MultipleChoiceField(required=True, choices=SPECIES_CHOICES, widget=Select2MultipleWidget)
+    compound_database = forms.ChoiceField(required=True, choices=CompoundDatabaseChoices,
+                                widget=Select2Widget,
+                                label='Query compounds by',
+                                help_text='<div style="color: gray"><small>When querying the Reactome knowledge base, '
+                                          'compounds will be matched using the identifiers specified above.</small></div>')
     class Meta:
         model = AnalysisUpload
         fields = ('analysis_name', 'analysis_description', 'species',

@@ -10,7 +10,8 @@ import requests
 from django.templatetags.static import static
 
 from linker.constants import GENOMICS, PROTEOMICS, METABOLOMICS, REACTIONS, PATHWAYS, GENES_TO_PROTEINS, \
-    PROTEINS_TO_REACTIONS, COMPOUNDS_TO_REACTIONS, REACTIONS_TO_PATHWAYS, SAMPLE_COL, GROUP_COL
+    PROTEINS_TO_REACTIONS, COMPOUNDS_TO_REACTIONS, REACTIONS_TO_PATHWAYS, SAMPLE_COL, GROUP_COL, \
+    COMPOUND_DATABASE_CHEBI, COMPOUND_DATABASE_KEGG
 from linker.metadata import get_gene_names, get_compound_metadata, clean_label, get_species_name_to_id
 from linker.models import Analysis, AnalysisData
 from linker.reactome import ensembl_to_uniprot, uniprot_to_reaction, compound_to_reaction, \
@@ -26,10 +27,8 @@ COMPOUND_PK = 'compound_pk'
 REACTION_PK = 'reaction_pk'
 PATHWAY_PK = 'pathway_pk'
 
-COMPOUND_DATABASE = 'ChEBI'
-# COMPOUND_DATABASE = 'KEGG'
 
-def reactome_mapping(request, genes_str, proteins_str, compounds_str, species_list):
+def reactome_mapping(request, genes_str, proteins_str, compounds_str, compound_database_str, species_list):
     ### all the ids that we have from the user ###
     observed_gene_df, group_gene_df, observed_gene_ids = csv_to_dataframe(genes_str)
     observed_protein_df, group_protein_df, observed_protein_ids = csv_to_dataframe(proteins_str)
@@ -49,7 +48,7 @@ def reactome_mapping(request, genes_str, proteins_str, compounds_str, species_li
             kegg_2_chebi[cid] = cid
 
     if observed_compound_df is not None:
-        if COMPOUND_DATABASE == 'ChEBI':
+        if compound_database_str == COMPOUND_DATABASE_CHEBI:
             observed_compound_df.iloc[:, 0] = observed_compound_df.iloc[:, 0].map(
                 kegg_2_chebi)  # assume 1st column is id
         observed_compound_ids = get_ids_from_dataframe(observed_compound_df)
@@ -92,7 +91,7 @@ def reactome_mapping(request, genes_str, proteins_str, compounds_str, species_li
 
     ### maps reactions -> compounds ###
     print('Mapping reactions -> compounds')
-    if COMPOUND_DATABASE == 'KEGG':
+    if compound_database_str == COMPOUND_DATABASE_KEGG:
         use_kegg = True
     else:
         use_kegg = False
@@ -204,12 +203,13 @@ def reactome_mapping(request, genes_str, proteins_str, compounds_str, species_li
 
 
 def save_analysis(analysis_name, analysis_desc,
-                  genes_str, proteins_str, compounds_str,
+                  genes_str, proteins_str, compounds_str, compound_database_str,
                   results, species_list, current_user):
     metadata = {
         'genes_str': genes_str,
         'proteins_str': proteins_str,
         'compounds_str': compounds_str,
+        'compound_database_str': compound_database_str,
         'species_list': species_list
     }
     analysis = Analysis.objects.create(name=analysis_name,
