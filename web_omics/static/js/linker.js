@@ -357,6 +357,7 @@ const myLinker = (function () {
                                 displayNameCol, title) {
             this.clearInfoPanel(rowId, title);
             if (rowObject[displayNameCol] != '-') {
+                debugger;
 
                 const tableData = {
                     'id': rowObject[pkCol]

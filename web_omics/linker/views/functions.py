@@ -26,8 +26,8 @@ COMPOUND_PK = 'compound_pk'
 REACTION_PK = 'reaction_pk'
 PATHWAY_PK = 'pathway_pk'
 
-# COMPOUND_DATABASE = 'ChEBI'
-COMPOUND_DATABASE = 'KEGG'
+COMPOUND_DATABASE = 'ChEBI'
+# COMPOUND_DATABASE = 'KEGG'
 
 def reactome_mapping(request, genes_str, proteins_str, compounds_str, species_list):
     ### all the ids that we have from the user ###
@@ -415,7 +415,7 @@ def pk_to_json(pk_label, display_label, data, metadata_map, observed_df, has_spe
         # add display label to row_data
         species = None
         if len(metadata_map) > 0 and item in metadata_map and metadata_map[item] is not None:
-            label = metadata_map[item]['display_name']
+            label = metadata_map[item]['display_name'].capitalize()
             # get the species if it's there too
             if has_species and 'species' in metadata_map[item]:
                 species = metadata_map[item]['species']
