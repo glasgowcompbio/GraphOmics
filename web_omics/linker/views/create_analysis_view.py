@@ -148,22 +148,27 @@ def get_uploaded_data(form_dict, data_key, design_key):
 
 def get_uploaded_str(data_df, design_df):
     # check if it's a PiMP peak-table export format
-    if 'Peak id' in data_df.columns:
+    if PIMP_PEAK_ID_COL in data_df.columns:
         # remove unwanted columns
-        to_drop = ['Peak id', 'Mass', 'RT', 'Polarity']
-        if 'FrAnK Annotation' in data_df.columns:
-            to_drop.append('FrAnK Annotation')
-        if 'PiMP Annotation' in data_df.columns:
-            to_drop.append('PiMP Annotation')
+        to_drop = [PIMP_PEAK_ID_COL, PIMP_MASS_COL, PIMP_RT_COl, PIMP_POLARITY_COL]
+        if PIMP_FRANK_ANNOTATION_COL in data_df.columns:
+            to_drop.append(PIMP_FRANK_ANNOTATION_COL)
+        if PIMP_ANNOTATION_COL in data_df.columns:
+            to_drop.append(PIMP_ANNOTATION_COL)
         data_df = data_df.drop(to_drop, axis=1)
         # format dataframe: each kegg compound is a row by itself
         data_list = []
         for i, row in data_df.iterrows():
-            compound_ids = row['KEGG ID']
+            compound_ids = row[PIMP_KEGG_ID_COL]
             try:
                 for compound_id in compound_ids.split(','):
                     if compound_id.strip().startswith('C'):
-                        row_dict = row.drop('KEGG ID').to_dict()
+                        row_dict = row.drop(PIMP_KEGG_ID_COL).to_dict()
+                        # peak_id = row_dict.pop(PIMP_PEAK_ID_COL, None)
+                        # if peak_id:
+                        #     row_dict[IDENTIFIER_COL] = '%s,%s' % (compound_id, peak_id)
+                        # else:
+                        #     row_dict[IDENTIFIER_COL] = compound_id
                         row_dict[IDENTIFIER_COL] = compound_id
                         data_list.append(row_dict)
             except TypeError:
@@ -176,19 +181,15 @@ def get_uploaded_str(data_df, design_df):
     # convert to csv since that's what subsequent methods want, adding the second grouping line if necessary
     data_list = data_df.to_csv(index=False).splitlines()
     first_line = data_list[0].split(',')
+    new_data_list = []
+    new_data_list.append(','.join(first_line))
 
     if design_df is not None:
         design_df.columns = design_df.columns.str.lower()
         sample_2_group = design_df.set_index(SAMPLE_COL).to_dict()[GROUP_COL]
-        second_line = [GROUP_COL] + [sample_2_group[x] for x in first_line[1:]]
-    else: # assigns a default group if the design matrix is not provided
-        second_line = [GROUP_COL] + ['default' for x in first_line[1:]]
+        second_line = [GROUP_COL] + [sample_2_group[x] if x in sample_2_group else DEFAULT_GROUP_NAME for x in first_line[1:]]
+        new_data_list.append(','.join(second_line))
 
-    # remove period from sample name since this can break alasql
-    first_line = [w.replace('.', '_') for w in first_line]
-    new_data_list = []
-    new_data_list.append(','.join(first_line))
-    new_data_list.append(','.join(second_line))
     new_data_list.extend(data_list[1:])
     data_str = '\n'.join(new_data_list)
     return data_str

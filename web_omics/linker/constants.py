@@ -57,6 +57,16 @@ SAMPLE_COL = 'sample'
 GROUP_COL = 'group'
 FACTOR_COL = 'factor'
 
+PIMP_PEAK_ID_COL = 'Peak id'
+PIMP_MASS_COL = 'Mass'
+PIMP_RT_COl = 'RT'
+PIMP_POLARITY_COL = 'Polarity'
+PIMP_ANNOTATION_COL = 'PiMP Annotation'
+PIMP_FRANK_ANNOTATION_COL = 'FrAnK Annotation'
+PIMP_KEGG_ID_COL = 'KEGG ID'
+
+DEFAULT_GROUP_NAME = 'default'
+
 COMPOUND_DATABASE_KEGG = 'KEGG'
 COMPOUND_DATABASE_CHEBI = 'ChEBI'
 CompoundDatabaseChoices = (

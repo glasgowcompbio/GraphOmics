@@ -11,7 +11,7 @@ from django.templatetags.static import static
 
 from linker.constants import GENOMICS, PROTEOMICS, METABOLOMICS, REACTIONS, PATHWAYS, GENES_TO_PROTEINS, \
     PROTEINS_TO_REACTIONS, COMPOUNDS_TO_REACTIONS, REACTIONS_TO_PATHWAYS, SAMPLE_COL, GROUP_COL, \
-    COMPOUND_DATABASE_CHEBI, COMPOUND_DATABASE_KEGG
+    COMPOUND_DATABASE_CHEBI, COMPOUND_DATABASE_KEGG, DEFAULT_GROUP_NAME
 from linker.metadata import get_gene_names, get_compound_metadata, clean_label, get_species_name_to_id
 from linker.models import Analysis, AnalysisData
 from linker.reactome import ensembl_to_uniprot, uniprot_to_reaction, compound_to_reaction, \
@@ -338,7 +338,7 @@ def csv_to_dataframe(csv_str):
     # extract group, if any
     filtered_str = ''
     group_str = None
-    for line in csv_str.splitlines():
+    for line in csv_str.splitlines(): # go through all lines and remove the line containing the grouping info
         if re.match(GROUP_COL, line, re.I):
             group_str = line
         else:
@@ -348,6 +348,7 @@ def csv_to_dataframe(csv_str):
     data = StringIO(filtered_str)
     try:
         data_df = pd.read_csv(data)
+        data_df.columns = data_df.columns.str.replace('.', '_') # replace period with underscore to prevent alasql breaking
         data_df.iloc[:, 0] = data_df.iloc[:, 0].astype(str) # assume id is in the first column and is a string
         id_list = data_df.iloc[:, 0].values.tolist()
     except pd.errors.EmptyDataError:
@@ -360,10 +361,11 @@ def csv_to_dataframe(csv_str):
         sample_data = data_df.columns.values
         if group_str is not None:
             print(group_str)
-            group_data = group_str.split(',')
-            group_df = pd.DataFrame(list(zip(sample_data[1:], group_data[1:])), columns=[SAMPLE_COL, GROUP_COL])
+            group_data = group_str.split(',')[1:]
         else:
-            group_df = pd.DataFrame(sample_data[1:], columns=[SAMPLE_COL])
+            num_samples = len(sample_data[1:])
+            group_data = [DEFAULT_GROUP_NAME for x in range(num_samples)] # assigns a default group if nothing specified
+        group_df = pd.DataFrame(list(zip(sample_data[1:], group_data)), columns=[SAMPLE_COL, GROUP_COL])
 
     return data_df, group_df, id_list
 

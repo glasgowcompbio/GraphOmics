@@ -34,13 +34,14 @@ const myLinker = (function () {
                     // render: $.fn.dataTable.render.ellipsis(50, false)
                 }, {
                     "targets": '_all',
+                    defaultContent: '-',
                     render: function(data, type, row) {
                         if (typeof(data) == 'number') {
                             return data.toFixed(2);
                         } else if (typeof(data) == 'string') {
                             return data.trunc(50);
-                        } else if (data === null) {
-                            return '-'
+                        // } else if (data === null) {
+                        //     return '-'
                         } else {
                             return data;
                         }
