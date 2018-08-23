@@ -150,7 +150,7 @@ def get_uploaded_str(data_df, design_df):
     # check if it's a PiMP peak-table export format
     if PIMP_PEAK_ID_COL in data_df.columns:
         # remove unwanted columns
-        to_drop = [PIMP_PEAK_ID_COL, PIMP_MASS_COL, PIMP_RT_COl, PIMP_POLARITY_COL]
+        to_drop = [PIMP_MASS_COL, PIMP_RT_COl, PIMP_POLARITY_COL]
         if PIMP_FRANK_ANNOTATION_COL in data_df.columns:
             to_drop.append(PIMP_FRANK_ANNOTATION_COL)
         if PIMP_ANNOTATION_COL in data_df.columns:
@@ -164,11 +164,6 @@ def get_uploaded_str(data_df, design_df):
                 for compound_id in compound_ids.split(','):
                     if compound_id.strip().startswith('C'):
                         row_dict = row.drop(PIMP_KEGG_ID_COL).to_dict()
-                        # peak_id = row_dict.pop(PIMP_PEAK_ID_COL, None)
-                        # if peak_id:
-                        #     row_dict[IDENTIFIER_COL] = '%s,%s' % (compound_id, peak_id)
-                        # else:
-                        #     row_dict[IDENTIFIER_COL] = compound_id
                         row_dict[IDENTIFIER_COL] = compound_id
                         data_list.append(row_dict)
             except TypeError:

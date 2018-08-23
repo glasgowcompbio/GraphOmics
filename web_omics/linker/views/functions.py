@@ -3,15 +3,17 @@ import json
 import pickle
 import re
 import urllib.request
+from collections import defaultdict
 from io import StringIO
 
+import numpy as np
 import pandas as pd
 import requests
 from django.templatetags.static import static
 
 from linker.constants import GENOMICS, PROTEOMICS, METABOLOMICS, REACTIONS, PATHWAYS, GENES_TO_PROTEINS, \
     PROTEINS_TO_REACTIONS, COMPOUNDS_TO_REACTIONS, REACTIONS_TO_PATHWAYS, SAMPLE_COL, GROUP_COL, \
-    COMPOUND_DATABASE_CHEBI, COMPOUND_DATABASE_KEGG, DEFAULT_GROUP_NAME
+    COMPOUND_DATABASE_CHEBI, COMPOUND_DATABASE_KEGG, DEFAULT_GROUP_NAME, IDENTIFIER_COL, PIMP_PEAK_ID_COL
 from linker.metadata import get_gene_names, get_compound_metadata, clean_label, get_species_name_to_id
 from linker.models import Analysis, AnalysisData
 from linker.reactome import ensembl_to_uniprot, uniprot_to_reaction, compound_to_reaction, \
@@ -143,23 +145,30 @@ def reactome_mapping(request, genes_str, proteins_str, compounds_str, compound_d
     reaction_pk_list = [x for x in reaction_ids if x not in reaction_2_pathways.keys]
     reaction_2_pathways = add_links(reaction_2_pathways, REACTION_PK, PATHWAY_PK, reaction_pk_list, [NA])
 
-    gene_2_proteins_json = json.dumps(gene_2_proteins.mapping_list)
-    protein_2_reactions_json = json.dumps(protein_2_reactions.mapping_list)
-    compound_2_reactions_json = json.dumps(compound_2_reactions.mapping_list)
-    reaction_2_pathways_json = json.dumps(reaction_2_pathways.mapping_list)
-
     rel_path = static('data/gene_names.p')
     pickled_url = request.build_absolute_uri(rel_path)
     metadata_map = get_gene_names(all_gene_ids, pickled_url)
     genes_json = pk_to_json(GENE_PK, 'gene_id', all_gene_ids, metadata_map, observed_gene_df, observed_ids=observed_gene_ids)
+    gene_2_proteins_json = json.dumps(gene_2_proteins.mapping_list)
 
     # metadata_map = get_uniprot_metadata_online(uniprot_ids)
     proteins_json = pk_to_json('protein_pk', 'protein_id', all_protein_ids, metadata_map, observed_protein_df, observed_ids=observed_protein_ids)
+    protein_2_reactions_json = json.dumps(protein_2_reactions.mapping_list)
 
+    # TODO: this feels like a very bad way to implement this
+    # We need to deal with uploaded peak data from PiMP, which contains a lot of duplicate identifications per peak
     rel_path = static('data/compound_names.json')
     json_url = request.build_absolute_uri(rel_path)
     metadata_map = get_compound_metadata(all_compound_ids, json_url, reaction_to_compound_id_to_names)
-    compounds_json = pk_to_json('compound_pk', 'compound_id', all_compound_ids, metadata_map, observed_compound_df, observed_ids=observed_compound_ids)
+    try:
+        mapping = get_mapping(observed_compound_df)
+    except KeyError:
+        mapping = None
+    compounds_json = pk_to_json('compound_pk', 'compound_id', all_compound_ids, metadata_map, observed_compound_df,
+                                observed_ids=observed_compound_ids, mapping=mapping)
+    if mapping:
+        compound_2_reactions = expand_relation(compound_2_reactions, mapping, 'compound_pk')
+    compound_2_reactions_json = json.dumps(compound_2_reactions.mapping_list)
 
     metadata_map = {}
     for name in reaction_2_pathways_id_to_names:
@@ -171,12 +180,12 @@ def reactome_mapping(request, genes_str, proteins_str, compounds_str, compound_d
     reaction_count_df = None
     pathway_count_df = None
 
-    # TODO: old, unfinished method
+    # TODO: old, unfinished method. Either complete it or remove it
+    # Meanwhile, the get_reactome_overrepresentation_df() method below does the job too
     # print('Computing reaction and pathway counts')
     # reaction_count_df, pathway_count_df = get_count_df(gene_2_proteins_mapping, protein_2_reactions_mapping,
     #                                                    compound_2_reactions_mapping, reaction_2_pathways_mapping,
     #                                                    species_list)
-
     if not use_kegg: # below works best for ChEBI
         identifiers = observed_protein_ids + observed_compound_ids
         pathway_count_df = get_reactome_overrepresentation_df(identifiers, species_list)
@@ -184,6 +193,7 @@ def reactome_mapping(request, genes_str, proteins_str, compounds_str, compound_d
     pathway_ids = reaction_2_pathways.values
     reactions_json = pk_to_json('reaction_pk', 'reaction_id', reaction_ids, metadata_map, reaction_count_df, has_species=True)
     pathways_json = pk_to_json('pathway_pk', 'pathway_id', pathway_ids, metadata_map, pathway_count_df, has_species=True)
+    reaction_2_pathways_json = json.dumps(reaction_2_pathways.mapping_list)
 
     results = {
         GENOMICS: genes_json,
@@ -200,6 +210,15 @@ def reactome_mapping(request, genes_str, proteins_str, compounds_str, compound_d
         'group_compound_df': group_compound_df
     }
     return results
+
+
+def get_mapping(observed_compound_df):
+    mapping = defaultdict(list)
+    for idx, row in observed_compound_df.iterrows():
+        identifier = row[IDENTIFIER_COL]
+        peak_id = row[PIMP_PEAK_ID_COL]
+        mapping[identifier].append('%s_%s' % (identifier, peak_id))
+    return dict(mapping)
 
 
 def save_analysis(analysis_name, analysis_desc,
@@ -349,6 +368,13 @@ def csv_to_dataframe(csv_str):
     try:
         data_df = pd.read_csv(data)
         data_df.columns = data_df.columns.str.replace('.', '_') # replace period with underscore to prevent alasql breaking
+        rename = {data_df.columns.values[0]: IDENTIFIER_COL}
+        for i in range(len(data_df.columns.values[1:])): # sql doesn't like column names starting with a number
+            col_name = data_df.columns.values[i]
+            if col_name[0].isdigit():
+                new_col_name = '_' + col_name # append an underscore in front of the column name
+                rename[col_name] = new_col_name
+        data_df = data_df.rename(columns=rename)
         data_df.iloc[:, 0] = data_df.iloc[:, 0].astype(str) # assume id is in the first column and is a string
         id_list = data_df.iloc[:, 0].values.tolist()
     except pd.errors.EmptyDataError:
@@ -367,6 +393,11 @@ def csv_to_dataframe(csv_str):
             group_data = [DEFAULT_GROUP_NAME for x in range(num_samples)] # assigns a default group if nothing specified
         group_df = pd.DataFrame(list(zip(sample_data[1:], group_data)), columns=[SAMPLE_COL, GROUP_COL])
 
+    # drop peak id column if present
+    try:
+        group_df = group_df.drop(group_df[group_df[SAMPLE_COL] == PIMP_PEAK_ID_COL].index)
+    except AttributeError:
+        pass
     return data_df, group_df, id_list
 
 
@@ -390,10 +421,55 @@ def reverse_relation(rel):
     return Relation(keys=rel.values, values=rel.keys, mapping_list=rel.mapping_list)
 
 
-def pk_to_json(pk_label, display_label, data, metadata_map, observed_df, has_species=False, observed_ids=None):
-    # turn the first column of the dataframe into index
+def expand_relation(rel, mapping, pk_col):
+    expanded_keys = substitute(rel.keys, mapping)
+    expanded_values = substitute(rel.values, mapping)
+    expanded_mapping_list = []
+    for row in rel.mapping_list:
+        expanded = expand_each(row, mapping, pk_col)
+        if len(expanded) == 0:
+            expanded = [row]
+        expanded_mapping_list.extend(expanded)
+    return Relation(keys=expanded_keys, values=expanded_values, mapping_list=expanded_mapping_list)
+
+
+def substitute(my_list, mapping):
+    new_list = []
+    for x in my_list:
+        if x in mapping:
+            new_list.extend(mapping[x])
+        else:
+            new_list.append(x)
+    return new_list
+
+
+def expand_each(row, mapping, pk_col):
+    results = []
+    pk = row[pk_col]
+    try:
+        replacements = mapping[pk]
+        for rep in replacements:
+            new_row = without_keys(row, [pk_col])
+            new_row[pk_col] = rep
+            results.append(new_row)
+    except KeyError:
+        pass
+    return results
+
+
+# https://stackoverflow.com/questions/31433989/return-copy-of-dictionary-excluding-specified-keys
+def without_keys(d, keys):
+    return {x: d[x] for x in d if x not in keys}
+
+
+def pk_to_json(pk_label, display_label, data, metadata_map, observed_df, has_species=False,
+               observed_ids=None, mapping=None):
     if observed_df is not None:
-        observed_df = observed_df.set_index(observed_df.columns[0])
+        if PIMP_PEAK_ID_COL in observed_df.columns: # if peak id is present, rename the identifier column to include it
+            observed_df[IDENTIFIER_COL] = observed_df[IDENTIFIER_COL] + '_' + observed_df[PIMP_PEAK_ID_COL].astype(str)
+        if mapping is not None:
+            data = expand_data(data, mapping)
+        observed_df = observed_df.set_index(IDENTIFIER_COL) # set identifier as index
         observed_df = observed_df[~observed_df.index.duplicated(keep='first')]  # remove row with duplicate indices
         observed_df = observed_df.fillna(value=0)  # replace all NaNs with 0s
 
@@ -402,6 +478,14 @@ def pk_to_json(pk_label, display_label, data, metadata_map, observed_df, has_spe
 
         if item == NA:
             continue  # handled below after this loop
+
+        if '_' in item:
+            tokens = item.split('_')
+            assert len(tokens) == 2
+            item = tokens[0]
+            peak_id = tokens[1]
+        else:
+            peak_id = None
 
         # add observed status and the primary key label to row data
         row = {}
@@ -412,12 +496,20 @@ def pk_to_json(pk_label, display_label, data, metadata_map, observed_df, has_spe
                 row['obs'] = False
         else:
             row['obs'] = None
-        row[pk_label] = item
+
+        if peak_id:
+            key = '%s_%s' % (item, peak_id)
+            row[pk_label] = key
+        else:
+            row[pk_label] = item
 
         # add display label to row_data
         species = None
         if len(metadata_map) > 0 and item in metadata_map and metadata_map[item] is not None:
-            label = metadata_map[item]['display_name'].capitalize()
+            if peak_id:
+                label = '%s (%s)' % (metadata_map[item]['display_name'].capitalize(), peak_id)
+            else:
+                label = metadata_map[item]['display_name'].capitalize()
             # get the species if it's there too
             if has_species and 'species' in metadata_map[item]:
                 species = metadata_map[item]['species']
@@ -428,11 +520,15 @@ def pk_to_json(pk_label, display_label, data, metadata_map, observed_df, has_spe
         # add the remaining data columns to row
         if observed_df is not None:
             try:
-                observed_values = observed_df.loc[item].to_dict()
+                if peak_id:
+                    observed_values = observed_df.loc[key].to_dict()
+                else:
+                    observed_values = observed_df.loc[item].to_dict()
             except KeyError:  # missing data
                 observed_values = {}
                 for col in observed_df.columns:
                     observed_values.update({col: None})
+            observed_values.pop(PIMP_PEAK_ID_COL, None)
             row.update(observed_values)
 
         if has_species:
@@ -448,6 +544,8 @@ def pk_to_json(pk_label, display_label, data, metadata_map, observed_df, has_spe
 
     if observed_df is not None:  # also add the remaining columns
         for col in observed_df.columns:
+            if col == PIMP_PEAK_ID_COL:
+                continue
             row.update({col: 0})
 
     if row not in output:
@@ -455,6 +553,17 @@ def pk_to_json(pk_label, display_label, data, metadata_map, observed_df, has_spe
 
     output_json = json.dumps(output)
     return output_json
+
+
+def expand_data(data, mapping):
+    new_data = []
+    for x in data:
+        if x in mapping:
+            new_data.extend(mapping[x])
+        else:
+            new_data.append(x)
+    data = new_data
+    return data
 
 
 def make_relations(mapping, source_pk, target_pk, value_key=None):

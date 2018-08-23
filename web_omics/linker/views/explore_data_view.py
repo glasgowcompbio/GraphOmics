@@ -246,6 +246,14 @@ def get_kegg_metabolite_info(request, analysis_id):
     if request.is_ajax():
 
         compound_id = request.GET['id']
+        if '_' in compound_id:
+            tokens = compound_id.split('_')
+            assert len(tokens) == 2
+            compound_id = tokens[0]
+            peak_id = tokens[1]
+        else:
+            peak_id = None
+
         metadata = get_single_compound_metadata_online(compound_id)
 
         if compound_id.upper().startswith('C'):  # assume it's kegg
@@ -257,6 +265,10 @@ def get_kegg_metabolite_info(request, analysis_id):
             for key in selected:
                 value = metadata[key]
                 infos.append({'key': key, 'value': str(value)})
+
+            key = 'PiMP Peak ID'
+            value = peak_id
+            infos.append({'key': key, 'value': str(value)})
 
             images = ['http://www.kegg.jp/Fig/compound/' + compound_id + '.gif']
             links = [
@@ -285,6 +297,10 @@ def get_kegg_metabolite_info(request, analysis_id):
             ]
 
             infos = []
+            key = 'PiMP Peak ID'
+            value = peak_id
+            infos.append({'key': key, 'value': str(value)})
+
             try:
                 for db_link in metadata.DatabaseLinks:
                     if 'KEGG COMPOUND' in str(db_link.type):
@@ -324,7 +340,7 @@ def get_kegg_metabolite_info(request, analysis_id):
             'annotation_url': annotation_url,
             'annotation_id': compound_id
         }
-        measurements = get_grouped_measurements(analysis_id, compound_id, METABOLOMICS)
+        measurements = get_grouped_measurements(analysis_id, compound_id, METABOLOMICS, peak_id=peak_id)
         if measurements is not None:
             data['plot_data'] = measurements
         return JsonResponse(data)
@@ -502,7 +518,7 @@ def update_annotation(request, analysis_id, database_id, data_type):
     return JsonResponse(data)
 
 
-def get_grouped_measurements(analysis_id, database_id, data_type):
+def get_grouped_measurements(analysis_id, database_id, data_type, peak_id=None):
     analysis = Analysis.objects.get(id=analysis_id)
     analysis_data = get_last_data(analysis, data_type)
     if analysis_data.json_design is None:
@@ -512,7 +528,11 @@ def get_grouped_measurements(analysis_id, database_id, data_type):
     for row in analysis_data.json_data:
         for key in row.keys():
             if '_id' in key or '_pk' in key:
-                if row[key] == database_id: # if found
+                if peak_id:
+                    search = '%s_%s' % (database_id, peak_id)
+                else:
+                    search = database_id
+                if row[key] == search: # if found
                     # filter this row to remove exclude_colnames
                     filtered_data = filter_dict(row, exclude_colnames)
                     # check if there's some measurements (not all entries are None)
