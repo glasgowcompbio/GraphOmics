@@ -92,18 +92,22 @@ def get_ensembl_gene_info(request, analysis_id):
         metadata = get_single_ensembl_metadata_online(ensembl_id)
 
         infos = []
-        # selected = ['description', 'species', 'biotype', 'db_type', 'logic_name', 'strand', 'start', 'end']
-        selected = ['description', 'species']
-        for key in selected:
-            value = metadata[key]
-            if key == 'description':
-                value = value[0:value.index('[')]  # remove e.g. '[xxx]' from 'abhydrolase [xxx]'
-            infos.append({'key': key.title(), 'value': value})
+        if metadata is not None:
+            # selected = ['description', 'species', 'biotype', 'db_type', 'logic_name', 'strand', 'start', 'end']
+            selected = ['description', 'species']
+            for key in selected:
+                value = metadata[key]
+                if key == 'description':
+                    value = value[0:value.index('[')]  # remove e.g. '[xxx]' from 'abhydrolase [xxx]'
+                infos.append({'key': key.title(), 'value': value})
 
-        display_name = metadata['display_name']
-        summary = get_entrez_summary(ensembl_id)
-        infos.append({'key': 'Summary', 'value': truncate(summary)})
+        try:
+            summary = get_entrez_summary(ensembl_id)
+            infos.append({'key': 'Summary', 'value': truncate(summary)})
+        except TypeError:
+            pass
 
+        display_name = metadata['display_name'] if metadata is not None else ''
         # try:
         #     summary = wikipedia.summary(display_name)
         #     if 'gene' in summary.lower() or 'protein' in summary.lower():
@@ -148,58 +152,62 @@ def get_ensembl_gene_info(request, analysis_id):
 def get_uniprot_protein_info(request, analysis_id):
     if request.is_ajax():
         uniprot_id = request.GET['id']
-        metadata = get_single_uniprot_metadata_online(uniprot_id)
 
-        infos = []
+        infos = []                                                                                                                                                                     
         try:
-            fullname = [x.text for x in metadata.soup.select('protein > recommendedname > fullname')][0]
-        except IndexError:
-            fullname = uniprot_id
-
-        shortName = None
-        try:
-            shortname = [x.text for x in metadata.soup.select('protein > recommendedname > shortname')][0]
-        except IndexError:
-            pass
-
-        if shortName is not None:
-            infos.append({'key': 'Name', 'value': "{} ({})".format(fullname, shortname)})
-        else:
-            infos.append({'key': 'Name', 'value': "{}".format(fullname)})
-
-        try:
-            ecnumber = [x.text for x in metadata.soup.select('protein > recommendedname > ecnumber')][0]
-            infos.append({'key': 'EC Number', 'value': 'EC' + ecnumber})
-        except IndexError:
-            pass
-
-        # get comments
-        selected = ['function', 'catalytic activity', 'enzyme regulation', 'subunit', 'pathway', 'miscellaneous',
-                    'domain']
-        for child in metadata.soup.find_all('comment'):
+            metadata = get_single_uniprot_metadata_online(uniprot_id)
             try:
-                if child['type'] in selected:
-                    key = child['type'].title()
-                    if key == 'Function':  # quick-hack
-                        key = 'Summary'
-                    infos.append({'key': key, 'value': truncate(child.text)})
-            except KeyError:
-                continue
+                fullname = [x.text for x in metadata.soup.select('protein > recommendedname > fullname')][0]
+            except IndexError:
+                fullname = uniprot_id
 
-        # gene ontologies
-        go = []
-        for child in metadata.soup.find_all('dbreference'):
+            shortName = None
             try:
-                if child['type'] == 'GO':
-                    props = child.find_all('property')
-                    for prop in props:
-                        if prop['type'] == 'term':
-                            go.append(prop['value'].split(':')[1])
-            except KeyError:
-                continue
-        go_str = '; '.join(sorted(go))
-        go_str = truncate(go_str)
-        infos.append({'key': 'Gene_ontologies', 'value': go_str})
+                shortname = [x.text for x in metadata.soup.select('protein > recommendedname > shortname')][0]
+            except IndexError:
+                pass
+
+            if shortName is not None:
+                infos.append({'key': 'Name', 'value': "{} ({})".format(fullname, shortname)})
+            else:
+                infos.append({'key': 'Name', 'value': "{}".format(fullname)})
+
+            try:
+                ecnumber = [x.text for x in metadata.soup.select('protein > recommendedname > ecnumber')][0]
+                infos.append({'key': 'EC Number', 'value': 'EC' + ecnumber})
+            except IndexError:
+                pass
+
+            # get comments
+            selected = ['function', 'catalytic activity', 'enzyme regulation', 'subunit', 'pathway', 'miscellaneous',
+                        'domain']
+            for child in metadata.soup.find_all('comment'):
+                try:
+                    if child['type'] in selected:
+                        key = child['type'].title()
+                        if key == 'Function':  # quick-hack
+                            key = 'Summary'
+                        infos.append({'key': key, 'value': truncate(child.text)})
+                except KeyError:
+                    continue
+
+            # gene ontologies
+            go = []
+            for child in metadata.soup.find_all('dbreference'):
+                try:
+                    if child['type'] == 'GO':
+                        props = child.find_all('property')
+                        for prop in props:
+                            if prop['type'] == 'term':
+                                go.append(prop['value'].split(':')[1])
+                except KeyError:
+                    continue
+            go_str = '; '.join(sorted(go))
+            go_str = truncate(go_str)
+            infos.append({'key': 'Gene_ontologies', 'value': go_str})
+
+        except TypeError:
+            pass
 
         images = []
         # with urllib.request.urlopen('https://swissmodel.expasy.org/repository/uniprot/' + uniprot_id + '.json') as url:
@@ -262,9 +270,10 @@ def get_kegg_metabolite_info(request, analysis_id):
 
             infos = []
             selected = ['FORMULA']
-            for key in selected:
-                value = metadata[key]
-                infos.append({'key': key, 'value': str(value)})
+            if metadata is not None:
+                for key in selected:
+                    value = metadata[key]
+                    infos.append({'key': key, 'value': str(value)})
 
             key = 'PiMP Peak ID'
             value = peak_id
