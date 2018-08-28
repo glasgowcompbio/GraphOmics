@@ -2,7 +2,7 @@
 WebOmics is a dashboard to integrate and explore different types of biological -omics data. 
 Using this tool, you can map genomics, proteomics and metabolomics data onto metabolic pathways.
 
-![Screenshot](images/screenshot.png?raw=true "Data Explorer")
+![Screenshot](web_omics/images/screenshot.png?raw=true "Data Explorer")
 
 Requires:
 - npm/react for frontend.
