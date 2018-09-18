@@ -1,44 +1,34 @@
 [[source]]
-url = "https://pypi.python.org/simple"
+url = "https://pypi.org/simple"
 verify_ssl = true
 name = "pypi"
 
-[dev-packages]
-werkzeug = "==0.12.2"
+[packages]
 django = "*"
 django-configurations = "*"
+dj-database-url = "*"
+django-debug-toolbar = "*"
+django-extensions = "*"
+"django-select2" = "*"
+gunicorn = "*"
+whitenoise = "*"
 ipython = "*"
-jupyter = "*"
-
-[packages]
-dj-database-url = "==0.4.2"
-django-configurations = "==2.0.0"
-django-debug-toolbar = "==1.9.1"
-django-extensions = "==1.9.7"
-django = "==2.0"
-"psycopg2" = "==2.7.3.2"
-gunicorn = "==19.7.1"
-newrelic = "==2.98.0.81"
-whitenoise = "==4.0b4"
+"rpy2" = "*"
+# "rpy2" = {file = "https://download.lfd.uci.edu/pythonlibs/o4uhg4xd/rpy2-2.9.4-cp36-cp36m-win_amd64.whl"} # use this for windows
 numpy = "*"
-matplotlib = "*"
 scipy = "*"
 pandas = "*"
 seaborn = "*"
-"neo4j-driver" = "*"
-xmltodict = "*"
-bioservices = "*"
-tables = "*"
-wikipedia = "*"
-"django-select2" = "*"
-jsonfield = "*"
 scikit-learn = "*"
-pywinpty = "*"
-tzlocal = "*"
-jsonpickle = "*"
+matplotlib = "*"
 statsmodels = "*"
-"rpy2" = "*"
-deprecated = "*"
+"neo4j-driver" = "*"
+jupyter = "*"
+bioservices = "*"
+jsonfield = "*"
+jsonpickle = "*"
+
+[dev-packages]
 
 [requires]
 python_version = "3.6"
