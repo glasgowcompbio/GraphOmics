@@ -8,5 +8,5 @@ urlpatterns = [
     path('login/', views.user_login, name='login'),
     path('logout/', views.user_logout, name='logout'),
     path('profile/', views.ProfileUpdate.as_view(), name='profile'),
-    path('change_password/', auth_views.password_change, {'post_change_redirect': 'profile'}, name='password_change'),
+    path('change_password/', auth_views.PasswordChangeView.as_view(success_url='profile'), name='password_change')
 ]
