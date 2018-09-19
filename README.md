@@ -130,3 +130,29 @@ And you can start the server by:
 ```bash
 $ python manage.py runserver
 ```
+
+### 7. Jupyter Notebook
+
+Notebooks are very useful for prototyping and troubleshooting. Using shell_plus, you can launch a notebook that has access to django objects.
+
+References: https://stackoverflow.com/questions/35483328/how-to-setup-jupyter-ipython-notebook-for-django
+In the same directory that contains manage.py, run:
+```bash
+$ jupyter notebook
+```
+
+You might need to do the following configurations to make the notebook work properly:
+1. Add the environmental variables `DJANGO_CONFIGURATION=Development` and `DJANGO_SETTINGS_MODULE=web_omics.settings`
+2. Make sure that django-configuration is setup properly when launched from notebook, see https://github.com/jazzband/django-configurations/issues/147. As a workaround, you can edit the file <your_virtual_env>/site-packages/django_extensions/management/shells.py, and add the workaround below:
+```
+def import_objects(options, style):
+    from django.apps import apps
+    from django import setup
+
+    if not apps.ready:
+        # workaround
+        import configurations
+        configurations.setup()    
+        # end workaround
+        setup()
+```
