@@ -25,8 +25,8 @@ jupyter = "*"
 bioservices = "*"
 jsonfield = "*"
 jsonpickle = "*"
-wikipedia = "*"
 "rpy2" = {file = "https://download.lfd.uci.edu/pythonlibs/o4uhg4xd/rpy2-2.9.4-cp36-cp36m-win_amd64.whl"}
+tzlocal = "*"
 
 [dev-packages]
 

@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "73d58e65e9af80d292d6b69c7191440fd5185c01f9c430afc8cb7cb0bebcb5b2"
+            "sha256": "b3bad071f418b2bc02820e989c92704191a8d39f329b3d0492d63e16e5d22954"
         },
         "pipfile-spec": 6,
         "requires": {
@@ -653,10 +653,11 @@
         },
         "pyparsing": {
             "hashes": [
-                "sha256:0832bcf47acd283788593e7a0f542407bd9550a55a8a8435214a1960e04bcb04",
-                "sha256:fee43f17a9c4087e7ed1605bd6df994c6173c1e977d7ade7b651292fab2bd010"
+                "sha256:905d8090c335314568b5faee0025b1829f27bb974604a5762a6cdef3a7dfc3b7",
+                "sha256:f493ee323be1e94929416b3585eefcc04943115cecbaaa35a8c86d1a2368af19"
             ],
-            "version": "==2.2.0"
+            "markers": "python_version >= '2.6' and python_version != '3.2.*' and python_version != '3.1.*' and python_version != '3.0.*'",
+            "version": "==2.2.1"
         },
         "python-dateutil": {
             "hashes": [
@@ -738,7 +739,6 @@
             "version": "==0.4.13"
         },
         "rpy2": {
-            "file": "https://download.lfd.uci.edu/pythonlibs/o4uhg4xd/rpy2-2.9.4-cp36-cp36m-win_amd64.whl",
             "hashes": [
                 "sha256:6d11505999bb1fdb74b0c2e857879b973ff7995bf495d168b01995dbfcae4110",
                 "sha256:be57f741d0c284b5d8785ab03dff0e829303e5ac30e548d5ceb46e05b168812e"
@@ -917,6 +917,13 @@
                 "sha256:c6cb5e6f57c5a9bdaa40fa71ce7b4af30298fbab9ece9815b5d995ab6217c7d9"
             ],
             "version": "==4.3.2"
+        },
+        "tzlocal": {
+            "hashes": [
+                "sha256:4ebeb848845ac898da6519b9b31879cf13b6626f7184c496037b818e238f2c4e"
+            ],
+            "index": "pypi",
+            "version": "==1.5.1"
         },
         "urllib3": {
             "hashes": [

@@ -26,6 +26,7 @@ bioservices = "*"
 jsonfield = "*"
 jsonpickle = "*"
 "rpy2" = "*"
+tzlocal = "*"
 
 [dev-packages]
 
