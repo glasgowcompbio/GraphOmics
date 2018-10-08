@@ -372,6 +372,7 @@ def csv_to_dataframe(csv_str):
     try:
         data_df = pd.read_csv(data)
         data_df.columns = data_df.columns.str.replace('.', '_') # replace period with underscore to prevent alasql breaking
+        data_df.columns = data_df.columns.str.replace('#', '') # remove funny characters
         rename = {data_df.columns.values[0]: IDENTIFIER_COL}
         for i in range(len(data_df.columns.values[1:])): # sql doesn't like column names starting with a number
             col_name = data_df.columns.values[i]

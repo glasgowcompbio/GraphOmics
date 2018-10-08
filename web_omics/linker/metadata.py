@@ -111,6 +111,7 @@ def clean_label(w):
     for tok in w.split(' '):
         # filtered = re.sub(r'[^\w\s]', '', tok)
         filtered = tok.replace("'", "")
+        filtered = filtered.replace('"', "")
         results.append(filtered.strip())
     return ' '.join(results)
 
