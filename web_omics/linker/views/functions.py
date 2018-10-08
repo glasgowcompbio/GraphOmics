@@ -17,7 +17,7 @@ from linker.constants import GENOMICS, PROTEOMICS, METABOLOMICS, REACTIONS, PATH
 from linker.metadata import get_gene_names, get_compound_metadata, clean_label, get_species_name_to_id
 from linker.models import Analysis, AnalysisData
 from linker.reactome import ensembl_to_uniprot, uniprot_to_reaction, compound_to_reaction, \
-    reaction_to_metabolite_pathway, reaction_to_uniprot, reaction_to_compound, uniprot_to_ensembl
+    reaction_to_pathway, reaction_to_uniprot, reaction_to_compound, uniprot_to_ensembl
 from linker.reactome import get_reaction_df
 
 Relation = collections.namedtuple('Relation', 'keys values mapping_list')
@@ -30,7 +30,8 @@ REACTION_PK = 'reaction_pk'
 PATHWAY_PK = 'pathway_pk'
 
 
-def reactome_mapping(request, genes_str, proteins_str, compounds_str, compound_database_str, species_list):
+def reactome_mapping(request, genes_str, proteins_str, compounds_str, compound_database_str, species_list,
+                     metabolic_pathway_only):
     ### all the ids that we have from the user ###
     observed_gene_df, group_gene_df, observed_gene_ids = csv_to_dataframe(genes_str)
     observed_protein_df, group_protein_df, observed_protein_ids = csv_to_dataframe(proteins_str)
@@ -79,8 +80,9 @@ def reactome_mapping(request, genes_str, proteins_str, compounds_str, compound_d
     reaction_ids_from_proteins = protein_2_reactions.values
     reaction_ids_from_compounds = compound_2_reactions.values
     reaction_ids = list(set(reaction_ids_from_proteins + reaction_ids_from_compounds))
-    reaction_2_pathways_mapping, reaction_2_pathways_id_to_names = reaction_to_metabolite_pathway(reaction_ids,
-                                                                                                  species_list)
+    reaction_2_pathways_mapping, reaction_2_pathways_id_to_names = reaction_to_pathway(reaction_ids,
+                                                                                       species_list,
+                                                                                       metabolic_pathway_only)
     reaction_2_pathways = make_relations(reaction_2_pathways_mapping, REACTION_PK, PATHWAY_PK,
                                          value_key='pathway_id')
 
@@ -163,6 +165,8 @@ def reactome_mapping(request, genes_str, proteins_str, compounds_str, compound_d
     try:
         mapping = get_mapping(observed_compound_df)
     except KeyError:
+        mapping = None
+    except AttributeError:
         mapping = None
     compounds_json = pk_to_json('compound_pk', 'compound_id', all_compound_ids, metadata_map, observed_compound_df,
                                 observed_ids=observed_compound_ids, mapping=mapping)

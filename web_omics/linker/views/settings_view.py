@@ -54,7 +54,8 @@ def add_data(request, analysis_id):
                 proteins_str = get_formatted_data(analysis.metadata, 'proteins_str', None)
                 compounds_str = get_formatted_data(analysis.metadata, 'compounds_str', database_id)
 
-            results = reactome_mapping(request, genes_str, proteins_str, compounds_str, species_list)
+            results = reactome_mapping(request, genes_str, proteins_str, compounds_str,
+                                       species_list, metabolic_pathway_only)
 
             # update analysis data
             counts = collections.defaultdict(int)

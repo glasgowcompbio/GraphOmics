@@ -3,7 +3,8 @@ import os
 from django import forms
 from django_select2.forms import Select2Widget, Select2MultipleWidget
 
-from linker.constants import AddNewDataChoices, InferenceTypeChoices, CompoundDatabaseChoices
+from linker.constants import AddNewDataChoices, InferenceTypeChoices, CompoundDatabaseChoices, \
+    MetabolicPathwayOnlyChoices
 from linker.reactome import get_species_dict, get_all_pathways
 from linker.models import Analysis, AnalysisUpload
 
@@ -65,6 +66,10 @@ class CreateAnalysisForm(forms.Form):
     compounds = forms.CharField(required=False,
                                 widget=forms.Textarea(attrs={'rows': 6, 'cols': 100, 'style': 'width: 100%'}),
                                 initial=example_compounds)
+    metabolic_pathway_only = forms.ChoiceField(required=True, choices=MetabolicPathwayOnlyChoices,
+                                widget=Select2Widget,
+                                label='Limit to',
+                                help_text='<div style="color: gray"><small>Whether to limit the selected pathways to only metabolic pathways.</small></div>')
     compound_database = forms.ChoiceField(required=True, choices=CompoundDatabaseChoices,
                                 widget=Select2Widget,
                                 label='Query compounds by',
@@ -76,6 +81,10 @@ class UploadAnalysisForm(forms.ModelForm):
     analysis_name = forms.CharField(required=False, widget=forms.TextInput(attrs={'style': 'width: 100%'}))
     analysis_description = forms.CharField(required=False, widget=forms.TextInput(attrs={'style': 'width: 100%'}))
     species = forms.MultipleChoiceField(required=True, choices=SPECIES_CHOICES, widget=Select2MultipleWidget)
+    metabolic_pathway_only = forms.ChoiceField(required=True, choices=MetabolicPathwayOnlyChoices,
+                                widget=Select2Widget,
+                                label='Limit to',
+                                help_text='<div style="color: gray"><small>Whether to limit the selected pathways to only metabolic pathways.</small></div>')
     compound_database = forms.ChoiceField(required=True, choices=CompoundDatabaseChoices,
                                 widget=Select2Widget,
                                 label='Query compounds by',

@@ -391,48 +391,47 @@ def reaction_to_compound(reaction_ids, species_list, use_kegg=False):
     return dict(results), id_to_names
 
 
-def reaction_to_metabolite_pathway(reaction_ids, species_list,
-                                   leaf=True):
+def rchop(thestring, ending):
+    if thestring.endswith(ending):
+        return thestring[:-len(ending)]
+    return thestring
+
+
+def reaction_to_pathway(reaction_ids, species_list, metabolic_pathway_only, leaf=True):
     id_to_names = {}
     results = defaultdict(list)
     try:
         session = get_neo4j_session()
-        if leaf:
-            # retrieve only the leaf nodes in the pathway hierarchy
-            query = """
-            MATCH (tp:TopLevelPathway)-[:hasEvent*]->
-                  (p:Pathway)-[:hasEvent*]->(rle:ReactionLikeEvent)
-            WHERE
-                tp.displayName = 'Metabolism' AND
-                tp.speciesName IN {species} AND
-                rle.stId IN {reaction_ids} AND
-                (p)-[:hasEvent]->(rle)
-            RETURN
-                rle.stId AS reaction_id,
-                rle.displayName AS reaction_name,
-                rle.speciesName AS reaction_species,
-                p.stId AS pathway_id,
-                p.displayName AS pathway_name,
-                tp.speciesName AS pathway_species
-            """
-        else:
-            # retrieve all nodes maps reactions to all levels in the pathway
-            # hierarchy (except the top-level)
-            query = """
-            MATCH (tp:TopLevelPathway)-[:hasEvent*]->
-                  (p:Pathway)-[:hasEvent*]->(rle:ReactionLikeEvent)
-            WHERE
-                tp.displayName = 'Metabolism' AND
-                tp.speciesName IN {species} AND
-                rle.stId IN {reaction_ids}
-            RETURN
-                rle.stId AS reaction_id,
-                rle.displayName AS reaction_name,
-                rle.speciesName AS reaction_species,        	    
-                p.stId AS pathway_id,
-                p.displayName AS pathway_name,
-                tp.speciesName AS pathway_species                
-            """
+
+        # initial match clause in the query
+        query = """
+        MATCH (tp:TopLevelPathway)-[:hasEvent*]->
+              (p:Pathway)-[:hasEvent*]->(rle:ReactionLikeEvent)
+        WHERE
+            tp.speciesName IN {species} AND        
+            rle.stId IN {reaction_ids} AND            
+        """
+
+        if leaf: # retrieve only the leaf nodes in the pathway hierarchy
+            query += " (p)-[:hasEvent]->(rle) AND "
+
+        if metabolic_pathway_only: # only retrieves metabolic pathways
+            query += " tp.displayName = 'Metabolism' AND "
+
+        # remove last AND
+        query = rchop(query.strip(), 'AND')
+
+        # add return clause
+        query += """
+        RETURN
+            rle.stId AS reaction_id,
+            rle.displayName AS reaction_name,
+            rle.speciesName AS reaction_species,
+            p.stId AS pathway_id,
+            p.displayName AS pathway_name,
+            tp.speciesName AS pathway_species
+        """
+
         params = {
             'reaction_ids': reaction_ids,
             'species': species_list

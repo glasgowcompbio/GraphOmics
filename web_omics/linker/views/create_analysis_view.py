@@ -23,13 +23,14 @@ class CreateAnalysisView(FormView):
         proteins_str = form.cleaned_data['proteins']
         compounds_str = form.cleaned_data['compounds']
         compound_database_str = form.cleaned_data['compound_database']
+        metabolic_pathway_only = form.cleaned_data['metabolic_pathway_only']
         species_dict = get_species_dict()
         species_list = [species_dict[x] for x in form.cleaned_data['species']]
         current_user = self.request.user
 
         analysis, data, data_fields = get_data(self.request, analysis_desc, analysis_name, compounds_str,
                                                compound_database_str, current_user, genes_str, proteins_str,
-                                               species_list)
+                                               species_list, metabolic_pathway_only)
         context = get_context(analysis, data, data_fields)
         return render(self.request, self.success_url, context)
 
@@ -46,13 +47,14 @@ class UploadAnalysisView(FormView):
         proteins_str = get_uploaded_data(form.cleaned_data, 'protein_data', 'protein_design')
         compounds_str = get_uploaded_data(form.cleaned_data, 'compound_data', 'compound_design')
         compound_database_str = form.cleaned_data['compound_database']
+        metabolic_pathway_only = form.cleaned_data['metabolic_pathway_only']
         species_dict = get_species_dict()
         species_list = [species_dict[x] for x in form.cleaned_data['species']]
         current_user = self.request.user
 
         analysis, data, data_fields = get_data(self.request, analysis_desc, analysis_name, compounds_str,
                                                compound_database_str, current_user, genes_str, proteins_str,
-                                               species_list)
+                                               species_list, metabolic_pathway_only)
         context = get_context(analysis, data, data_fields)
         return render(self.request, self.success_url, context)
 
@@ -67,6 +69,7 @@ class AddPathwayView(FormView):
         analysis_desc = form.cleaned_data['analysis_description']
         pathway_list = form.cleaned_data['pathways']
         species_list = list(set([pathway_species_dict[x] for x in pathway_list]))
+        metabolic_pathway_only = False
 
         # get reactions under pathways
         pathway_2_reactions, _ = pathway_to_reactions(pathway_list)
@@ -88,14 +91,16 @@ class AddPathwayView(FormView):
         compounds_str = '\n'.join(['identifier'] + all_compounds)
 
         analysis, data, data_fields = get_data(self.request, analysis_desc, analysis_name, compounds_str, current_user,
-                                               genes_str, proteins_str, species_list)
+                                               genes_str, proteins_str, species_list, metabolic_pathway_only)
         context = get_context(analysis, data, data_fields)
         return render(self.request, self.success_url, context)
 
 
 def get_data(request, analysis_desc, analysis_name, compounds_str, compound_database_str,
-             current_user, genes_str, proteins_str, species_list):
-    results = reactome_mapping(request, genes_str, proteins_str, compounds_str, compound_database_str, species_list)
+             current_user, genes_str, proteins_str, species_list, metabolic_pathway_only):
+    metabolic_pathway_only = metabolic_pathway_only.lower() in ("yes", "true", "t", "1") # convert string to bool
+    results = reactome_mapping(request, genes_str, proteins_str, compounds_str,
+                               compound_database_str, species_list, metabolic_pathway_only)
     analysis, data = save_analysis(analysis_name, analysis_desc,
                                    genes_str, proteins_str, compounds_str, compound_database_str,
                                    results, species_list, current_user)

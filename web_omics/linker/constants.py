@@ -73,3 +73,7 @@ CompoundDatabaseChoices = (
     (COMPOUND_DATABASE_KEGG, 'KEGG identifiers'),
     (COMPOUND_DATABASE_CHEBI, 'ChEBI identifiers'),
 )
+MetabolicPathwayOnlyChoices = (
+    (True, 'Only metabolic pathways'),
+    (False, 'All pathways'),
+)
