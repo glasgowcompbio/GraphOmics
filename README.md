@@ -1,13 +1,14 @@
 # WebOmics
 WebOmics is a dashboard to integrate and explore different types of biological -omics data. 
-Using this tool, you can map genomics, proteomics and metabolomics data onto metabolic pathways.
+Using this tool, you can map transcriptomics, proteomics and metabolomics data onto metabolic pathways. 
+WebOmics uses [Reactome](https://reactome.org/) as the knowledge base to map entities across different omics.
+Methods to rank pathway and highlight interesting connection are also included.
 
 ![Screenshot](web_omics/images/screenshot.png?raw=true "Data Explorer")
 
 Requires:
-- npm/react for frontend.
-- Django 2.0/Python and rpy for backend
-- A local Reactome database for the knowledge base
+- Django 2.0/Python and rpy for backend.
+- A local Reactome installation.
 - The usual scientific python stack (Numpy/Scipy/Pandas) for analysis and running the notebooks (optional).
 
 ## How to install?
