@@ -53,7 +53,7 @@ class AnalysisUpload(models.Model):
 class AnalysisData(models.Model):
     parent = models.ForeignKey("self", blank=True, null=True, on_delete=models.CASCADE)
     analysis = models.ForeignKey(Analysis, on_delete=models.CASCADE)
-    display_name = models.CharField(max_length=1000)
+    display_name = models.CharField(max_length=1000, blank=True, null=True)
     json_data = JSONField()
     json_design = JSONField()
     data_type = models.IntegerField(choices=DataRelationType)

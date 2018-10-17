@@ -13,7 +13,8 @@ from django.templatetags.static import static
 
 from linker.constants import GENOMICS, PROTEOMICS, METABOLOMICS, REACTIONS, PATHWAYS, GENES_TO_PROTEINS, \
     PROTEINS_TO_REACTIONS, COMPOUNDS_TO_REACTIONS, REACTIONS_TO_PATHWAYS, SAMPLE_COL, GROUP_COL, \
-    COMPOUND_DATABASE_CHEBI, COMPOUND_DATABASE_KEGG, DEFAULT_GROUP_NAME, IDENTIFIER_COL, PIMP_PEAK_ID_COL
+    COMPOUND_DATABASE_CHEBI, COMPOUND_DATABASE_KEGG, DEFAULT_GROUP_NAME, IDENTIFIER_COL, PIMP_PEAK_ID_COL, \
+    PADJ_COL_PREFIX, T_TEST_THRESHOLD, FC_COL_PREFIX, T_TEST
 from linker.metadata import get_gene_names, get_compound_metadata, clean_label, get_species_name_to_id
 from linker.models import Analysis, AnalysisData
 from linker.reactome import ensembl_to_uniprot, uniprot_to_reaction, compound_to_reaction, \
@@ -258,9 +259,18 @@ def save_analysis(analysis_name, analysis_desc,
         json_str, ui_label, group_info = v
         data[ui_label] = json_str
 
+        json_data = json.loads(json_str)
         json_design = group_info.to_json() if group_info is not None else None
+        keys = json_data[0].keys()
+        padj_col_count = len(list(filter(lambda x: x.startswith(PADJ_COL_PREFIX), keys)))
+        inference_type = T_TEST if padj_col_count > 0 else None
+        display_name = 'Loaded data' if padj_col_count > 0 else None
         analysis_data = AnalysisData(analysis=analysis,
-                                     json_data=json.loads(json_str), json_design=json_design, data_type=k)
+                                     json_data=json_data,
+                                     json_design=json_design,
+                                     data_type=k,
+                                     display_name=display_name,
+                                     inference_type=inference_type)
         analysis_data.save()
         print('Saved analysis data', analysis_data.pk, 'for analysis', analysis.pk)
 
@@ -390,19 +400,45 @@ def csv_to_dataframe(csv_str):
     group_df = None
     if data_df is not None:
         sample_data = data_df.columns.values
-        if group_str is not None:
-            print(group_str)
-            group_data = group_str.split(',')[1:]
-        else:
-            num_samples = len(sample_data[1:])
-            group_data = [DEFAULT_GROUP_NAME for x in range(num_samples)] # assigns a default group if nothing specified
-        group_df = pd.DataFrame(list(zip(sample_data[1:], group_data)), columns=[SAMPLE_COL, GROUP_COL])
+        # filter sample data to remove non-measurement columns
+        sample_data = list(filter(lambda x: not x == IDENTIFIER_COL and
+                                            not x.startswith(PADJ_COL_PREFIX) and
+                                            not x.startswith(FC_COL_PREFIX),
+                                  sample_data))
+        if len(sample_data) > 0:
+            if group_str is not None:
+                print(group_str)
+                group_data = group_str.split(',')[1:]
+            else:
+                num_samples = len(sample_data[1:])
+                group_data = [DEFAULT_GROUP_NAME for x in range(num_samples)] # assigns a default group if nothing specified
+            group_df = pd.DataFrame(list(zip(sample_data[1:], group_data)), columns=[SAMPLE_COL, GROUP_COL])
 
     # drop peak id column if present
     try:
         group_df = group_df.drop(group_df[group_df[SAMPLE_COL] == PIMP_PEAK_ID_COL].index)
     except AttributeError:
         pass
+
+    # if there are columns containing 'padj'
+    if data_df is not None:
+        padj_col_count = len(list(filter(lambda x: x.startswith(PADJ_COL_PREFIX), data_df.columns)))
+        if padj_col_count > 0:
+            for index, row in data_df.iterrows():
+                filter_col = [col for col in row.index if col.startswith(PADJ_COL_PREFIX)]
+                padj_values = row[filter_col].values
+                significant_all = False
+                significant_any = False
+                try:
+                    check = (padj_values > 0) & (padj_values < T_TEST_THRESHOLD)
+                    if len(check) > 0:
+                        significant_all = np.all(check)
+                        significant_any = np.any(check)
+                except RuntimeWarning:
+                    print(row)
+                data_df.loc[index, 'significant_all'] = bool(significant_all)
+                data_df.loc[index, 'significant_any'] = bool(significant_any)
+
     return data_df, group_df, id_list
 
 
@@ -533,7 +569,11 @@ def pk_to_json(pk_label, display_label, data, metadata_map, observed_df, has_spe
                 observed_values = {}
                 for col in observed_df.columns:
                     observed_values.update({col: None})
-            observed_values.pop(PIMP_PEAK_ID_COL, None)
+            observed_values.pop(PIMP_PEAK_ID_COL, None) # remove pimp peakid column
+            # convert numpy bool to python bool, else json serialisation will break
+            for k, v in observed_values.items():
+                if type(v) == np.bool_:
+                    observed_values[k] = bool(v)
             row.update(observed_values)
 
         if has_species:

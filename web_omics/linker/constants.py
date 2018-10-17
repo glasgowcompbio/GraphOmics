@@ -53,6 +53,8 @@ IDS = {
     METABOLOMICS: 'compound_id'
 }
 IDENTIFIER_COL = 'identifier'
+PADJ_COL_PREFIX = 'padj_'
+FC_COL_PREFIX = 'FC_'
 SAMPLE_COL = 'sample'
 GROUP_COL = 'group'
 FACTOR_COL = 'factor'
