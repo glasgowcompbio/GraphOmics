@@ -1,0 +1,12 @@
+{% if messages %}
+    <div class="panel panel-default">
+        <div class="panel-body mt-2">
+            {% for message in messages %}
+            <p class="alert alert-dismissable {% if message.tags %}alert-{{ message.tags }}"{% endif %}>
+                <button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>
+                {{ message }}
+            </p>
+            {% endfor %}
+        </div>
+    </div>
+{% endif %}

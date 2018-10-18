@@ -4,6 +4,7 @@
 
 {% block body_block %}
     <div class="container-fluid">
+        {% include "message.html" %}
         <div class="panel panel-default">
             <div class="panel-body mt-2">
                 <h3>Analysis</h3>
@@ -19,6 +20,7 @@
                             <th>Species</th>
                             <th>User</th>
                             <th>Date</th>
+                            <th>Action</th>
                         </tr>
                     </thead>
                     {% for analysis in object_list %}
@@ -30,6 +32,11 @@
                             <td>{{ analysis.get_species_str }}</td>
                             <td>{{ analysis.user }}</td>
                             <td>{{ analysis.timestamp|date:"jS F Y H:i" }}</td>
+                            <td class="text-center">
+                                <a href="{% url 'delete_analysis' pk=analysis.pk %}">
+                                    <i class="fa fa-trash" aria-hidden="true"></i>
+                                </a>
+                            </td>
                         </tr>
                     {% endfor %}
                 </table>

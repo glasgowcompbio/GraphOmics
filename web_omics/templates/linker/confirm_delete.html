@@ -1,0 +1,39 @@
+{% extends 'base.html' %}
+
+{% load static %}
+
+{% block body_block %}
+    <div class="container-fluid m-2 mb-5">
+        <h3>Delete Analysis</h3>
+        <div class="m-1 mb-3">
+            <form method="post">{% csrf_token %}
+                <p>Are you sure you want to delete the following?</p>
+                <table class="table table-bordered table-hover">
+                    <tbody>
+                        <tr>
+                            <th scope="row">Analysis Name</th>
+                            <td>{{ object.name }}</td>
+                        </tr>
+                        <tr>
+                            <th scope="row">Analysis Description</th>
+                            <td>{{ object.description }}</td>
+                        </tr>
+                        <tr>
+                            <th scope="row">Species</th>
+                            <td>{{ object.get_species_str }}</td>
+                        </tr>
+                        <tr>
+                            <th scope="row">User</th>
+                            <td>{{ object.user }}</td>
+                        </tr>
+                        <tr>
+                            <th scope="row">Date</th>
+                            <td>{{ object.timestamp|date:"jS F Y H:i" }}</td>
+                        </tr>
+                    </tbody>
+                </table>
+                <input type="submit" class="btn btn-danger" value="Confirm">
+            </form>
+        </div>
+    </div>
+{% endblock %}

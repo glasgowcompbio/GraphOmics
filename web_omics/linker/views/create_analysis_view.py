@@ -1,10 +1,12 @@
 import pandas as pd
 import json
 from django.shortcuts import render
-from django.views.generic.edit import FormView
+from django.urls import reverse_lazy
+from django.views.generic.edit import FormView, DeleteView
+from django.contrib import messages
 
 from linker.forms import CreateAnalysisForm, UploadAnalysisForm, AddPathwayForm, pathway_species_dict
-from linker.models import AnalysisData
+from linker.models import AnalysisData, Analysis
 from linker.reactome import get_species_dict, pathway_to_reactions, reaction_to_uniprot, reaction_to_compound, \
     uniprot_to_ensembl
 from linker.views.functions import reactome_mapping, save_analysis, change_column_order
@@ -57,6 +59,18 @@ class UploadAnalysisView(FormView):
                                                species_list, metabolic_pathway_only)
         context = get_context(analysis, data, data_fields)
         return render(self.request, self.success_url, context)
+
+
+class DeleteAnalysisView(DeleteView):
+    model = Analysis
+    success_url = reverse_lazy('experiment_list_view')
+    template_name = 'linker/confirm_delete.html'
+    success_message = "Analysis was successfully deleted."
+
+    # https://stackoverflow.com/questions/24822509/success-message-in-deleteview-not-shown/42656041#42656041
+    def delete(self, request, *args, **kwargs):
+        messages.success(self.request, self.success_message)
+        return super(DeleteAnalysisView, self).delete(request, *args, **kwargs)
 
 
 class AddPathwayView(FormView):
