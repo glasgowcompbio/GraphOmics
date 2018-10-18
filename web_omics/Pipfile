@@ -27,6 +27,7 @@ jsonfield = "*"
 jsonpickle = "*"
 "rpy2" = "*"
 tzlocal = "*"
+django-webpack-loader = "*"
 
 [dev-packages]
 

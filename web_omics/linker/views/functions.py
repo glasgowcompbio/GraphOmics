@@ -407,7 +407,6 @@ def csv_to_dataframe(csv_str):
                                   sample_data))
         if len(sample_data) > 0:
             if group_str is not None:
-                print(group_str)
                 group_data = group_str.split(',')[1:]
             else:
                 num_samples = len(sample_data[1:])

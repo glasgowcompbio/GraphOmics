@@ -19,8 +19,7 @@ def summary(request, analysis_id):
     compound_samples = get_samples(analysis, METABOLOMICS)
     annotations = get_annotations(analysis)
     compound_database = analysis.metadata['compound_database_str']
-    context = {
-        'analysis_id': analysis.pk,
+    data = {
         'observed_genes': observed_genes,
         'observed_proteins': observed_proteins,
         'observed_compounds': observed_compounds,
@@ -36,7 +35,15 @@ def summary(request, analysis_id):
         'protein_samples': protein_samples,
         'compound_samples': compound_samples,
         'annotations': annotations,
-        'compound_database': compound_database
+        'compound_database': compound_database,
+    }
+    react_props = {
+        'name': 'Joe'
+    }
+    context = {
+        'analysis_id': analysis.pk,
+        'data': data,
+        'react_props': json.dumps(react_props)
     }
     return render(request, 'linker/summary.html', context)
 

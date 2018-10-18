@@ -35,15 +35,20 @@ class Common(Configuration):
         'django.contrib.messages',
         'whitenoise.runserver_nostatic',
         'django.contrib.staticfiles',
-
         'django_extensions',
-        # 'debug_toolbar',
         'django_select2',
-
+        'webpack_loader',
         'web_omics.users',
         'linker',
         'registration'
     ]
+
+    WEBPACK_LOADER = {
+        'DEFAULT': {
+            'BUNDLE_DIR_NAME': 'bundles/',
+            'STATS_FILE': os.path.join(BASE_DIR, 'webpack-stats.json'),
+        }
+    }
 
     MIDDLEWARE = [
         'django.middleware.security.SecurityMiddleware',
