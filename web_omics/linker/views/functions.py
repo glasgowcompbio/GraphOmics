@@ -412,7 +412,8 @@ def csv_to_dataframe(csv_str):
             else:
                 num_samples = len(sample_data[1:])
                 group_data = [DEFAULT_GROUP_NAME for x in range(num_samples)] # assigns a default group if nothing specified
-            group_df = pd.DataFrame(list(zip(sample_data[1:], group_data)), columns=[SAMPLE_COL, GROUP_COL])
+            # group_df = pd.DataFrame(list(zip(sample_data[1:], group_data)), columns=[SAMPLE_COL, GROUP_COL])
+            group_df = pd.DataFrame(list(zip(sample_data, group_data)), columns=[SAMPLE_COL, GROUP_COL])
 
     # drop peak id column if present
     try:
