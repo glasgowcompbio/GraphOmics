@@ -162,3 +162,4 @@ local_settings.py
 db.sqlite3
 
 static/data/debugging/*
+static/bundles/*

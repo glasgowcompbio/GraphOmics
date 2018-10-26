@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 {% load static %}
+{% load render_bundle from webpack_loader %}
 <html lang="en">
 <head>
 
@@ -9,21 +10,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
     <title>WebOmics - {% block title %}{% endblock %}</title>
 
-    <!-- Bootstrap and jquery -->
-    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.1/css/bootstrap.min.css"
-          integrity="sha384-WskhaSGFgHYWDcbwN70/dfYBj47jz9qbsMId/iRN3ewGhXQFZCSftd1LZCfmhktB" crossorigin="anonymous">
-    <link href="{% static 'css/bootstrap4-business-tycoon.min.css' %}" rel="stylesheet">
-    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.1.0/css/all.css" crossorigin="anonymous"
-          integrity="sha384-lKuwvrZot6UHsBSfcMvOkWwlCMgc0TaWr+30HWe3a4ltaBwTZhyTEggF5tJv8tbt" >
-
-    <!-- Custom CSS -->
-    <link rel="shortcut icon" href="#"/>
-
     <!-- Any other additional things you want to include .. -->
+    {% render_bundle 'base' %}
     {% block head_block %}
     {% endblock %}
-
-    <link href="{% static 'css/webomics.css' %}" rel="stylesheet">
 
 </head>
 <body role="document">
@@ -58,22 +48,6 @@
 {% block body_block %}
 {% endblock %}
 
-<!-- jQuery (necessary for Bootstrap's JavaScript plugins) -->
-<!-- <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script> -->
-<!-- Include all compiled plugins (below), or include individual files as needed -->
-<script src="https://code.jquery.com/jquery-3.3.1.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.3/umd/popper.min.js"
-        integrity="sha384-ZMP7rVo3mIykV+2+9J3UJ46jBk0WLaUAdn689aCwoqbBJiSnjAK/l8WvCWPIPm49"
-        crossorigin="anonymous"></script>
-<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.1.1/js/bootstrap.min.js"
-        integrity="sha384-smHYKdLADwkXOn1EmN1qk/HfnUcbVRZyYmZ4qpPea6sjB/pTJ0euyQp0Mk8ck+5T"
-        crossorigin="anonymous"></script>
-<script src="https://code.jquery.com/ui/1.12.1/jquery-ui.min.js"
-        integrity="sha256-VazP97ZCwtekAsvgPBSUwPFKdrwD3unUfSGVYrahUqU="
-        crossorigin="anonymous"></script>
-<script type='text/javascript' src='{% static "js/jquery.blockUI.js" %}'></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/5.5.0/d3.min.js"
-        integrity="sha256-0OcjjB7oKWCwru7gzilCYvXgTE9augkyvMI0WFC1ODg=" crossorigin="anonymous"></script>
 {% block js_block %}
 {% endblock %}
 

@@ -1,14 +1,10 @@
 {% extends 'base.html' %}
 {% load static %}
+{% load render_bundle from webpack_loader %}
 
 {% block title %}WebOmics{% endblock %}
 
 {% block head_block %}
-    <!-- link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/v/dt/dt-1.10.16/sc-1.4.4/sl-1.2.5/datatables.min.css"/ -->
-    <link rel="stylesheet" type="text/css"
-          href="https://cdn.datatables.net/v/dt/dt-1.10.16/b-1.5.1/b-colvis-1.5.1/r-2.2.1/sc-1.4.4/sl-1.2.5/datatables.min.css"/>
-    <link rel="stylesheet" type="text/css"
-          href="https://code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css"/>
 {% endblock %}
 
 {% block body_block %}
@@ -194,13 +190,6 @@
 {% endblock %}
 
 {% block js_block %}
-
-    <!-- script type="text/javascript" src="https://cdn.datatables.net/v/dt/dt-1.10.16/sc-1.4.4/sl-1.2.5/datatables.min.js"></script -->
-    <script type="text/javascript"
-            src="https://cdn.datatables.net/v/dt/dt-1.10.16/b-1.5.1/b-colvis-1.5.1/r-2.2.1/sc-1.4.4/sl-1.2.5/datatables.min.js"></script>
-    <script type="text/javascript" src="https://cdn.datatables.net/plug-ins/1.10.16/dataRender/ellipsis.js"></script>
-    <script type='text/javascript' src='{% static "js/firdi.js" %}'></script>
-    <script type='text/javascript' src='{% static "js/alasql.js" %}'></script>
     <script type='text/javascript'>
         var genes = JSON.parse('{{ data.genes_json|safe }}');
         var proteins = JSON.parse('{{ data.proteins_json|safe }}');
@@ -228,10 +217,7 @@
         const get_kegg_metabolite_info = "{% url "get_kegg_metabolite_info" analysis_id=analysis_id %}";
         const get_reactome_reaction_info = "{% url "get_reactome_reaction_info" analysis_id=analysis_id %}";
         const get_reactome_pathway_info = "{% url "get_reactome_pathway_info" analysis_id=analysis_id %}";
-        const biopv_url = "{% static "js/bio-pv.min.js" %}";
         const data_fields = JSON.parse('{{ data_fields|safe }}');
     </script>
-    <script type='text/javascript' src='{% static "js/require.js" %}'></script>
-    <script type='text/javascript' src='{% static "js/linker.js" %}'></script>
-
+    {% render_bundle 'explore_data' %}
 {% endblock %}

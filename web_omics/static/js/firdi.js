@@ -1,3 +1,18 @@
+require('datatables.net');
+require('datatables.net-dt/css/jquery.dataTables.css');
+require('datatables.net-buttons');
+require('datatables.net-buttons-dt/css/buttons.dataTables.min.css');
+require('datatables.net-buttons/js/buttons.colVis.js'); // Column visibility
+require('datatables.net-responsive');
+require('datatables.net-responsive-dt/css/responsive.dataTables.min.css');
+require('datatables.net-scroller');
+require('datatables.net-scroller-dt/css/scroller.dataTables.min.css');
+require('datatables.net-select');
+require('datatables.net-select-dt/css/select.dataTables.min.css');
+
+require('block-ui');
+const alasql = require('alasql');
+
 const FiRDI = (function () {
     const isTableVisible = tableInfo => tableInfo["options"]["visible"];
 
@@ -16,10 +31,10 @@ const FiRDI = (function () {
             dataTablesSettingsObjects.forEach(function (x) {
                 $('#' + x['tableName']).DataTable(x['tableSettings']);
             });
+            // change button to arrows
             const buttons = $(".buttons-colvis");
             for (let button of buttons) {
                 btn = $(button);
-                // btn.addClass('btn-xs');
                 btn.text('▼');
             }
             $.fx.off = true;
@@ -424,6 +439,14 @@ const FiRDI = (function () {
 
             return this;
         },
+        blockUI: function () {
+            $.blockUI({
+                message: '<h3>Loading</h3>'
+            });
+        },
+        unblockUI: function () {
+            $.unblockUI();
+        },
         resetFiRDI: function (newTablesInfo) {
             // copy tablesInfo into newTablesInfo
             // replace the data with the newData
@@ -567,8 +590,8 @@ const FiRDI = (function () {
             this.tableFieldNames.forEach(tableFieldNames => this.resetTable(tableFieldNames, dataForTables, queryResult));
         },
         trClickHandler: function (e, dt, type, cell, originalEvent) {
-            // debugger;
             e.preventDefault();
+            // this.blockUI();
 
             // clear search result
             $('#global_filter').val('');
@@ -595,6 +618,7 @@ const FiRDI = (function () {
                 this.updateTables();
             }
 
+            // this.unblockUI();
             // console.log("after", this.stackManager.stack, this.constraintsManager.constraints);
         },
         initTableFilters: function () {
@@ -628,3 +652,5 @@ const FiRDI = (function () {
     };
 
 })();
+
+module.exports = exports = FiRDI;

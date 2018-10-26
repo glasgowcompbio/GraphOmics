@@ -1,3 +1,6 @@
+const FiRDI = require('./firdi.js');
+const d3 = require("d3");
+
 // https://stackoverflow.com/questions/1199352/smart-way-to-shorten-long-strings-with-javascript
 String.prototype.trunc = String.prototype.trunc ||
       function(n){
@@ -11,7 +14,6 @@ const myLinker = (function () {
 
             const defaultDataTablesSettings = {
                 // "dom": "Brftip",
-                // "dom": "Brpit",
                 "dom": "Brtip",
                 "pageLength": 10,
                 // "scrollY": "800px",
@@ -358,7 +360,6 @@ const myLinker = (function () {
                                 displayNameCol, title) {
             this.clearInfoPanel(rowId, title);
             if (rowObject[displayNameCol] != '-') {
-                debugger;
 
                 const tableData = {
                     'id': rowObject[pkCol]
@@ -436,7 +437,6 @@ const myLinker = (function () {
                     }
 
                     let images = data['images'];
-                    let pdbs = [];
                     for (let item of images) {
                         if (isImageUrl(item)) {
                             let newImage = $('<img/>', {
@@ -455,60 +455,8 @@ const myLinker = (function () {
                                 })
                             );
                             dataDiv.append(newLink);
-                        } else { // assume it's pdb
-                            pdbs.push(item);
                         }
                     }
-
-                    if (pdbs.length > 0) { // TODO: old codes for protein visualiser. Can be removed.
-
-                        // draw first pdb
-                        let first = pdbs[0];
-                        let pvDiv = $('<div/>', {'id': 'pvViewer'});
-                        dataDiv.append(pvDiv);
-
-                        require([biopv_url], function (pv) {
-
-                            let viewer = pv.Viewer(document.getElementById('pvViewer'), {
-                                quality: 'medium',
-                                width: '200',
-                                height: '200',
-                                antialias: true,
-                                outline: true,
-                                slabMode: 'auto'
-                            });
-
-                            function load(pdbUrl) {
-                                pv.io.fetchPdb(pdbUrl, function (structure) {
-                                    // render everything as helix/sheet/coil cartoon, coloring by secondary
-                                    // structure succession
-                                    let go = viewer.cartoon('structure', structure, {
-                                        color: pv.color.ssSuccession(),
-                                        showRelated: '1',
-                                    });
-
-                                    // find camera orientation such that the molecules biggest extents are
-                                    // aligned to the screen plane.
-                                    let rotation = pv.viewpoint.principalAxes(go);
-                                    viewer.setRotation(rotation)
-
-                                    // adapt zoom level to contain the whole structure
-                                    viewer.autoZoom();
-                                });
-                            }
-
-                            // load default
-                            let queryUrl = get_swissmodel_protein_pdb + "?pdb_url=" + encodeURIComponent(first);
-                            load(queryUrl);
-
-                            // tell viewer to resize when window size changes.
-                            window.onresize = function (event) {
-                                viewer.fitParent();
-                            };
-
-                        });
-
-                    } // end pv
 
                     // plot intensities here
                     const plotData = data['plot_data']
@@ -770,74 +718,4 @@ const myLinker = (function () {
 
 })();
 
-function annotate(annotationId, annotationUrl, displayName) {
-    $('#annotationId').val(`annotation-${annotationId}`);
-    let annotation = $(`#annotation-${annotationId}`).text();
-    if (annotation.length > 0) {
-        annotation = annotation.split(':')[1].trim();
-    }
-    $('#displayName').val(displayName);
-    $('#annotationValue').val(annotation);
-    $('#annotationForm').attr('action', annotationUrl);
-    $('#annotationDialog').dialog({
-        modal: true,
-        width: 460,
-    });
-}
-
-$(document).ready(function () {
-
-    let pqr = myLinker.init(data);
-
-    // see https://docs.djangoproject.com/en/dev/ref/csrf/#ajax
-    // using jQuery
-    function getCookie(name) {
-        var cookieValue = null;
-        if (document.cookie && document.cookie !== '') {
-            var cookies = document.cookie.split(';');
-            for (var i = 0; i < cookies.length; i++) {
-                var cookie = jQuery.trim(cookies[i]);
-                // Does this cookie string begin with the name we want?
-                if (cookie.substring(0, name.length + 1) === (name + '=')) {
-                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                    break;
-                }
-            }
-        }
-        return cookieValue;
-    }
-
-    var csrftoken = getCookie('csrftoken');
-
-    function csrfSafeMethod(method) {
-        // these HTTP methods do not require CSRF protection
-        return (/^(GET|HEAD|OPTIONS|TRACE)$/.test(method));
-    }
-
-    $.ajaxSetup({
-        beforeSend: function (xhr, settings) {
-            if (!csrfSafeMethod(settings.type) && !this.crossDomain) {
-                xhr.setRequestHeader("X-CSRFToken", csrftoken);
-            }
-        }
-    });
-
-    $('#annotationSubmit').on('click', function (e) {
-        const form = $('#annotationForm');
-        const action = form.attr('action');
-        const data = form.serialize();
-        $.ajax({
-            type: 'POST',
-            url: action,
-            data: data,
-            success: function () {
-                const annotId = $('#annotationId').val();
-                const annotValue = $('#annotationValue').val();
-                const annotHtml = `<p><strong>Annotation:</strong> ${annotValue}</p>`;
-                $(`#${annotId}`).html(annotHtml);
-                $('#annotationDialog').dialog('close');
-            }
-        });
-    });
-
-});
+module.exports = exports = myLinker;
