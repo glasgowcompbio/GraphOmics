@@ -37,7 +37,8 @@ $(document).ready(function () {
         }
     });
 
-    function annotate(annotationId, annotationUrl, displayName) {
+    // TODO: shouldn't put this in global scope
+    window.annotate = function(annotationId, annotationUrl, displayName) {
         $('#annotationId').val(`annotation-${annotationId}`);
         let annotation = $(`#annotation-${annotationId}`).text();
         if (annotation.length > 0) {
