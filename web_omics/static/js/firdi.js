@@ -440,12 +440,21 @@ const FiRDI = (function () {
             return this;
         },
         blockUI: function () {
-            $.blockUI({
-                message: '<h3>Loading</h3>'
+            $('#all_tables').block({
+                message: '<h5>Please wait ...</h5>',
+                css: {
+                    border: 'none',
+                    padding: '15px',
+                    backgroundColor: '#000',
+                    '-webkit-border-radius': '10px',
+                    '-moz-border-radius': '10px',
+                    opacity: .5,
+                    color: '#fff'
+                }
             });
         },
         unblockUI: function () {
-            $.unblockUI();
+            $('#all_tables').unblock();
         },
         resetFiRDI: function (newTablesInfo) {
             // copy tablesInfo into newTablesInfo
@@ -591,8 +600,15 @@ const FiRDI = (function () {
         },
         trClickHandler: function (e, dt, type, cell, originalEvent) {
             e.preventDefault();
-            // this.blockUI();
-
+            this.blockUI();
+            const obj = this;
+            window.setTimeout(function() {
+                obj.trClickHandlerUpdate(e, dt, type, cell, originalEvent);
+                obj.unblockUI();
+                // console.log("after", this.stackManager.stack, this.constraintsManager.constraints);
+            }, 1);
+        },
+        trClickHandlerUpdate: function (e, dt, type, cell, originalEvent) {
             // clear search result
             $('#global_filter').val('');
             $.fn.dataTable.tables({api: true}).search('').draw();
@@ -617,9 +633,6 @@ const FiRDI = (function () {
                 this.constraintsManager.addConstraint(tableName, rowObject);
                 this.updateTables();
             }
-
-            // this.unblockUI();
-            // console.log("after", this.stackManager.stack, this.constraintsManager.constraints);
         },
         initTableFilters: function () {
             function filterTable(tableManager) {
