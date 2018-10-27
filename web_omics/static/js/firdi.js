@@ -34,7 +34,7 @@ const FiRDI = (function () {
             // change button to arrows
             const buttons = $(".buttons-colvis");
             for (let button of buttons) {
-                btn = $(button);
+                const btn = $(button);
                 btn.text('▼');
             }
             $.fx.off = true;
@@ -143,7 +143,7 @@ const FiRDI = (function () {
             }
 
             let rs = undefined;
-            if (relationship.constructor == Array) {
+            if (relationship.constructor === Array) {
                 rs = relationship; // an array of multiple relationships
             } else {
                 rs = [relationship] // create an array of just one relationship
@@ -600,7 +600,7 @@ const FiRDI = (function () {
             // Calls the appropriate constraint function depending on the state of the bound table
             const tableName = e.currentTarget.id;
             const tableAPI = $(this.dataTablesIds[tableName]).DataTable()
-            targetTr = $(originalEvent.target).closest('tr'),
+            const targetTr = $(originalEvent.target).closest('tr'),
                 rowObject = tableAPI.row(targetTr).data();
 
             // console.log("before", this.stackManager.stack, this.constraintsManager.constraints);
@@ -653,4 +653,4 @@ const FiRDI = (function () {
 
 })();
 
-export default FIRDI;
+export default FiRDI;
