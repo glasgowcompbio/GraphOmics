@@ -1,6 +1,7 @@
 const path = require("path");
 const webpack = require('webpack');
 const BundleTracker = require('webpack-bundle-tracker');
+const CleanWebpackPlugin = require('clean-webpack-plugin');
 const IgnorePlugin =  require("webpack").IgnorePlugin;
 const MiniCssExtractPlugin = require("mini-css-extract-plugin");
 
@@ -20,6 +21,7 @@ module.exports = {
 
     plugins: [
         new BundleTracker({filename: './webpack-stats.json'}),
+        new CleanWebpackPlugin(path.resolve('./static/bundles/')),
         new MiniCssExtractPlugin({
             filename: "[name]-[hash].css",
             chunkFilename: "[id]-[chunkhash].css"
@@ -55,8 +57,6 @@ module.exports = {
             },
         ],
     },
-
-    devtool: 'source-map',
 
     resolve: {
         modules: ['node_modules', 'bower_components'],
