@@ -5,6 +5,7 @@
 {% block title %}WebOmics{% endblock %}
 
 {% block head_block %}
+    {% render_bundle 'explore_data' 'css' %}
 {% endblock %}
 
 {% block body_block %}
@@ -219,5 +220,5 @@
         const get_reactome_pathway_info = "{% url "get_reactome_pathway_info" analysis_id=analysis_id %}";
         const data_fields = JSON.parse('{{ data_fields|safe }}');
     </script>
-    {% render_bundle 'explore_data' %}
+    {% render_bundle 'explore_data' 'js' %}
 {% endblock %}

@@ -1,7 +1,8 @@
-var path = require("path");
-var webpack = require('webpack');
-var BundleTracker = require('webpack-bundle-tracker');
-var IgnorePlugin =  require("webpack").IgnorePlugin;
+const path = require("path");
+const webpack = require('webpack');
+const BundleTracker = require('webpack-bundle-tracker');
+const IgnorePlugin =  require("webpack").IgnorePlugin;
+const MiniCssExtractPlugin = require("mini-css-extract-plugin");
 
 module.exports = {
     context: __dirname,
@@ -19,6 +20,10 @@ module.exports = {
 
     plugins: [
         new BundleTracker({filename: './webpack-stats.json'}),
+        new MiniCssExtractPlugin({
+            filename: "[name]-[hash].css",
+            chunkFilename: "[id]-[chunkhash].css"
+        }),
         new webpack.ProvidePlugin({
             $: "jquery",
             jQuery: "jquery",
@@ -29,18 +34,29 @@ module.exports = {
         new IgnorePlugin(/(^fs$|cptable|jszip|xlsx|^es6-promise$|^net$|^tls$|^forever-agent$|^tough-cookie$|cpexcel|^path$|^request$|react-native|^vertx$)/),
     ],
 
-    // externals: {
-    //     jquery: 'jQuery'
-    // },
-
     module: {
         rules: [
-            { test: /\.jsx?$/, exclude: /node_modules/, loader: 'babel-loader' },
-            { test: /\.css$/, loaders: ['style-loader', 'css-loader'] },
-            { test: /\.(svg|gif|png|eot|woff|ttf)$/, loader: 'url-loader' },
-            // { test: /datatables\.net.*/, loader: 'imports-loader?define=>false'},
+            {
+                test: /\.jsx?$/,
+                exclude: /node_modules/,
+                loader: 'babel-loader'
+            },
+            {
+                test: /\.s?[ac]ss$/,
+                use: [
+                    MiniCssExtractPlugin.loader,
+                    { loader: 'css-loader', options: { url: false, sourceMap: true } },
+                    { loader: 'sass-loader', options: { sourceMap: true } }
+                ],
+            },
+            {
+                test: /\.(svg|gif|png|eot|woff|ttf)$/,
+                loader: 'url-loader'
+            },
         ],
     },
+
+    devtool: 'source-map',
 
     resolve: {
         modules: ['node_modules', 'bower_components'],

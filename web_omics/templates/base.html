@@ -11,7 +11,7 @@
     <title>WebOmics - {% block title %}{% endblock %}</title>
 
     <!-- Any other additional things you want to include .. -->
-    {% render_bundle 'base' %}
+    {% render_bundle 'base' 'css' %}
     <link rel="stylesheet" type="text/css" href="https://stackpath.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css">
     {% block head_block %}
     {% endblock %}
@@ -49,6 +49,7 @@
 {% block body_block %}
 {% endblock %}
 
+{% render_bundle 'base' 'js' %}
 {% block js_block %}
 {% endblock %}
 

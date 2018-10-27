@@ -5,6 +5,7 @@
 {% block title %}WebOmics{% endblock %}
 
 {% block head_block %}
+    {% render_bundle 'summary' 'css' %}
 {% endblock %}
 
 {% block body_block %}
@@ -157,5 +158,5 @@
     <script>
         window.props = {{ react_props|safe }};
     </script>
-    {% render_bundle 'summary' %}
+    {% render_bundle 'summary' 'js' %}
 {% endblock %}
