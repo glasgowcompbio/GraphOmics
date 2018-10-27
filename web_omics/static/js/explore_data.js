@@ -1,5 +1,7 @@
 import Linker from './linker.js';
+require('webpack-jquery-ui');
 require('../css/linker.css');
+require('webpack-jquery-ui/css');
 
 $(document).ready(function () {
 
