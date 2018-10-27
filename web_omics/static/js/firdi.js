@@ -402,8 +402,9 @@ const FiRDI = (function () {
     };
 
     let tablesManager = {
-        init: function (tablesInfo, defaultDataTablesSettings) {
+        init: function (tablesInfo, defaultDataTablesSettings, infoPanelManager) {
             this.tablesInfo = tablesInfo;
+            this.infoPanelManager = infoPanelManager;
 
             // Some minimum DataTables settings are required
             const minDataTablesSettings = {
@@ -501,7 +502,6 @@ const FiRDI = (function () {
             const fieldNames = tableFieldNames['fieldNames'].map(x => prefix + x);
 
             const sqlStatement = "SELECT DISTINCT " + fieldNames.join(", ") + " FROM ?";
-            console.log(sqlStatement + ' (queryResult)');
             const temp = alasql(sqlStatement, [dataSource]);
 
             temp.map(x => { // for each row in the sql results
@@ -609,8 +609,18 @@ const FiRDI = (function () {
             window.setTimeout(function() {
                 obj.trClickHandlerUpdate(e, dt, type, cell, originalEvent);
                 obj.unblockUI();
-                // console.log("after", this.stackManager.stack, this.constraintsManager.constraints);
-            }, 1);
+                if (obj.infoPanelManager) { // update the related info panel for this table, if any
+                    const tableId = e.currentTarget.id;
+                    const tables = $('.dataTable').DataTable();
+                    const tableAPI = tables.table('#' + tableId);
+                    const selectedData = tableAPI.row('.selected').data();
+                    if (selectedData) {
+                        obj.infoPanelManager.getEntityInfo(tableId, selectedData);
+                    } else {
+                        obj.infoPanelManager.clearInfoPane(tableId);
+                    }
+                }
+            }, 1); // we need a small delay to allow blockUI to be rendered correctly
         },
         trClickHandlerUpdate: function (e, dt, type, cell, originalEvent) {
             // clear search result

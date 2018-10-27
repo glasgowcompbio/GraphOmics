@@ -20,6 +20,7 @@ const Linker = (function () {
                 // "scrollCollapse": true,
                 "pagingType": "simple",
                 "searching": true,
+                "select": true,
                 "columnDefs": [{
                     targets: 2,
                     createdCell: function(td, cellData, rowData, row, col) {
@@ -232,7 +233,7 @@ const Linker = (function () {
             // https://stackoverflow.com/questions/24383805/datatables-change-number-of-pagination-buttons
             // $.fn.DataTable.ext.pager.numbers_length = 3;
 
-            FiRDI.init(tables, defaultDataTablesSettings);
+            FiRDI.init(tables, defaultDataTablesSettings, infoPanesManager);
 
             // Hide certain columns
             let columnsToHidePerTable = [
@@ -280,14 +281,6 @@ const Linker = (function () {
                 });
             });
 
-
-            // set event handler when rows in the visible tables are clicked
-            this.visibleTableNames = ['genes_table', 'proteins_table',
-                'compounds_table', 'reactions_table', 'pathways_table'];
-            this.visibleTableNames.forEach(tableName => $('#' + tableName)
-                .DataTable()
-                .on('user-select', this.dataTablesDrawFunction));
-
             // enable global search box
             $('#global_filter').on('keyup click', function () {
                 const val = $('#global_filter').val();
@@ -295,24 +288,6 @@ const Linker = (function () {
             });
 
         }, // end init
-
-        dataTablesDrawFunction: function (e, dt, type, cell, originalEvent) {
-            // calls the appropriate info pane functions
-            e.preventDefault();
-
-            // update table
-            const tableId = e.currentTarget.id;
-            const tables = $('.dataTable').DataTable();
-            const tableAPI = tables.table('#' + tableId);
-            const selectedData = tableAPI.row('.selected').data();
-
-            if (selectedData) {
-                infoPanesManager.getEntityInfo(tableId, selectedData);
-            } else {
-                infoPanesManager.clearInfoPane(tableId);
-            }
-
-        },
 
     } // end linkerResultsManager
 
@@ -379,7 +354,7 @@ const Linker = (function () {
                     const annotationUrl = data['annotation_url'];
                     const annotationId = data['annotation_id'];
                     const annotationLink = '<button type="button" class="btn btn-outline-primary btn-sm" style="margin-left: 5px"' +
-                        `onclick="annotate('${annotationId}', '${annotationUrl}', '${displayName}')"><i class="fas fa-edit"></i></button>`;
+                        `onclick="annotate('${annotationId}', '${annotationUrl}', '${displayName}')">📝</button>`;
                     infoTitle.append(annotationLink);
 
                     let annotationHtml = '';

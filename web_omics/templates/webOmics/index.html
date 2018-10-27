@@ -32,11 +32,7 @@
                             <td>{{ analysis.get_species_str }}</td>
                             <td>{{ analysis.user }}</td>
                             <td>{{ analysis.timestamp|date:"jS F Y H:i" }}</td>
-                            <td class="text-center">
-                                <a href="{% url 'delete_analysis' pk=analysis.pk %}">
-                                    <i class="fa fa-trash" aria-hidden="true"></i>
-                                </a>
-                            </td>
+                            <td class="text-center">🗑️</td>
                         </tr>
                     {% endfor %}
                 </table>
