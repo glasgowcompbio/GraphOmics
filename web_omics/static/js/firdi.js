@@ -441,8 +441,12 @@ const FiRDI = (function () {
         },
         blockUI: function () {
             $('#all_tables').block({
+                centerY: 0,
                 message: '<h5>Please wait ...</h5>',
                 css: {
+                    top: '10px',
+                    left: '',
+                    right: '10px',
                     border: 'none',
                     padding: '15px',
                     backgroundColor: '#000',
