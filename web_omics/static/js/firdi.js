@@ -653,4 +653,4 @@ const FiRDI = (function () {
 
 })();
 
-module.exports = exports = FiRDI;
+export default FIRDI;

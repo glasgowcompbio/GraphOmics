@@ -1,5 +1,5 @@
-const FiRDI = require('./firdi.js');
-const d3 = require("d3");
+import FiRDI from './firdi.js';
+const d3 = require('d3');
 
 // https://stackoverflow.com/questions/1199352/smart-way-to-shorten-long-strings-with-javascript
 String.prototype.trunc = String.prototype.trunc ||
@@ -7,7 +7,7 @@ String.prototype.trunc = String.prototype.trunc ||
           return (this.length > n) ? this.substr(0, n-1) + '&hellip;' : this;
       };
 
-const myLinker = (function () {
+const Linker = (function () {
 
     let linkerResultsManager = {
         init: function (data) {
@@ -106,7 +106,7 @@ const myLinker = (function () {
                         for (let i = 0; i < filteredIdx.length; i++) {
                             const idx = filteredIdx[i];
                             const colour = filteredColours[i];
-                            x = $(row).find(`td`).filter(function() {
+                            const x = $(row).find(`td`).filter(function() {
                                 // TODO: round to the specified decimal places and compare the string representation. Might not always work.
                                 const dp = 2;
                                 const val1 = parseFloat(this.textContent).toFixed(dp);
@@ -718,4 +718,4 @@ const myLinker = (function () {
 
 })();
 
-module.exports = exports = myLinker;
+export default Linker;

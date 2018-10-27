@@ -1,9 +1,9 @@
-const myLinker = require('./linker.js');
+import Linker from './linker.js';
 require('../css/linker.css');
 
 $(document).ready(function () {
 
-    let pqr = myLinker.init(data);
+    let pqr = Linker.init(data);
 
     // see https://docs.djangoproject.com/en/dev/ref/csrf/#ajax
     // using jQuery
