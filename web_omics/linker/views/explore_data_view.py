@@ -18,7 +18,7 @@ from linker.models import Analysis, AnalysisData, AnalysisAnnotation
 from linker.reactome import get_reactome_description, get_reaction_entities, pathway_to_reactions
 from linker.views.functions import change_column_order, recur_dictify
 from linker.constants import *
-
+from .harmonizomeapi import Harmonizome, Entity
 
 def truncate(my_str):
     my_str = (my_str[:TRUNCATE_LIMIT] + '...') if len(my_str) > TRUNCATE_LIMIT else my_str
@@ -90,6 +90,7 @@ def get_ensembl_gene_info(request, analysis_id):
     if request.is_ajax():
         ensembl_id = request.GET['id']
         metadata = get_single_ensembl_metadata_online(ensembl_id)
+        display_name = metadata['display_name'] if metadata is not None else ''
 
         infos = []
         if metadata is not None:
@@ -101,13 +102,19 @@ def get_ensembl_gene_info(request, analysis_id):
                     value = value[0:value.index('[')]  # remove e.g. '[xxx]' from 'abhydrolase [xxx]'
                 infos.append({'key': key.title(), 'value': value})
 
+        data = Harmonizome.get(Entity.GENE, name=display_name)
+        try:
+            description = data['description']
+            infos.append({'key': 'Description', 'value': description})
+        except KeyError:
+            pass
+        
         try:
             summary = get_entrez_summary(ensembl_id)
-            infos.append({'key': 'Summary', 'value': truncate(summary)})
+            infos.append({'key': 'Entrez Summary', 'value': truncate(summary)})
         except TypeError:
             pass
 
-        display_name = metadata['display_name'] if metadata is not None else ''
         # try:
         #     summary = wikipedia.summary(display_name)
         #     if 'gene' in summary.lower() or 'protein' in summary.lower():
