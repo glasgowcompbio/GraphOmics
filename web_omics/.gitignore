@@ -163,3 +163,4 @@ db.sqlite3
 
 static/data/debugging/*
 static/bundles/*
+webpack-stats.json
