@@ -108,7 +108,7 @@ def get_ensembl_gene_info(request, analysis_id):
             infos.append({'key': 'Description', 'value': description})
         except KeyError:
             pass
-        
+
         try:
             summary = get_entrez_summary(ensembl_id)
             infos.append({'key': 'Entrez Summary', 'value': truncate(summary)})

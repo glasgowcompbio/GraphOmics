@@ -34,8 +34,88 @@
         <div class="m-1 mb-3">
             <div class="card">
                 <div class="card-body">
-                    <h5 class="card-title">Visualisation</h5>
-                    <div id="summary-app"></div>
+                    <h5 class="card-title">Heatmaps</h5>
+                    <div id="accordion">
+
+                      <div class="card">
+                        <div class="card-header" id="headingOne">
+                          <h5 class="mb-0">
+                            <button class="btn btn-link collapsed" data-toggle="collapse" data-target="#collapseOne" aria-expanded="false" aria-controls="collapseOne">
+                              Show Gene Data
+                            </button>
+                          </h5>
+                        </div>
+                        <div id="collapseOne" class="collapse" aria-labelledby="headingOne" data-parent="#accordion">
+                          <div id="summary-vis-gene" class="card-body">
+                            No data is available.
+                          </div>
+                        </div>
+                      </div>
+
+                      <div class="card">
+                        <div class="card-header" id="headingTwo">
+                          <h5 class="mb-0">
+                            <button class="btn btn-link collapsed" data-toggle="collapse" data-target="#collapseTwo" aria-expanded="false" aria-controls="collapseTwo">
+                              Show Protein Data
+                            </button>
+                          </h5>
+                        </div>
+                        <div id="collapseTwo" class="collapse" aria-labelledby="headingTwo" data-parent="#accordion">
+                          <div id="summary-vis-protein">
+                            No data is available.
+                          </div>
+                        </div>
+                      </div>
+
+                      <div class="card">
+                        <div class="card-header" id="headingThree">
+                          <h5 class="mb-0">
+                            <button class="btn btn-link collapsed" data-toggle="collapse" data-target="#collapseThree" aria-expanded="false" aria-controls="collapseThree">
+                              Show Compound Data
+                            </button>
+                          </h5>
+                        </div>
+                        <div id="collapseThree" class="collapse" aria-labelledby="headingThree" data-parent="#accordion">
+                          <div id="summary-vis-compound">
+                            No data is available.
+                          </div>
+                        </div>
+                      </div>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="m-1 mb-3">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Annotations</h5>
+                    <h6 class="card-subtitle mb-2 text-muted">
+                        The following user annotations are found in this analysis.
+                    </h6>
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th scope="col">Data Type</th>
+                                <th scope="col">Database ID</th>
+                                <th scope="col">Display Name</th>
+                                <th scope="col">Annotation</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in data.annotations %}
+                                {% if item.2 %}
+                                    <tr>
+                                        <td>{{ item.0 }}</td>
+                                        <td><a href="{{ item.3 }}" target="_blank">{{ item.1 }}</a></td>
+                                        <td>{{ item.4 }}</td>
+                                        <td>{{ item.2 }}</td>
+                                    </tr>
+                                {% endif %}
+                            {% endfor %}
+                        </tbody>
+                    </table>
                 </div>
             </div>
         </div>
@@ -111,39 +191,6 @@
                                 <td>{{ data.num_pathways }}</td>
                                 <td></td>
                             </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-
-        <div class="m-1 mb-3">
-            <div class="card">
-                <div class="card-body">
-                    <h5 class="card-title">Annotations</h5>
-                    <h6 class="card-subtitle mb-2 text-muted">
-                        The following user annotations have been performed in this analysis.
-                    </h6>
-                    <table class="table table-sm">
-                        <thead>
-                            <tr>
-                                <th scope="col">Data Type</th>
-                                <th scope="col">Database ID</th>
-                                <th scope="col">Display Name</th>
-                                <th scope="col">Annotation</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for item in data.annotations %}
-                                {% if item.2 %}
-                                    <tr>
-                                        <td>{{ item.0 }}</td>
-                                        <td><a href="{{ item.3 }}" target="_blank">{{ item.1 }}</a></td>
-                                        <td>{{ item.4 }}</td>
-                                        <td>{{ item.2 }}</td>
-                                    </tr>
-                                {% endif %}
-                            {% endfor %}
                         </tbody>
                     </table>
                 </div>

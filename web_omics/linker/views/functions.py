@@ -14,7 +14,7 @@ from django.templatetags.static import static
 from linker.constants import GENOMICS, PROTEOMICS, METABOLOMICS, REACTIONS, PATHWAYS, GENES_TO_PROTEINS, \
     PROTEINS_TO_REACTIONS, COMPOUNDS_TO_REACTIONS, REACTIONS_TO_PATHWAYS, SAMPLE_COL, GROUP_COL, \
     COMPOUND_DATABASE_CHEBI, COMPOUND_DATABASE_KEGG, DEFAULT_GROUP_NAME, IDENTIFIER_COL, PIMP_PEAK_ID_COL, \
-    PADJ_COL_PREFIX, T_TEST_THRESHOLD, FC_COL_PREFIX, T_TEST
+    PADJ_COL_PREFIX, T_TEST_THRESHOLD, FC_COL_PREFIX, T_TEST, IDS
 from linker.metadata import get_gene_names, get_compound_metadata, clean_label, get_species_name_to_id
 from linker.models import Analysis, AnalysisData
 from linker.reactome import ensembl_to_uniprot, uniprot_to_reaction, compound_to_reaction, \
@@ -684,3 +684,39 @@ def recur_dictify(frame):
     grouped = frame.groupby(frame.columns[0])
     d = {k: recur_dictify(g.ix[:,1:]) for k,g in grouped}
     return d
+
+
+def get_last_analysis_data(analysis, data_type):
+    analysis_data = [x for x in analysis.analysisdata_set.all().order_by('-timestamp') if x.data_type == data_type][0]
+    return analysis_data
+
+
+def get_dataframes(analysis_data, pk_col, sample_col):
+    data_df = pd.DataFrame(analysis_data.json_data).set_index(pk_col)
+    design_df = None
+    if analysis_data.json_design:
+        design_df = pd.read_json(analysis_data.json_design).set_index(sample_col)
+    return data_df, design_df
+
+
+def get_groups(analysis_data):
+    if analysis_data.json_design:
+        df = pd.read_json(analysis_data.json_design)
+        analysis_groups = set(df[GROUP_COL])
+        groups = ((None, NA),) + tuple(zip(analysis_groups, analysis_groups))
+    else:
+        groups = ((None, NA),)
+    return groups
+
+
+def filter_data(df, data_type):
+    # drop columns that do not contain measurements
+    to_drop = list(filter(
+        lambda x: x.startswith('padj_') or x.startswith('FC_') or x.startswith('significant_') or x.startswith('obs'),
+        df.columns))
+    to_drop.append(IDS[data_type])
+    df = df.drop(to_drop, axis=1)
+    # drop rows with all NAs and 0s
+    df = df.dropna(how='all')
+    df = df.loc[~(df == 0).all(axis=1)]
+    return df

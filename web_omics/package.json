@@ -48,6 +48,7 @@
     "alasql": "^0.4.11",
     "block-ui": "^2.70.1",
     "bootstrap": "^4.1.3",
+    "clustergrammer": "^1.19.5",
     "d3": "^5.7.0",
     "datatables.net": "^1.10.16",
     "datatables.net-buttons": "^1.5.1",
@@ -63,6 +64,7 @@
     "popper.js": "^1.14.4",
     "react": "^16.5.2",
     "react-dom": "^16.5.2",
+    "underscore": "^1.9.1",
     "webpack-jquery-ui": "^2.0.1"
   }
 }

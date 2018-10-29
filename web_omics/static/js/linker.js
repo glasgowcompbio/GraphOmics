@@ -1,5 +1,4 @@
 import FiRDI from './firdi.js';
-const d3 = require('d3');
 
 // https://stackoverflow.com/questions/1199352/smart-way-to-shorten-long-strings-with-javascript
 String.prototype.trunc = String.prototype.trunc ||

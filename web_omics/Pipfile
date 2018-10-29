@@ -28,6 +28,7 @@ jsonpickle = "*"
 "rpy2" = "*"
 tzlocal = "*"
 django-webpack-loader = "*"
+clustergrammer = "*"
 
 [dev-packages]
 

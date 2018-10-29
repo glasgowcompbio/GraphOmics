@@ -6,6 +6,11 @@ from linker.models import Analysis, AnalysisData, AnalysisAnnotation
 import json
 import pandas as pd
 import numpy as np
+from clustergrammer import Network
+
+from linker.views import get_last_analysis_data
+from linker.views.functions import get_last_analysis_data, get_groups, get_dataframes, filter_data
+from linker.constants import *
 
 
 def summary(request, analysis_id):
@@ -19,6 +24,7 @@ def summary(request, analysis_id):
     compound_samples = get_samples(analysis, METABOLOMICS)
     annotations = get_annotations(analysis)
     compound_database = analysis.metadata['compound_database_str']
+    cluster_json = get_clusters(analysis, [GENOMICS, PROTEOMICS, METABOLOMICS])
     data = {
         'observed_genes': observed_genes,
         'observed_proteins': observed_proteins,
@@ -38,7 +44,7 @@ def summary(request, analysis_id):
         'compound_database': compound_database,
     }
     react_props = {
-        'name': 'Joe'
+        'cluster_json': cluster_json
     }
     context = {
         'analysis_id': analysis.pk,
@@ -49,7 +55,7 @@ def summary(request, analysis_id):
 
 
 def get_counts(analysis, data_type):
-    analysis_data = AnalysisData.objects.filter(analysis=analysis, data_type=data_type).first()
+    analysis_data = get_last_analysis_data(analysis, data_type)
     json_data = analysis_data.json_data
     df = pd.DataFrame(json_data)
     observed = df[df['obs'] == True].shape[0]
@@ -103,3 +109,33 @@ def get_url(data_type, database_id):
         return 'https://www.ebi.ac.uk/chebi/searchId.do?chebiId=CHEBI:' + database_id
     elif data_type == REACTIONS or data_type == PATHWAYS:
         return 'https://reactome.org/content/detail/' + database_id
+
+
+def get_clusters(analysis, data_types):
+    cluster_json = {}
+    for data_type in data_types:
+        analysis_data = get_last_analysis_data(analysis, data_type)
+        data_df, design_df = get_dataframes(analysis_data, PKS[data_type], SAMPLE_COL)
+        data_df = filter_data(data_df, data_type)
+        if not data_df.empty:
+            # df = np.log2(data_df.replace(0, 1))
+            df = data_df
+            net = Network()
+            net.load_df(df)
+            # net.filter_sum('row', threshold=20)
+            net.normalize(axis='col', norm_type='zscore')
+            net.filter_N_top('row', 1000, rank_type='var')
+            # net.filter_threshold('row', threshold=3.0, num_occur=4)
+            # net.swap_nan_for_zero()
+            # net.downsample(ds_type='kmeans', axis='col', num_samples=10)
+            # net.random_sample(random_state=100, num_samples=10, axis='col')
+            net.cluster()
+            json_data = net.export_net_json()
+            if data_type == GENOMICS:
+                label = 'gene'
+            elif data_type == PROTEOMICS:
+                label = 'protein'
+            elif data_type == METABOLOMICS:
+                label = 'compound'
+            cluster_json[label] = json_data
+    return cluster_json

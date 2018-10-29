@@ -9,10 +9,11 @@ import numpy as np
 import pandas as pd
 import jsonpickle
 
-from linker.constants import *
 from linker.forms import BaseInferenceForm, T_test_Form, HierarchicalClusteringForm
 from linker.models import Analysis, AnalysisData
+from linker.views.functions import get_last_analysis_data, get_groups, get_dataframes, filter_data
 from linker.views.pipelines import run_deseq, run_ttest
+from linker.constants import *
 
 
 def inference(request, analysis_id):
@@ -26,7 +27,7 @@ def inference(request, analysis_id):
 
             # run t-test analysis
             if inference_type == T_TEST:
-                analysis_data = get_analysis_data(analysis, data_type)
+                analysis_data = get_last_analysis_data(analysis, data_type)
                 groups = get_groups(analysis_data)
                 action_url = reverse('inference_t_test', kwargs={
                     'analysis_id': analysis_id,
@@ -39,7 +40,7 @@ def inference(request, analysis_id):
 
             # do hierarchical clustering
             elif inference_type == HIERARCHICAL:
-                analysis_data = get_analysis_data(analysis, data_type)
+                analysis_data = get_last_analysis_data(analysis, data_type)
                 groups = get_groups(analysis_data) + ((ALL, ALL),)
                 action_url = reverse('inference_hierarchical', kwargs={
                     'analysis_id': analysis_id,
@@ -82,7 +83,7 @@ def inference_t_test(request, analysis_id):
         analysis = get_object_or_404(Analysis, pk=analysis_id)
         form = T_test_Form(request.POST)
         data_type = int(request.POST['data_type'])
-        analysis_data = get_analysis_data(analysis, data_type)
+        analysis_data = get_last_analysis_data(analysis, data_type)
         groups = get_groups(analysis_data)
         form.fields['case'] = forms.ChoiceField(choices=groups, widget=Select2Widget())
         form.fields['control'] = forms.ChoiceField(choices=groups, widget=Select2Widget())
@@ -91,13 +92,7 @@ def inference_t_test(request, analysis_id):
             case = form.cleaned_data['case']
             control = form.cleaned_data['control']
             data_df, design_df = get_dataframes(analysis_data, PKS[data_type], SAMPLE_COL)
-            to_drop = list(filter(lambda x: x.startswith('padj_') or x.startswith('FC_') or x.startswith('significant_') or x.startswith('obs'), data_df.columns))
-            to_drop.append(IDS[data_type])
-            data_df = data_df.drop(to_drop, axis=1)
-
-            # drop rows with all NAs and 0s
-            data_df = data_df.dropna(how='all')
-            data_df = data_df.loc[~(data_df==0).all(axis=1)]
+            data_df = filter_data(data_df, data_type)
 
             if data_type == GENOMICS: # run deseq2 here
                 pd_df, rld_df, res_ordered = run_deseq(data_df, design_df, 10, case, control)
@@ -167,7 +162,7 @@ def inference_hierarchical(request, analysis_id):
         analysis = get_object_or_404(Analysis, pk=analysis_id)
         form = HierarchicalClusteringForm(request.POST)
         data_type = int(request.POST['data_type'])
-        analysis_data = get_analysis_data(analysis, data_type)
+        analysis_data = get_last_analysis_data(analysis, data_type)
         groups = get_groups(analysis_data) + ((ALL, ALL),)
         form.fields['group'] = forms.ChoiceField(choices=groups, widget=Select2Widget())
 
@@ -181,27 +176,6 @@ def inference_hierarchical(request, analysis_id):
             messages.warning(request, 'Add new inference failed.')
 
     return inference(request, analysis_id)
-
-
-def get_analysis_data(analysis, data_type):
-    analysis_data = [x for x in analysis.analysisdata_set.all().order_by('-timestamp') if x.data_type == data_type][0]
-    return analysis_data
-
-
-def get_dataframes(analysis_data, pk_col, sample_col):
-    data_df = pd.DataFrame(analysis_data.json_data).set_index(pk_col)
-    design_df = pd.read_json(analysis_data.json_design).set_index(sample_col)
-    return data_df, design_df
-
-
-def get_groups(analysis_data):
-    if analysis_data.json_design:
-        df = pd.read_json(analysis_data.json_design)
-        analysis_groups = set(df[GROUP_COL])
-        groups = ((None, NA),) + tuple(zip(analysis_groups, analysis_groups))
-    else:
-        groups = ((None, NA),)
-    return groups
 
 
 def do_hierarchical_clustering(data_df, design_df, group):

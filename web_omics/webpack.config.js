@@ -30,7 +30,9 @@ module.exports = {
             $: "jquery",
             jQuery: "jquery",
             'window.jQuery': 'jquery',
-            'window.$': 'jquery'
+            'window.$': 'jquery',
+            d3: 'd3',
+            _: "underscore"
         }),
         // for alasql
         new IgnorePlugin(/(^fs$|cptable|jszip|xlsx|^es6-promise$|^net$|^tls$|^forever-agent$|^tough-cookie$|cpexcel|^path$|^request$|react-native|^vertx$)/),
@@ -57,6 +59,8 @@ module.exports = {
             },
         ],
     },
+
+    devtool: 'source-map',
 
     resolve: {
         modules: ['node_modules', 'bower_components'],
