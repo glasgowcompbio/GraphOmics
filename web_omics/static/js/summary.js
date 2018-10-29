@@ -32,7 +32,7 @@ $(document).ready(function () {
         $.get(url, function (data) {
 
             data = JSON.parse(data);
-            
+
             // save data for repeated use
             window.gene_data[gene_symbol] = {}
             window.gene_data[gene_symbol].name = data.name;

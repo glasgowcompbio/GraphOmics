@@ -124,7 +124,7 @@ def get_clusters(analysis, data_types):
             net.load_df(df)
             # net.filter_sum('row', threshold=20)
             net.normalize(axis='col', norm_type='zscore')
-            net.filter_N_top('row', 1000, rank_type='var')
+            # net.filter_N_top('row', 1000, rank_type='var')
             # net.filter_threshold('row', threshold=3.0, num_occur=4)
             # net.swap_nan_for_zero()
             # net.downsample(ds_type='kmeans', axis='col', num_samples=10)
