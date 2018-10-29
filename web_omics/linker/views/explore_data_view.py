@@ -2,7 +2,6 @@ import json
 import urllib.request
 
 import collections
-import wikipedia
 from django.http import HttpResponse
 from django.http import JsonResponse
 from django.shortcuts import render, get_object_or_404
