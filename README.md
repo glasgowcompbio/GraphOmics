@@ -122,16 +122,15 @@ $ pipenv shell
 
 ### 6. Install front-end dependencies
 
-Now we need to install the front-end dependencies of WebOmics. The front-end packages are managed by Node.js
+Now we need to install the front-end dependencies of WebOmics. The Javascript packages required by WebOmics are managed by Node.js.
 First, install Node.js for your platform: https://nodejs.org/en. You can choose the LTS version for this.
 
-Once Node.js is installed, you need to get a package manager. Here we use Yarn. Below is the instructions for Ubuntu (for other platforms, refer to https://yarnpkg.com/en/docs/install).
+Once Node.js is installed, you need to get a package manager. Here we use Yarn (alternatively you can use npm). Below is the instructions for Ubuntu (for other platforms, refer to https://yarnpkg.com/en/docs/install).
 ```bash
 $ curl -sS https://dl.yarnpkg.com/debian/pubkey.gpg | sudo apt-key add -
 $ echo "deb https://dl.yarnpkg.com/debian/ stable main" | sudo tee /etc/apt/sources.list.d/yarn.list
 $ sudo apt-get update && sudo apt-get install yarn
 ```
-
 In the `WebOmics/web_omics` directory where `package.json` can be found, type the following to download all the front-end packages:
 ```bash
 $ yarn
@@ -146,6 +145,8 @@ To run webpack in production mode to generate a minified bundle, type:
 ```bash
 $ yarn run build
 ```
+
+JQuery, D3.js and React are already configured in the project, and they can be readily used.
 
 ### 7. Start WebOmics
 
