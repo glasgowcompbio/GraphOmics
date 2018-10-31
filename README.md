@@ -120,7 +120,34 @@ $ pipenv install --dev
 $ pipenv shell
 ```
 
-### 6. Start WebOmics
+### 6. Install front-end dependencies
+
+Now we need to install the front-end dependencies of WebOmics. The front-end packages are managed by Node.js
+First, install Node.js for your platform: https://nodejs.org/en. You can choose the LTS version for this.
+
+Once Node.js is installed, you need to get a package manager. Here we use Yarn. Below is the instructions for Ubuntu (for other platforms, refer to https://yarnpkg.com/en/docs/install).
+```bash
+$ curl -sS https://dl.yarnpkg.com/debian/pubkey.gpg | sudo apt-key add -
+$ echo "deb https://dl.yarnpkg.com/debian/ stable main" | sudo tee /etc/apt/sources.list.d/yarn.list
+$ sudo apt-get update && sudo apt-get install yarn
+```
+
+In the `WebOmics/web_omics` directory where `package.json` can be found, type the following to download all the front-end packages:
+```bash
+$ yarn
+```
+
+To run webpack in development mode so it rebuilds the bundle when there's a change to your file, type:
+```bash
+$ yarn run dev
+```
+
+To run webpack in production mode to generate a minified bundle, type:
+```bash
+$ yarn run build
+```
+
+### 7. Start WebOmics
 
 Now you can start the WebOmics app in Django. Do a migration the first time to create the database tables
 ```bash
@@ -132,7 +159,7 @@ And you can start the server by:
 $ python manage.py runserver
 ```
 
-### 7. Jupyter Notebook
+### 8. Jupyter Notebook
 
 Notebooks are very useful for prototyping and troubleshooting. Using shell_plus, you can launch a notebook that has access to django objects.
 
@@ -144,16 +171,5 @@ $ jupyter notebook
 
 You might need to do the following configurations to make the notebook work properly:
 1. Add the environmental variables `DJANGO_CONFIGURATION=Development` and `DJANGO_SETTINGS_MODULE=web_omics.settings`
-2. Make sure that django-configuration is setup properly when launched from notebook, see https://github.com/jazzband/django-configurations/issues/147. As a workaround, you can edit the file <your_virtual_env>/site-packages/django_extensions/management/shells.py, and add the workaround below:
-```
-def import_objects(options, style):
-    from django.apps import apps
-    from django import setup
-
-    if not apps.ready:
-        # workaround
-        import configurations
-        configurations.setup()    
-        # end workaround
-        setup()
+2. Make sure that django-configuration is setup properly when launched from notebook, see https://django-configurations.readthedocs.io/en/latest/cookbook/#ipython-notebooks
 ```
