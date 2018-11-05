@@ -114,15 +114,6 @@ def get_ensembl_gene_info(request, analysis_id):
         except TypeError:
             pass
 
-        # try:
-        #     summary = wikipedia.summary(display_name)
-        #     if 'gene' in summary.lower() or 'protein' in summary.lower():
-        #         infos.append({'key': 'Summary', 'value': truncate(summary)})
-        # except wikipedia.exceptions.DisambiguationError:
-        #     pass
-        # except ValueError:
-        #     pass
-
         images = []
         links = [
             {
