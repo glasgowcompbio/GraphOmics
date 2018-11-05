@@ -1,15 +1,12 @@
 {% extends 'base.html' %}
 {% load static %}
+{% load render_bundle from webpack_loader %}
 
 {% block title %}WebOmics{% endblock %}
 
 {% block head_block %}
+    {% render_bundle 'inference' 'css' %}
     {{ form.media.css }}
-    <style type="text/css">
-        select {
-            width: 600px;
-        }
-    </style>
 {% endblock %}
 
 {% block body_block %}
@@ -97,13 +94,7 @@
 {% endblock %}
 
 {% block js_block %}
-    <script type='text/javascript'>
-        // $('#id_data_type').on('change', function() {
-        //     $('#form_submit').click();
-        // })
-        $('#id_inference_type').on('change', function() {
-            $('#form_submit').click();
-        })
-    </script>
+    <!-- the order below is important for select2 to work -->
+    {% render_bundle 'inference' 'js' %}
     {{ form.media.js }}
 {% endblock %}

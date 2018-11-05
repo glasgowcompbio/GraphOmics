@@ -12,6 +12,7 @@ module.exports = {
         base: './static/js/base',
         explore_data: './static/js/explore_data',
         summary: './static/js/summary',
+        inference: './static/js/inference'
     },
 
     output: {
@@ -57,6 +58,18 @@ module.exports = {
                 test: /\.(svg|gif|png|eot|woff|ttf)$/,
                 loader: 'url-loader'
             },
+            {
+                // for django-select2
+                // https://stackoverflow.com/questions/47469228/jquery-is-not-defined-using-webpack
+                test: require.resolve('jquery'),
+                use: [{
+                    loader: 'expose-loader',
+                    options: 'jQuery'
+                },{
+                    loader: 'expose-loader',
+                    options: '$'
+                }]
+            }
         ],
     },
 
