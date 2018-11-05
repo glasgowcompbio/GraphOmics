@@ -83,6 +83,7 @@ class AddPathwayView(FormView):
         analysis_desc = form.cleaned_data['analysis_description']
         pathway_list = form.cleaned_data['pathways']
         species_list = list(set([pathway_species_dict[x] for x in pathway_list]))
+        compound_database_str = COMPOUND_DATABASE_KEGG
         metabolic_pathway_only = False
 
         # get reactions under pathways
@@ -104,15 +105,18 @@ class AddPathwayView(FormView):
         proteins_str = '\n'.join(['identifier'] + all_proteins)
         compounds_str = '\n'.join(['identifier'] + all_compounds)
 
-        analysis, data, data_fields = get_data(self.request, analysis_desc, analysis_name, compounds_str, current_user,
-                                               genes_str, proteins_str, species_list, metabolic_pathway_only)
+        analysis, data, data_fields = get_data(self.request, analysis_desc, analysis_name, compounds_str, compound_database_str,
+                                               current_user, genes_str, proteins_str, species_list, metabolic_pathway_only)
         context = get_context(analysis, data, data_fields)
         return render(self.request, self.success_url, context)
 
 
 def get_data(request, analysis_desc, analysis_name, compounds_str, compound_database_str,
              current_user, genes_str, proteins_str, species_list, metabolic_pathway_only):
-    metabolic_pathway_only = metabolic_pathway_only.lower() in ("yes", "true", "t", "1") # convert string to bool
+    try:
+        metabolic_pathway_only = metabolic_pathway_only.lower() in ("yes", "true", "t", "1") # convert string to bool
+    except AttributeError:
+        pass
     results = reactome_mapping(request, genes_str, proteins_str, compounds_str,
                                compound_database_str, species_list, metabolic_pathway_only)
     analysis, data = save_analysis(analysis_name, analysis_desc,
