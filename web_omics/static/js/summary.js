@@ -81,7 +81,7 @@ $(document).ready(function () {
             const args = {
                 root: elementId,
                 network_data: jsonData,
-                opacity_scale: 'log',
+                // opacity_scale: 'linear',
                 row_tip_callback: gene_info,
             };
             const cgm = Clustergrammer(args);

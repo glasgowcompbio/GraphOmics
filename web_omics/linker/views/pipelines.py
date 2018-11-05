@@ -9,6 +9,7 @@ import pandas as pd
 from scipy import stats
 from statsmodels.sandbox.stats.multicomp import multipletests
 from sklearn.decomposition import PCA
+from sklearn import preprocessing
 
 from rpy2.robjects.packages import importr
 from rpy2 import robjects
@@ -125,3 +126,56 @@ def plot_pca(rld_df, n_components):
 
     cumsum = np.cumsum(pca.explained_variance_ratio_)
     return cumsum
+
+
+class WebOmicsInference(object):
+    def __init__(self, data_df, design_df, remove_cols):
+        data_df = data_df.copy()
+        remove_cols = tuple([x.lower() for x in remove_cols])
+        to_drop = list(filter(lambda x: x.lower().startswith(remove_cols), data_df.columns))
+        df = data_df.drop(to_drop, axis=1)  # remove columns to be excluded from dataframe
+        df = df.dropna(how='all')  # remove rows that are all NAs
+        df = df.loc[~(df == 0).all(axis=1)]  # remove rows that are all 0s
+        self.data_df = df
+        self.design_df = design_df
+
+    def impute_data(self, min_value=0):
+        if self.design_df is not None:
+            grouping = self.design_df.groupby('group')
+            for group, samples in grouping.groups.items():
+                # If all zero in group then replace with minimum
+                temp = self.data_df.loc[:, samples]
+                temp = (temp == 0).all(axis=1)
+                self.data_df.loc[temp, samples] = min_value
+
+                # Replace any other zeros with mean of group
+                subset_df = self.data_df.loc[:, samples]
+                self.data_df.loc[:, samples] = subset_df.mask(subset_df == 0, subset_df.mean(axis=1), axis=0)
+
+    def heatmap(self, N=None, standardize=True):
+        if standardize:
+            data_df = self._standardize_df(self.data_df)
+        else:
+            data_df = self.data_df
+        if N is not None:
+            plt.matshow(data_df[0:N])
+        else:
+            plt.matshow(data_df)
+        plt.colorbar()
+
+    def _standardize_df(self, data_df):
+        if data_df.empty:
+            return data_df
+        # standardize the data across the samples (zero mean and unit variance))
+        scaled_data = np.log(np.array(data_df))
+        mean_std = np.mean(np.std(scaled_data, axis=1))
+        scaled_data = preprocessing.scale(scaled_data, axis=1) * mean_std
+        # Put the scaled data back into df for further use
+        sample_names = data_df.columns
+        data_df[sample_names] = scaled_data
+        # Standardizing, testing data
+        mean = np.round(data_df.values.mean(axis=1))
+        variance = np.round(data_df.values.std(axis=1))
+        #         print("Mean values of the rows in the DF is %s", str(mean))
+        #         print("Variance in the rows of the DF is %s", str(variance))
+        return data_df
