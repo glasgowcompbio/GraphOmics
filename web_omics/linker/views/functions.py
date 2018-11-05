@@ -191,9 +191,11 @@ def reactome_mapping(request, genes_str, proteins_str, compounds_str, compound_d
     # reaction_count_df, pathway_count_df = get_count_df(gene_2_proteins_mapping, protein_2_reactions_mapping,
     #                                                    compound_2_reactions_mapping, reaction_2_pathways_mapping,
     #                                                    species_list)
-    if not use_kegg: # below works best for ChEBI
-        identifiers = observed_protein_ids + observed_compound_ids
-        pathway_count_df = get_reactome_overrepresentation_df(identifiers, species_list)
+
+    # buggy!
+    # if not use_kegg: # below works best for ChEBI
+    #     identifiers = observed_protein_ids + observed_compound_ids
+    #     pathway_count_df = get_reactome_overrepresentation_df(identifiers, species_list)
 
     pathway_ids = reaction_2_pathways.values
     reactions_json = pk_to_json('reaction_pk', 'reaction_id', reaction_ids, metadata_map, reaction_count_df, has_species=True)
@@ -333,6 +335,8 @@ def get_reactome_overrepresentation_df(identifiers, species_list):
         if r.status_code == 200:
             results = r.json()
             token = results['summary']['token']
+        else:
+            token = None
 
         # TODO: the dictionary below is a workaround, since we should pass the species id from the form, not species name!
         species_name_to_id = get_species_name_to_id()
@@ -340,17 +344,18 @@ def get_reactome_overrepresentation_df(identifiers, species_list):
         data = []
         for species_name in species_list:
             species_id = species_name_to_id[species_name]
-            filter_url = 'https://reactome.org/AnalysisService/token/%s/filter/species/%d' % (token, species_id)
-            r = requests.get(filter_url)
-            if r.status_code == 200:
-                temp = r.json()['pathways']
-                for x in temp:
-                    stId = x['stId']
-                    found = x['entities']['found']
-                    total = x['entities']['total']
-                    fdr = x['entities']['fdr']
-                    row = [stId, found, total, fdr]
-                    data.append(row)
+            if token is not None:
+                filter_url = 'https://reactome.org/AnalysisService/token/%s/filter/species/%d' % (token, species_id)
+                r = requests.get(filter_url)
+                if r.status_code == 200:
+                    temp = r.json()['pathways']
+                    for x in temp:
+                        stId = x['stId']
+                        found = x['entities']['found']
+                        total = x['entities']['total']
+                        fdr = x['entities']['fdr']
+                        row = [stId, found, total, fdr]
+                        data.append(row)
 
         if len(data) > 0:
             pathway_count_df = pd.DataFrame(data, columns=['Identifier', 'found', 'total', 'padj_fdr'])

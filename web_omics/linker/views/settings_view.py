@@ -9,7 +9,8 @@ from linker.forms import AddDataForm, AddPathwayForm
 from linker.models import Analysis, AnalysisData
 from linker.reactome import get_species_dict
 from linker.views.functions import reactome_mapping, save_analysis
-from linker.constants import GENOMICS, PROTEOMICS, METABOLOMICS, REACTIONS, PATHWAYS, DataRelationType
+from linker.constants import GENOMICS, PROTEOMICS, METABOLOMICS, REACTIONS, PATHWAYS, \
+    DataRelationType, COMPOUND_DATABASE_CHEBI, COMPOUND_DATABASE_KEGG
 
 
 def settings(request, analysis_id):
@@ -54,7 +55,8 @@ def add_data(request, analysis_id):
                 proteins_str = get_formatted_data(analysis.metadata, 'proteins_str', None)
                 compounds_str = get_formatted_data(analysis.metadata, 'compounds_str', database_id)
 
-            results = reactome_mapping(request, genes_str, proteins_str, compounds_str,
+            metabolic_pathway_only = True
+            results = reactome_mapping(request, genes_str, proteins_str, compounds_str, COMPOUND_DATABASE_KEGG,
                                        species_list, metabolic_pathway_only)
 
             # update analysis data
