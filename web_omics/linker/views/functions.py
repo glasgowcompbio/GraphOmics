@@ -429,7 +429,7 @@ def csv_to_dataframe(csv_str):
     if data_df is not None:
         padj_col_count = len(list(filter(lambda x: x.startswith(PADJ_COL_PREFIX), data_df.columns)))
         if padj_col_count > 0:
-            for index, row in data_df.iterrows():
+            for index, row in data_df.iterrows(): # TODO: very slow!!
                 filter_col = [col for col in row.index if col.startswith(PADJ_COL_PREFIX)]
                 padj_values = row[filter_col].values
                 significant_all = False
