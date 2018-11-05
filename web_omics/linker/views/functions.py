@@ -260,7 +260,7 @@ def save_analysis(analysis_name, analysis_desc,
         data[ui_label] = json_str
 
         json_data = json.loads(json_str)
-        json_design = group_info.to_json() if group_info is not None else None
+        json_design = json.loads(group_info.to_json()) if group_info is not None else None
         keys = json_data[0].keys()
         padj_col_count = len(list(filter(lambda x: x.startswith(PADJ_COL_PREFIX), keys)))
         inference_type = T_TEST if padj_col_count > 0 else None
@@ -695,13 +695,13 @@ def get_dataframes(analysis_data, pk_col, sample_col):
     data_df = pd.DataFrame(analysis_data.json_data).set_index(pk_col)
     design_df = None
     if analysis_data.json_design:
-        design_df = pd.read_json(analysis_data.json_design).set_index(sample_col)
+        design_df = pd.DataFrame(analysis_data.json_design).set_index(sample_col)
     return data_df, design_df
 
 
 def get_groups(analysis_data):
     if analysis_data.json_design:
-        df = pd.read_json(analysis_data.json_design)
+        df = pd.DataFrame(analysis_data.json_design)
         analysis_groups = set(df[GROUP_COL])
         groups = ((None, NA),) + tuple(zip(analysis_groups, analysis_groups))
     else:

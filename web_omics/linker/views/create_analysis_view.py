@@ -128,8 +128,7 @@ def get_data(request, analysis_desc, analysis_name, compounds_str, compound_data
         try:
             analysis_data = AnalysisData.objects.filter(analysis=analysis, data_type=k).order_by('-timestamp')[0]
             if analysis_data.json_design:
-                data_fields[table_names[k]] = list(
-                    set(pd.DataFrame(json.loads(analysis_data.json_design))[SAMPLE_COL]))
+                data_fields[table_names[k]] = list(set(pd.DataFrame(analysis_data.json_design)[SAMPLE_COL]))
         except IndexError:
             continue
         except KeyError:
