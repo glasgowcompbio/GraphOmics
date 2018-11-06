@@ -1,5 +1,8 @@
+require('webpack-jquery-ui');
+require('webpack-jquery-ui/css');
 const Clustergrammer = require('clustergrammer');
 require('../css/summary.css');
+import check_setup_enrichr from './enrichrgram';
 
 $(document).ready(function () {
 
@@ -73,8 +76,35 @@ $(document).ready(function () {
 
     }
 
+    function test_tile_callback(tile_data) {
+        var row_name = tile_data.row_name;
+        var col_name = tile_data.col_name;
+        console.log(`tile_callback ${row_name} ${col_name}`);
+    }
+
+    function test_col_callback(col_data) {
+        var col_name = col_data.name;
+        console.log(`col_callback ${col_name}`);
+    }
+
+    function dendro_callback(inst_selection) {
+
+        var inst_rc;
+        var inst_data = inst_selection.__data__;
+
+        // toggle enrichr export section
+        if (inst_data.inst_rc === 'row') {
+            d3.select('.enrichr_export_section')
+                .style('display', 'block');
+        } else {
+            d3.select('.enrichr_export_section')
+                .style('display', 'none');
+        }
+
+    }
+
     function renderHeatmap(elementId, dataType, clusterJson) {
-        if (clusterJson.hasOwnProperty(dataType)) {
+        if (clusterJson.hasOwnProperty(dataType) && clusterJson[dataType]) {
             $(elementId).text('');
             $(elementId).addClass('heatmap_container');
             const jsonData = JSON.parse(clusterJson[dataType]);
@@ -83,8 +113,14 @@ $(document).ready(function () {
                 network_data: jsonData,
                 // opacity_scale: 'linear',
                 row_tip_callback: gene_info,
+                col_tip_callback: test_col_callback,
+                tile_tip_callback: test_tile_callback,
+                dendro_callback: dendro_callback
             };
             const cgm = Clustergrammer(args);
+            if (dataType === 'gene') { // 0 for GENOMICS, see linker.constants
+                check_setup_enrichr(cgm);
+            }
         } else {
             $(elementId).text('No data is available.');
         }

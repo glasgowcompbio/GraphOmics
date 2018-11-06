@@ -117,22 +117,38 @@ def get_clusters(analysis, data_types):
     for data_type in data_types:
         analysis_data = get_last_analysis_data(analysis, data_type)
         data_df, design_df = get_dataframes(analysis_data, PKS[data_type], SAMPLE_COL)
+
+        # standardise data differently for genomics vs proteomics/metabolomics
         if data_type == GENOMICS:
             inference = WebOmicsInference(data_df, design_df, data_type)
             df = inference.standardize_df(inference.data_df)
         elif data_type == PROTEOMICS or data_type == METABOLOMICS:
             inference = WebOmicsInference(data_df, design_df, data_type, min_value=5000)
             df = inference.standardize_df(inference.data_df, log=True)
-        if not df.empty:
-            net = Network()
-            net.load_df(df)
-            net.cluster()
-            data_type_label = {
-                GENOMICS: 'gene',
-                PROTEOMICS: 'protein',
-                METABOLOMICS: 'compound'
-            }
-            label = data_type_label[data_type]
-            json_data = net.export_net_json()
-            cluster_json[label] = json_data
+
+        data_type_label = {
+            GENOMICS: 'gene',
+            PROTEOMICS: 'protein',
+            METABOLOMICS: 'compound'
+        }
+        label = data_type_label[data_type]
+        json_data = to_clustergrammer(df)
+        cluster_json[label] = json_data
     return cluster_json
+
+
+def to_clustergrammer(df):
+    json_data = None
+    if not df.empty:
+        net = Network()
+        net.load_df(df)
+        # net.filter_sum('row', threshold=20)
+        # net.normalize(axis='col', norm_type='zscore')
+        # net.filter_N_top('row', 1000, rank_type='var')
+        # net.filter_threshold('row', threshold=3.0, num_occur=4)
+        # net.swap_nan_for_zero()
+        # net.downsample(ds_type='kmeans', axis='col', num_samples=10)
+        # net.random_sample(random_state=100, num_samples=10, axis='col')
+        net.cluster()
+        json_data = net.export_net_json()
+    return json_data
