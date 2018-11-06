@@ -41,9 +41,9 @@ class WebOmicsInference(object):
         # - replace any other zeros with mean of group
         self._impute_data(min_value)
 
-    def heatmap(self, N=None, standardize=True):
+    def heatmap(self, N=None, standardize=True, log=False):
         if standardize:
-            data_df = self.standardize_df(self.data_df)
+            data_df = self.standardize_df(self.data_df, log=log)
         else:
             data_df = self.data_df
         if N is not None:
@@ -52,11 +52,13 @@ class WebOmicsInference(object):
             plt.matshow(data_df)
         plt.colorbar()
 
-    def standardize_df(self, data_df):
+    def standardize_df(self, data_df, log=False):
         if data_df.empty:
             return data_df
         data_df = data_df.copy()
-        scaled_data = np.log(np.array(data_df))
+        scaled_data = np.array(data_df)
+        if log:
+            scaled_data = np.log(np.array(data_df))
         scaled_data = preprocessing.scale(scaled_data, axis=1)
         sample_names = data_df.columns
         data_df[sample_names] = scaled_data

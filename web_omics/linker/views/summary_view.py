@@ -117,11 +117,12 @@ def get_clusters(analysis, data_types):
     for data_type in data_types:
         analysis_data = get_last_analysis_data(analysis, data_type)
         data_df, design_df = get_dataframes(analysis_data, PKS[data_type], SAMPLE_COL)
-        min_value = 0
-        if data_type == PROTEOMICS or data_type == METABOLOMICS:
-            min_value = 5000
-        inference = WebOmicsInference(data_df, design_df, data_type, min_value=min_value)
-        df = inference.standardize_df(inference.data_df)
+        if data_type == GENOMICS:
+            inference = WebOmicsInference(data_df, design_df, data_type)
+            df = inference.standardize_df(inference.data_df)
+        elif data_type == PROTEOMICS or data_type == METABOLOMICS:
+            inference = WebOmicsInference(data_df, design_df, data_type, min_value=5000)
+            df = inference.standardize_df(inference.data_df, log=True)
         if not df.empty:
             net = Network()
             net.load_df(df)
