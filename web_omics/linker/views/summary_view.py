@@ -9,7 +9,7 @@ import numpy as np
 from clustergrammer import Network
 
 from linker.views import get_last_analysis_data
-from linker.views.functions import get_last_analysis_data, get_groups, get_dataframes, filter_data
+from linker.views.functions import get_last_analysis_data, get_groups, get_dataframes
 from linker.constants import *
 from linker.views.pipelines import WebOmicsInference
 
@@ -117,32 +117,21 @@ def get_clusters(analysis, data_types):
     for data_type in data_types:
         analysis_data = get_last_analysis_data(analysis, data_type)
         data_df, design_df = get_dataframes(analysis_data, PKS[data_type], SAMPLE_COL)
-        remove_cols = ['padj_', 'FC_', 'significant_', 'obs', IDS[data_type]]
-        if data_type == METABOLOMICS:
+        min_value = 0
+        if data_type == PROTEOMICS or data_type == METABOLOMICS:
             min_value = 5000
-        else:
-            min_value = 0
-        inference = WebOmicsInference(data_df, design_df, remove_cols)
-        inference.impute_data(min_value)
-        df = inference._standardize_df(inference.data_df)
+        inference = WebOmicsInference(data_df, design_df, data_type, min_value=min_value)
+        df = inference.standardize_df(inference.data_df)
         if not df.empty:
-            # df = np.log2(data_df.replace(0, 1))
             net = Network()
             net.load_df(df)
-            # net.filter_sum('row', threshold=20)
-            # net.normalize(axis='col', norm_type='zscore')
-            # net.filter_N_top('row', 1000, rank_type='var')
-            # net.filter_threshold('row', threshold=3.0, num_occur=4)
-            # net.swap_nan_for_zero()
-            # net.downsample(ds_type='kmeans', axis='col', num_samples=10)
-            # net.random_sample(random_state=100, num_samples=10, axis='col')
             net.cluster()
+            data_type_label = {
+                GENOMICS: 'gene',
+                PROTEOMICS: 'protein',
+                METABOLOMICS: 'compound'
+            }
+            label = data_type_label[data_type]
             json_data = net.export_net_json()
-            if data_type == GENOMICS:
-                label = 'gene'
-            elif data_type == PROTEOMICS:
-                label = 'protein'
-            elif data_type == METABOLOMICS:
-                label = 'compound'
             cluster_json[label] = json_data
     return cluster_json

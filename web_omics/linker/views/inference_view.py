@@ -11,8 +11,8 @@ import jsonpickle
 
 from linker.forms import BaseInferenceForm, T_test_Form, HierarchicalClusteringForm
 from linker.models import Analysis, AnalysisData
-from linker.views.functions import get_last_analysis_data, get_groups, get_dataframes, filter_data
-from linker.views.pipelines import run_deseq, run_ttest
+from linker.views.functions import get_last_analysis_data, get_groups, get_dataframes
+from linker.views.pipelines import WebOmicsInference
 from linker.constants import *
 
 
@@ -92,13 +92,14 @@ def inference_t_test(request, analysis_id):
             case = form.cleaned_data['case']
             control = form.cleaned_data['control']
             data_df, design_df = get_dataframes(analysis_data, PKS[data_type], SAMPLE_COL)
-            data_df = filter_data(data_df, data_type)
 
             if data_type == GENOMICS: # run deseq2 here
-                pd_df, rld_df, res_ordered = run_deseq(data_df, design_df, 10, case, control)
+                wi = WebOmicsInference(data_df, design_df, data_type)
+                pd_df, rld_df, res_ordered = wi.run_deseq(10, case, control)
                 result_df = pd_df[['padj', 'log2FoldChange']]
             elif data_type == PROTEOMICS or data_type == METABOLOMICS:
-                result_df = run_ttest(data_df, design_df, case, control)
+                wi = WebOmicsInference(data_df, design_df, data_type, min_value=5000)
+                result_df = wi.run_ttest(case, control)
 
             res = result_df.to_dict()
             json_data = analysis_data.json_data

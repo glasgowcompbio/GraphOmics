@@ -712,16 +712,3 @@ def get_groups(analysis_data):
     else:
         groups = ((None, NA),)
     return groups
-
-
-def filter_data(df, data_type):
-    # drop columns that do not contain measurements
-    to_drop = list(filter(
-        lambda x: x.startswith('padj_') or x.startswith('FC_') or x.startswith('significant_') or x.startswith('obs'),
-        df.columns))
-    to_drop.append(IDS[data_type])
-    df = df.drop(to_drop, axis=1)
-    # drop rows with all NAs and 0s
-    df = df.dropna(how='all')
-    df = df.loc[~(df == 0).all(axis=1)]
-    return df
