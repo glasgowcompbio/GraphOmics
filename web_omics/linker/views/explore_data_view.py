@@ -545,7 +545,7 @@ def get_grouped_measurements(analysis_id, database_id, data_type, peak_id=None):
                     if not all(v is None for v in list(filtered_data.values())):
                         # then merge with the design matrix
                         filtered_df = pd.DataFrame([filtered_data]).astype(float)
-                        design_df = pd.DataFrame(json.loads(analysis_data.json_design))
+                        design_df = pd.DataFrame(analysis_data.json_design)
                         merged_df = pd.merge(filtered_df.transpose(), design_df, left_index=True, right_on=SAMPLE_COL)
                         # put the columns in the right order, then return as dictionary
                         merged_df = change_column_order(merged_df, GROUP_COL, 0)
