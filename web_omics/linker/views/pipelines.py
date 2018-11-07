@@ -13,7 +13,7 @@ from rpy2 import robjects
 from rpy2.robjects import Formula
 from rpy2.robjects import pandas2ri
 
-from linker.constants import GROUP_COL, IDS
+from linker.constants import GROUP_COL, IDS, PKS
 
 
 class WebOmicsInference(object):
@@ -23,7 +23,7 @@ class WebOmicsInference(object):
 
         # remove all the default columns from dataframe if nothing provided
         if remove_cols is None:
-            remove_cols = ['padj_', 'FC_', 'significant_', 'obs', IDS[data_type]]
+            remove_cols = ['padj_', 'FC_', 'significant_', 'obs', PKS[data_type], IDS[data_type]]
         remove_cols = tuple([x.lower() for x in remove_cols])
         to_drop = list(filter(lambda x: x.lower().startswith(remove_cols), data_df.columns))
         df = data_df.drop(to_drop, axis=1)

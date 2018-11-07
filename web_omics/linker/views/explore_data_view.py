@@ -108,11 +108,11 @@ def get_ensembl_gene_info(request, analysis_id):
         except KeyError:
             pass
 
-        try:
-            summary = get_entrez_summary(ensembl_id)
-            infos.append({'key': 'Entrez Summary', 'value': truncate(summary)})
-        except TypeError:
-            pass
+        # try:
+        #     summary = get_entrez_summary(ensembl_id)
+        #     infos.append({'key': 'Entrez Summary', 'value': truncate(summary)})
+        # except TypeError:
+        #     pass
 
         images = []
         links = [
