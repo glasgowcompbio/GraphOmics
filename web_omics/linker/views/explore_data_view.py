@@ -29,15 +29,15 @@ def explore_data(request, analysis_id):
 
     # retrieve the json data linked to this analysis
     mapping = {
-        GENOMICS: 'genes_json',
-        PROTEOMICS: 'proteins_json',
-        METABOLOMICS: 'compounds_json',
-        REACTIONS: 'reactions_json',
-        PATHWAYS: 'pathways_json',
-        GENES_TO_PROTEINS: 'gene_proteins_json',
-        PROTEINS_TO_REACTIONS: 'protein_reactions_json',
-        COMPOUNDS_TO_REACTIONS: 'compound_reactions_json',
-        REACTIONS_TO_PATHWAYS: 'reaction_pathways_json'
+        GENOMICS: 'genes',
+        PROTEOMICS: 'proteins',
+        METABOLOMICS: 'compounds',
+        REACTIONS: 'reactions',
+        PATHWAYS: 'pathways',
+        GENES_TO_PROTEINS: 'gene_proteins',
+        PROTEINS_TO_REACTIONS: 'protein_reactions',
+        COMPOUNDS_TO_REACTIONS: 'compound_reactions',
+        REACTIONS_TO_PATHWAYS: 'reaction_pathways'
     }
     table_names = {
         GENOMICS: 'genes_table',
@@ -46,25 +46,29 @@ def explore_data(request, analysis_id):
     }
     data = {}
     data_fields = {}
+    cluster_json = {}
     for k, v in DataRelationType:
         try:
             analysis_data = get_last_data(analysis, k)
             label = mapping[k]
-            data[label] = json.dumps(analysis_data.json_data)
+            data[label] = analysis_data.json_data
             if analysis_data.json_design:
                 data_fields[table_names[k]] = list(set(pd.DataFrame(analysis_data.json_design)[SAMPLE_COL]))
+            if analysis_data.metadata and 'clustergrammer' in analysis_data.metadata:
+                cluster_json[mapping[k]] = analysis_data.metadata['clustergrammer']
         except IndexError:
             continue
         except KeyError:
             continue
 
     context = {
-        'data': data,
+        'data': json.dumps(data),
         'data_fields': json.dumps(data_fields),
+        'cluster_json': json.dumps(cluster_json),
         'analysis_id': analysis.pk,
         'analysis_name': analysis.name,
         'analysis_description': analysis.description,
-        'analysis_species': analysis.get_species_str()
+        'analysis_species': analysis.get_species_str(),
     }
     return render(request, 'linker/explore_data.html', context)
 
@@ -475,6 +479,44 @@ def get_reactome_pathway_info(request, analysis_id):
             'annotation': annotation,
             'annotation_url': annotation_url,
             'annotation_id': pathway_id
+        }
+        return JsonResponse(data)
+
+
+def get_short_info(request, data_type, display_name):
+    if request.is_ajax():
+
+        # to deal with duplicate indices
+        if '-' in display_name:
+            display_name = display_name.split('-')[0]
+
+        description = ''
+        if data_type == 'gene':
+            try:
+                results = Harmonizome.get(Entity.GENE, name=display_name)
+                description = results['description']
+            except KeyError:
+                pass
+
+        elif data_type == 'protein':
+            metadata = get_single_uniprot_metadata_online(display_name)
+            try:
+                display_name = [x.text for x in metadata.soup.select('protein > recommendedname > fullname')][0]
+                for child in metadata.soup.find_all('comment'):
+                    if child['type'].title() == 'Function':
+                        description = child.text
+                        break
+            except KeyError:
+                pass
+            except IndexError:
+                pass
+
+        elif data_type == 'compound':
+            pass
+
+        data = {
+            'name': display_name,
+            'description': description
         }
         return JsonResponse(data)
 

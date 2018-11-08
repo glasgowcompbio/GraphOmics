@@ -32,173 +32,30 @@
             </ul>
         </div>
 
+        <p>
+            <small><strong>{{ analysis_name }}</strong>: {{ analysis_description }} ({{ analysis_species }})
+            </small>
+        </p>
+
         <div class="m-1 mb-3 mt-2">
             <ul class="nav nav-pills mb-3" id="pills-tab" role="tablist">
                 <li class="nav-item">
-                    <a class="nav-link active" id="pills-home-tab" data-toggle="pill" href="#pills-home" role="tab"
-                       aria-controls="pills-home" aria-selected="true">Data Browser</a>
+                    <a class="nav-link active" id="pills-browser-tab" data-toggle="pill" href="#pills-browser" role="tab"
+                       aria-controls="pills-browser" aria-selected="true">Data Browser</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" id="pills-profile-tab" data-toggle="pill" href="#pills-profile" role="tab"
-                       aria-controls="pills-profile" aria-selected="false">Heatmap</a>
+                    <a class="nav-link" id="pills-heatmap-tab" data-toggle="pill" href="#pills-heatmap" role="tab"
+                       aria-controls="pills-heatmap" aria-selected="false">Heatmap</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" id="pills-contact-tab" data-toggle="pill" href="#pills-contact" role="tab"
-                       aria-controls="pills-contact" aria-selected="false">Factor Analysis</a>
+                    <a class="nav-link" id="pills-factor-tab" data-toggle="pill" href="#pills-factor" role="tab"
+                       aria-controls="pills-factor" aria-selected="false">Factor Analysis</a>
                 </li>
             </ul>
             <div class="tab-content" id="pills-tabContent">
-                <div class="tab-pane fade show active" id="pills-home" role="tabpanel" aria-labelledby="pills-home-tab">
-                    <p>
-                        <small><strong>{{ analysis_name }}</strong>: {{ analysis_description }} ({{ analysis_species }})
-                        </small>
-                    </p>
-                    <div class="">
-                        <form>
-                            <div class="row">
-                                <div class="col-6">
-                                    <input class="form-control" type="search" placeholder="Search" aria-label="Search"
-                                           id="global_filter">
-                                </div>
-                                <div class="col-6  text-right">
-                                    <div class="form-check-inline border p-1">
-                                        <input class="form-check-input" type="checkbox" value="" id="showDataCheck">
-                                        <label class="form-check-label" for="showDataCheck">
-                                            Show data columns
-                                        </label>&nbsp;&nbsp;&nbsp;&nbsp;
-                                    </div>
-                                    <div class="form-check-inline border p-1">
-                                        <label class="form-check-label">
-                                            Filter significant items in
-                                        </label>&nbsp;&nbsp;&nbsp;&nbsp;
-                                        <div class="form-check form-check-inline">
-                                            <input class="form-check-input" type="radio" name="inlineRadioOptions"
-                                                   id="inlineRadio1"
-                                                   value="all">
-                                            <label class="form-check-label" for="inlineRadio1">all tests</label>
-                                        </div>
-                                        <div class="form-check form-check-inline">
-                                            <input class="form-check-input" type="radio" name="inlineRadioOptions"
-                                                   id="inlineRadio2"
-                                                   value="any">
-                                            <label class="form-check-label" for="inlineRadio2">any test</label>
-                                        </div>
-                                        <div class="form-check form-check-inline">
-                                            <input class="form-check-input" type="radio" name="inlineRadioOptions"
-                                                   id="inlineRadio3"
-                                                   value="none" checked="checked">
-                                            <label class="form-check-label" for="inlineRadio3">none</label>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            &nbsp;
-                            <!--button class="btn btn-success my-2 my-sm-0" type="button">Search</button-->
-                        </form>
-                    </div>
-
-                    <div id="all_tables" class="card-group">
-
-                        <!-- Gene card -->
-                        <div class="card border-light">
-                            <div class="card-block">
-                                <div class="card-header bg-light m-0"><strong>Gene Data {% if data_display_name.0 %}(
-                                    {{ data_display_name.0 }}){% endif %}</strong></div>
-                                <div class="card-table style-2 p-1">
-                                    <table id="genes_table" class="table hover compact pod-table" style="width:100%">
-                                    </table>
-                                </div>
-                                <div class="card-header text-white bg-primary">Gene Information</div>
-                                <div class="card-body mt-3 p-1">
-                                    <div id="gene-row-info" class="card-text">
-                                        <p>Select an entry above.</p>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Protein card -->
-                        <div class="card border-light">
-                            <div class="card-block">
-                                <div class="card-header bg-light m-0"><strong>Protein Data {% if data.display_name.2 %}(
-                                    {{ data_display_name.2 }}){% endif %}</strong></div>
-                                <div class="card-table style-2 p-1">
-                                    <table id="proteins_table" class="table hover compact pod-table" style="width:100%">
-                                    </table>
-                                </div>
-                                <div class="card-header text-white bg-primary">Protein Information</div>
-                                <div class="card-body mt-3 p-1">
-                                    <div id="protein-row-info" class="card-text">
-                                        <p>Select an entry above.</p>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Compound card -->
-                        <div class="card border-light">
-                            <div class="card-block">
-                                <div class="card-header bg-light m-0"><strong>Compound Data {% if data_display_name.3 %}
-                                    (
-                                    {{ data_display_name.3 }}){% endif %}</strong></div>
-                                <div class="card-table style-2 p-1">
-                                    <table id="compounds_table" class="table hover compact pod-table"
-                                           style="width:100%">
-                                    </table>
-                                </div>
-                                <div class="card-header text-white bg-primary">Compound Information</div>
-                                <div class="card-body mt-3 p-1">
-                                    <div id="compound-row-info" class="card-text">
-                                        <p>Select an entry above.</p>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Reaction card -->
-                        <div class="card border-light">
-                            <div class="card-block">
-                                <div class="card-header bg-light m-0"><strong>Reactions Data
-                                    {% if data_display_name.4 %}(
-                                        {{ data_display_name.4 }}){% endif %}</strong></div>
-                                <div class="card-table style-2 p-1">
-                                    <table id="reactions_table" class="table hover compact pod-table"
-                                           style="width:100%">
-                                    </table>
-                                </div>
-                                <div class="card-header text-white bg-primary">Reaction Information</div>
-                                <div class="card-body mt-3 p-1">
-                                    <div id="reaction-row-info" class="card-text">
-                                        <p>Select an entry above.</p>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Pathway card -->
-                        <div class="card border-light" style="flex-grow:2">
-                            <div class="card-block">
-                                <div class="card-header bg-light m-0"><strong>Pathway Data {% if data_display_name.5 %}(
-                                    {{ data_display_name.5 }}){% endif %}</strong></div>
-                                <div class="card-table style-2 p-1">
-                                    <table id="pathways_table" class="table hover compact pod-table" style="width:100%">
-                                    </table>
-                                </div>
-                                <div class="card-header text-white bg-primary">Pathway Information</div>
-                                <div class="card-body mt-3 p-1">
-                                    <div id="pathway-row-info" class="card-text">
-                                        <p>Select an entry above.</p>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                    </div>
-                </div>
-                <div class="tab-pane fade" id="pills-profile" role="tabpanel" aria-labelledby="pills-profile-tab">def
-                </div>
-                <div class="tab-pane fade" id="pills-contact" role="tabpanel" aria-labelledby="pills-contact-tab">ghi
-                </div>
+                {% include "linker/explore_data_browser.html" %}
+                {% include "linker/explore_data_heatmap.html" %}
+                {% include "linker/explore_data_factor.html" %}
             </div>
         </div>
 
@@ -220,34 +77,16 @@
 {% endblock %}
 
 {% block js_block %}
-    <script type='text/javascript'>
-        var genes = JSON.parse('{{ data.genes_json|safe }}');
-        var proteins = JSON.parse('{{ data.proteins_json|safe }}');
-        var gene_proteins = JSON.parse('{{ data.gene_proteins_json|safe }}');
-        var reactions = JSON.parse('{{ data.reactions_json|safe }}');
-        var protein_reactions = JSON.parse('{{ data.protein_reactions_json|safe }}');
-        var compounds = JSON.parse('{{ data.compounds_json|safe }}');
-        var compound_reactions = JSON.parse('{{ data.compound_reactions_json|safe }}');
-        var pathways = JSON.parse('{{ data.pathways_json|safe }}');
-        var reaction_pathways = JSON.parse('{{ data.reaction_pathways_json|safe }}');
-        var data = {
-            genes: genes,
-            proteins: proteins,
-            gene_proteins: gene_proteins,
-            reactions: reactions,
-            protein_reactions: protein_reactions,
-            compounds: compounds,
-            compound_reactions: compound_reactions,
-            pathways: pathways,
-            reaction_pathways: reaction_pathways
-        }
+    <script>
+        const data = JSON.parse('{{ data|escapejs }}');
+        const data_fields = JSON.parse('{{ data_fields|escapejs }}');
+        const clusterJson = JSON.parse('{{ cluster_json|escapejs }}');
         const get_ensembl_gene_info = "{% url "get_ensembl_gene_info" analysis_id=analysis_id %}";
         const get_uniprot_protein_info = "{% url "get_uniprot_protein_info" analysis_id=analysis_id %}";
         const get_swissmodel_protein_pdb = "{% url "get_swissmodel_protein_pdb" analysis_id=analysis_id %}";
         const get_kegg_metabolite_info = "{% url "get_kegg_metabolite_info" analysis_id=analysis_id %}";
         const get_reactome_reaction_info = "{% url "get_reactome_reaction_info" analysis_id=analysis_id %}";
         const get_reactome_pathway_info = "{% url "get_reactome_pathway_info" analysis_id=analysis_id %}";
-        const data_fields = JSON.parse('{{ data_fields|safe }}');
     </script>
     {% render_bundle 'explore_data' 'js' %}
 {% endblock %}

@@ -7,7 +7,6 @@ from linker.models import Analysis, AnalysisData, AnalysisAnnotation
 import json
 import pandas as pd
 import numpy as np
-from clustergrammer import Network
 from .harmonizomeapi import Harmonizome, Entity
 
 from linker.views import get_last_analysis_data
@@ -15,7 +14,6 @@ from linker.metadata import get_single_ensembl_metadata_online, get_single_unipr
     get_single_compound_metadata_online, get_entrez_summary
 from linker.views.functions import get_last_analysis_data, get_groups, get_dataframes
 from linker.constants import *
-from linker.views.pipelines import WebOmicsInference
 
 
 def summary(request, analysis_id):
@@ -29,7 +27,6 @@ def summary(request, analysis_id):
     compound_samples = get_samples(analysis, METABOLOMICS)
     annotations = get_annotations(analysis)
     compound_database = analysis.metadata['compound_database_str']
-    cluster_json = get_clusters(analysis, [GENOMICS, PROTEOMICS, METABOLOMICS])
     data = {
         'observed_genes': observed_genes,
         'observed_proteins': observed_proteins,
@@ -48,13 +45,9 @@ def summary(request, analysis_id):
         'annotations': annotations,
         'compound_database': compound_database,
     }
-    react_props = {
-        'cluster_json': cluster_json
-    }
     context = {
         'analysis_id': analysis.pk,
         'data': data,
-        'react_props': json.dumps(react_props)
     }
     return render(request, 'linker/summary.html', context)
 
@@ -114,95 +107,3 @@ def get_url(data_type, database_id):
         return 'https://www.ebi.ac.uk/chebi/searchId.do?chebiId=CHEBI:' + database_id
     elif data_type == REACTIONS or data_type == PATHWAYS:
         return 'https://reactome.org/content/detail/' + database_id
-
-
-def get_clusters(analysis, data_types):
-    cluster_json = {}
-    for data_type in data_types:
-        index_col = IDS[data_type]
-        analysis_data = get_last_analysis_data(analysis, data_type)
-        data_df, design_df = get_dataframes(analysis_data, index_col, SAMPLE_COL)
-
-        # standardise data differently for genomics vs proteomics/metabolomics
-        if data_type == GENOMICS:
-            inference = WebOmicsInference(data_df, design_df, data_type)
-            df = inference.standardize_df(inference.data_df)
-        elif data_type == PROTEOMICS or data_type == METABOLOMICS:
-            inference = WebOmicsInference(data_df, design_df, data_type, min_value=5000)
-            df = inference.standardize_df(inference.data_df, log=True)
-
-        data_type_label = {
-            GENOMICS: 'gene',
-            PROTEOMICS: 'protein',
-            METABOLOMICS: 'compound'
-        }
-        label = data_type_label[data_type]
-        json_data = to_clustergrammer(df, design_df)
-        cluster_json[label] = json_data
-    return cluster_json
-
-
-def to_clustergrammer(data_df, design_df):
-    json_data = None
-    if not data_df.empty:
-        net = Network()
-        data_df = data_df[~data_df.index.duplicated(keep='first')] # remove rows with duplicate indices
-        net.load_df(data_df)
-        cats = {}
-        for k, v in design_df.groupby('group').groups.items():
-            cats[k] = v.values.tolist()
-        net.add_cats('col', [
-            {
-                'title': 'Column Category',
-                'cats': cats
-            }
-        ])
-        # net.filter_sum('row', threshold=20)
-        # net.normalize(axis='col', norm_type='zscore')
-        # net.filter_N_top('row', 1000, rank_type='var')
-        # net.filter_threshold('row', threshold=3.0, num_occur=4)
-        # net.swap_nan_for_zero()
-        # net.downsample(ds_type='kmeans', axis='col', num_samples=10)
-        # net.random_sample(random_state=100, num_samples=10, axis='col')
-        net.cluster(dist_type='cos',views=['N_row_sum', 'N_row_var'] , dendro=True,
-            calc_cat_pval=False, enrichrgram=False)
-        json_data = net.export_net_json()
-    return json_data
-
-
-def get_short_info(request, data_type, display_name):
-    if request.is_ajax():
-
-        # to deal with duplicate indices
-        if '-' in display_name:
-            display_name = display_name.split('-')[0]
-
-        description = ''
-        if data_type == 'gene':
-            try:
-                results = Harmonizome.get(Entity.GENE, name=display_name)
-                description = results['description']
-            except KeyError:
-                pass
-
-        elif data_type == 'protein':
-            metadata = get_single_uniprot_metadata_online(display_name)
-            try:
-                display_name = [x.text for x in metadata.soup.select('protein > recommendedname > fullname')][0]
-                for child in metadata.soup.find_all('comment'):
-                    if child['type'].title() == 'Function':
-                        description = child.text
-                        break
-            except KeyError:
-                pass
-            except IndexError:
-                pass
-
-        elif data_type == 'compound':
-            pass
-
-        data = {
-            'name': display_name,
-            'description': description
-        }
-        return JsonResponse(data)

@@ -10,6 +10,7 @@ import numpy as np
 import pandas as pd
 import requests
 from django.templatetags.static import static
+from clustergrammer import Network
 
 from linker.constants import GENOMICS, PROTEOMICS, METABOLOMICS, REACTIONS, PATHWAYS, GENES_TO_PROTEINS, \
     PROTEINS_TO_REACTIONS, COMPOUNDS_TO_REACTIONS, REACTIONS_TO_PATHWAYS, SAMPLE_COL, GROUP_COL, \
@@ -20,6 +21,7 @@ from linker.models import Analysis, AnalysisData
 from linker.reactome import ensembl_to_uniprot, uniprot_to_reaction, compound_to_reaction, \
     reaction_to_pathway, reaction_to_uniprot, reaction_to_compound, uniprot_to_ensembl
 from linker.reactome import get_reaction_df
+from linker.views.pipelines import WebOmicsInference
 
 Relation = collections.namedtuple('Relation', 'keys values mapping_list')
 NA = '-'  # this should be something that will appear first in the table when sorted alphabetically
@@ -273,6 +275,12 @@ def save_analysis(analysis_name, analysis_desc,
                                      data_type=k,
                                      display_name=display_name,
                                      inference_type=inference_type)
+        # make clustergrammer if we have data
+        if k in [GENOMICS, PROTEOMICS, METABOLOMICS]:
+            cluster_json = get_clusters(analysis_data, k)
+            analysis_data.metadata = {
+                'clustergrammer': cluster_json
+            }
         analysis_data.save()
         print('Saved analysis data', analysis_data.pk, 'for analysis', analysis.pk)
 
@@ -280,6 +288,49 @@ def save_analysis(analysis_name, analysis_desc,
         #     save_json_string(v[0], 'static/data/debugging/' + v[1] + '.json')
     print()
     return analysis, data
+
+
+def get_clusters(analysis_data, data_type):
+    index_col = IDS[data_type]
+    data_df, design_df = get_dataframes(analysis_data, index_col, SAMPLE_COL)
+
+    # standardise data differently for genomics vs proteomics/metabolomics
+    if data_type == GENOMICS:
+        inference = WebOmicsInference(data_df, design_df, data_type)
+        df = inference.standardize_df(inference.data_df)
+    elif data_type == PROTEOMICS or data_type == METABOLOMICS:
+        inference = WebOmicsInference(data_df, design_df, data_type, min_value=5000)
+        df = inference.standardize_df(inference.data_df, log=True)
+    json_data = to_clustergrammer(df, design_df)
+    return json_data
+
+
+def to_clustergrammer(data_df, design_df):
+    json_data = None
+    if not data_df.empty:
+        net = Network()
+        data_df = data_df[~data_df.index.duplicated(keep='first')] # remove rows with duplicate indices
+        net.load_df(data_df)
+        cats = {}
+        for k, v in design_df.groupby('group').groups.items():
+            cats[k] = v.values.tolist()
+        net.add_cats('col', [
+            {
+                'title': 'Column Category',
+                'cats': cats
+            }
+        ])
+        # net.filter_sum('row', threshold=20)
+        # net.normalize(axis='col', norm_type='zscore')
+        # net.filter_N_top('row', 1000, rank_type='var')
+        # net.filter_threshold('row', threshold=3.0, num_occur=4)
+        # net.swap_nan_for_zero()
+        # net.downsample(ds_type='kmeans', axis='col', num_samples=10)
+        # net.random_sample(random_state=100, num_samples=10, axis='col')
+        net.cluster(dist_type='cos',views=['N_row_sum', 'N_row_var'] , dendro=True,
+            calc_cat_pval=False, enrichrgram=False)
+        json_data = net.export_net_json()
+    return json_data
 
 
 # TODO: no longer used, can remove?
