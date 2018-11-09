@@ -151,6 +151,7 @@ class Development(Common):
 
     MIDDLEWARE = Common.MIDDLEWARE + [
         # 'debug_toolbar.middleware.DebugToolbarMiddleware'
+        'django.middleware.gzip.GZipMiddleware',
     ]
 
 
