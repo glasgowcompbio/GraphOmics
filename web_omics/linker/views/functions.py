@@ -15,7 +15,7 @@ from clustergrammer import Network
 from linker.constants import GENOMICS, PROTEOMICS, METABOLOMICS, REACTIONS, PATHWAYS, GENES_TO_PROTEINS, \
     PROTEINS_TO_REACTIONS, COMPOUNDS_TO_REACTIONS, REACTIONS_TO_PATHWAYS, SAMPLE_COL, GROUP_COL, \
     COMPOUND_DATABASE_CHEBI, COMPOUND_DATABASE_KEGG, DEFAULT_GROUP_NAME, IDENTIFIER_COL, PIMP_PEAK_ID_COL, \
-    PADJ_COL_PREFIX, T_TEST_THRESHOLD, FC_COL_PREFIX, T_TEST, IDS
+    PADJ_COL_PREFIX, T_TEST_THRESHOLD, FC_COL_PREFIX, T_TEST, IDS, DataRelationType
 from linker.metadata import get_gene_names, get_compound_metadata, clean_label, get_species_name_to_id
 from linker.models import Analysis, AnalysisData
 from linker.reactome import ensembl_to_uniprot, uniprot_to_reaction, compound_to_reaction, \
@@ -287,7 +287,7 @@ def save_analysis(analysis_name, analysis_desc,
         # if settings.DEBUG:
         #     save_json_string(v[0], 'static/data/debugging/' + v[1] + '.json')
     print()
-    return analysis, data
+    return analysis
 
 
 def get_clusters(analysis_data, data_type):
@@ -331,6 +331,58 @@ def to_clustergrammer(data_df, design_df):
             calc_cat_pval=False, enrichrgram=False)
         json_data = net.export_net_json()
     return json_data
+
+
+def get_last_data(analysis, data_type):
+    analysis_data = AnalysisData.objects.filter(analysis=analysis, data_type=data_type).order_by('-timestamp')[0]
+    return analysis_data
+
+
+def get_context(analysis):
+    # retrieve the json data linked to this analysis
+    mapping = {
+        GENOMICS: 'genes',
+        PROTEOMICS: 'proteins',
+        METABOLOMICS: 'compounds',
+        REACTIONS: 'reactions',
+        PATHWAYS: 'pathways',
+        GENES_TO_PROTEINS: 'gene_proteins',
+        PROTEINS_TO_REACTIONS: 'protein_reactions',
+        COMPOUNDS_TO_REACTIONS: 'compound_reactions',
+        REACTIONS_TO_PATHWAYS: 'reaction_pathways'
+    }
+    table_names = {
+        GENOMICS: 'genes_table',
+        PROTEOMICS: 'proteins_table',
+        METABOLOMICS: 'compounds_table'
+    }
+    data = {}
+    data_fields = {}
+    cluster_json = {}
+    for k, v in DataRelationType:
+        try:
+            analysis_data = get_last_data(analysis, k)
+            label = mapping[k]
+            data[label] = analysis_data.json_data
+            if analysis_data.json_design:
+                data_fields[table_names[k]] = list(set(pd.DataFrame(analysis_data.json_design)[SAMPLE_COL]))
+            if analysis_data.metadata and 'clustergrammer' in analysis_data.metadata:
+                cluster_json[mapping[k]] = analysis_data.metadata['clustergrammer']
+        except IndexError:
+            continue
+        except KeyError:
+            continue
+
+    context = {
+        'data': json.dumps(data),
+        'data_fields': json.dumps(data_fields),
+        'cluster_json': json.dumps(cluster_json),
+        'analysis_id': analysis.pk,
+        'analysis_name': analysis.name,
+        'analysis_description': analysis.description,
+        'analysis_species': analysis.get_species_str()
+    }
+    return context
 
 
 # TODO: no longer used, can remove?

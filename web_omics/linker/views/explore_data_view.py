@@ -15,9 +15,10 @@ from linker.metadata import get_single_ensembl_metadata_online, get_single_unipr
     get_single_compound_metadata_online, get_entrez_summary
 from linker.models import Analysis, AnalysisData, AnalysisAnnotation
 from linker.reactome import get_reactome_description, get_reaction_entities, pathway_to_reactions
-from linker.views.functions import change_column_order, recur_dictify
+from linker.views.functions import change_column_order, recur_dictify, get_context, get_last_data
 from linker.constants import *
 from .harmonizomeapi import Harmonizome, Entity
+
 
 def truncate(my_str):
     my_str = (my_str[:TRUNCATE_LIMIT] + '...') if len(my_str) > TRUNCATE_LIMIT else my_str
@@ -26,50 +27,7 @@ def truncate(my_str):
 
 def explore_data(request, analysis_id):
     analysis = get_object_or_404(Analysis, pk=analysis_id)
-
-    # retrieve the json data linked to this analysis
-    mapping = {
-        GENOMICS: 'genes',
-        PROTEOMICS: 'proteins',
-        METABOLOMICS: 'compounds',
-        REACTIONS: 'reactions',
-        PATHWAYS: 'pathways',
-        GENES_TO_PROTEINS: 'gene_proteins',
-        PROTEINS_TO_REACTIONS: 'protein_reactions',
-        COMPOUNDS_TO_REACTIONS: 'compound_reactions',
-        REACTIONS_TO_PATHWAYS: 'reaction_pathways'
-    }
-    table_names = {
-        GENOMICS: 'genes_table',
-        PROTEOMICS: 'proteins_table',
-        METABOLOMICS: 'compounds_table'
-    }
-    data = {}
-    data_fields = {}
-    cluster_json = {}
-    for k, v in DataRelationType:
-        try:
-            analysis_data = get_last_data(analysis, k)
-            label = mapping[k]
-            data[label] = analysis_data.json_data
-            if analysis_data.json_design:
-                data_fields[table_names[k]] = list(set(pd.DataFrame(analysis_data.json_design)[SAMPLE_COL]))
-            if analysis_data.metadata and 'clustergrammer' in analysis_data.metadata:
-                cluster_json[mapping[k]] = analysis_data.metadata['clustergrammer']
-        except IndexError:
-            continue
-        except KeyError:
-            continue
-
-    context = {
-        'data': json.dumps(data),
-        'data_fields': json.dumps(data_fields),
-        'cluster_json': json.dumps(cluster_json),
-        'analysis_id': analysis.pk,
-        'analysis_name': analysis.name,
-        'analysis_description': analysis.description,
-        'analysis_species': analysis.get_species_str(),
-    }
+    context = get_context(analysis)
     return render(request, 'linker/explore_data.html', context)
 
 
@@ -519,11 +477,6 @@ def get_short_info(request, data_type, display_name):
             'description': description
         }
         return JsonResponse(data)
-
-
-def get_last_data(analysis, data_type):
-    analysis_data = AnalysisData.objects.filter(analysis=analysis, data_type=data_type).order_by('-timestamp')[0]
-    return analysis_data
 
 
 def get_annotation(analysis_id, database_id, data_type):

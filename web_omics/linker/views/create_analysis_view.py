@@ -9,7 +9,7 @@ from linker.forms import CreateAnalysisForm, UploadAnalysisForm, AddPathwayForm,
 from linker.models import AnalysisData, Analysis
 from linker.reactome import get_species_dict, pathway_to_reactions, reaction_to_uniprot, reaction_to_compound, \
     uniprot_to_ensembl
-from linker.views.functions import reactome_mapping, save_analysis, change_column_order
+from linker.views.functions import reactome_mapping, save_analysis, change_column_order, get_context
 from linker.constants import *
 
 
@@ -30,10 +30,10 @@ class CreateAnalysisView(FormView):
         species_list = [species_dict[x] for x in form.cleaned_data['species']]
         current_user = self.request.user
 
-        analysis, data, data_fields = get_data(self.request, analysis_desc, analysis_name, compounds_str,
+        analysis = get_data(self.request, analysis_desc, analysis_name, compounds_str,
                                                compound_database_str, current_user, genes_str, proteins_str,
                                                species_list, metabolic_pathway_only)
-        context = get_context(analysis, data, data_fields)
+        context = get_context(analysis)
         return render(self.request, self.success_url, context)
 
 
@@ -54,10 +54,10 @@ class UploadAnalysisView(FormView):
         species_list = [species_dict[x] for x in form.cleaned_data['species']]
         current_user = self.request.user
 
-        analysis, data, data_fields = get_data(self.request, analysis_desc, analysis_name, compounds_str,
+        analysis = get_data(self.request, analysis_desc, analysis_name, compounds_str,
                                                compound_database_str, current_user, genes_str, proteins_str,
                                                species_list, metabolic_pathway_only)
-        context = get_context(analysis, data, data_fields)
+        context = get_context(analysis)
         return render(self.request, self.success_url, context)
 
 
@@ -105,9 +105,9 @@ class AddPathwayView(FormView):
         proteins_str = '\n'.join(['identifier'] + all_proteins)
         compounds_str = '\n'.join(['identifier'] + all_compounds)
 
-        analysis, data, data_fields = get_data(self.request, analysis_desc, analysis_name, compounds_str, compound_database_str,
+        analysis = get_data(self.request, analysis_desc, analysis_name, compounds_str, compound_database_str,
                                                current_user, genes_str, proteins_str, species_list, metabolic_pathway_only)
-        context = get_context(analysis, data, data_fields)
+        context = get_context(analysis)
         return render(self.request, self.success_url, context)
 
 
@@ -119,37 +119,10 @@ def get_data(request, analysis_desc, analysis_name, compounds_str, compound_data
         pass
     results = reactome_mapping(request, genes_str, proteins_str, compounds_str,
                                compound_database_str, species_list, metabolic_pathway_only)
-    analysis, data = save_analysis(analysis_name, analysis_desc,
+    analysis = save_analysis(analysis_name, analysis_desc,
                                    genes_str, proteins_str, compounds_str, compound_database_str,
                                    results, species_list, current_user)
-    table_names = {
-        GENOMICS: 'genes_table',
-        PROTEOMICS: 'proteins_table',
-        METABOLOMICS: 'compounds_table'
-    }
-    data_fields = {}
-    for k, v in DataRelationType:
-        try:
-            analysis_data = AnalysisData.objects.filter(analysis=analysis, data_type=k).order_by('-timestamp')[0]
-            if analysis_data.json_design:
-                data_fields[table_names[k]] = list(set(pd.DataFrame(analysis_data.json_design)[SAMPLE_COL]))
-        except IndexError:
-            continue
-        except KeyError:
-            continue
-    return analysis, data, data_fields
-
-
-def get_context(analysis, data, data_fields):
-    context = {
-        'data': data,
-        'data_fields': json.dumps(data_fields),
-        'analysis_id': analysis.pk,
-        'analysis_name': analysis.name,
-        'analysis_description': analysis.description,
-        'analysis_species': analysis.get_species_str()
-    }
-    return context
+    return analysis
 
 
 def get_uploaded_data(form_dict, data_key, design_key):
