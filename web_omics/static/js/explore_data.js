@@ -6,22 +6,33 @@ require('../css/summary.css');
 import { setupCsrfForAjax, showAnnotateDialog, handleAnnotateSubmit } from './annotate';
 import renderHeatmap from './clustergrammer_setup';
 
-const baseUrl = 'http://localhost:8000/linker/get_short_info/';
-const seenData = {};
+async function loadData(viewUrl) {
+    try {
+        const result = await $.getJSON(viewUrl);
+        return result;
+    } catch (e) {
+        console.log(e);
+    }
+}
 
 $(document).ready(function () {
 
-    // set up firdi tables
-    let pqr = Linker.init(data);
+    // load tables data
+    loadData(viewNames['get_firdi_data']).then(function(data) {
+        new Linker(data.tableData, data.tableFields, viewNames);
+    })
+
+    // load heatmap data
+    window.baseUrl = viewNames['get_short_info']; // TODO: shouldn't put this in global scope
+    loadData(viewNames['get_heatmap_data']).then(function(data) {
+        renderHeatmap('#summary-vis-gene', 'genes', data);
+        renderHeatmap('#summary-vis-protein', 'proteins', data);
+        renderHeatmap('#summary-vis-compound', 'compounds', data);
+    })
 
     // TODO: shouldn't put this in global scope
     window.annotate = showAnnotateDialog
     setupCsrfForAjax() // required for annotate submit to work
     $('#annotationSubmit').on('click', handleAnnotateSubmit);
-
-    // show heatmap
-    renderHeatmap('#summary-vis-gene', 'genes', clusterJson);
-    renderHeatmap('#summary-vis-protein', 'proteins', clusterJson);
-    renderHeatmap('#summary-vis-compound', 'compounds', clusterJson);
 
 });

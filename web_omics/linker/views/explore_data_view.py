@@ -1,22 +1,19 @@
-import json
-import urllib.request
-
 import collections
-from django.http import HttpResponse
+
+import pandas as pd
+from django.core.exceptions import ObjectDoesNotExist
 from django.http import JsonResponse
 from django.shortcuts import render, get_object_or_404
 from django.urls import reverse
 from django.utils import timezone
-from django.core.exceptions import ObjectDoesNotExist
 
-import pandas as pd
-
-from linker.metadata import get_single_ensembl_metadata_online, get_single_uniprot_metadata_online, \
-    get_single_compound_metadata_online, get_entrez_summary
-from linker.models import Analysis, AnalysisData, AnalysisAnnotation
-from linker.reactome import get_reactome_description, get_reaction_entities, pathway_to_reactions
-from linker.views.functions import change_column_order, recur_dictify, get_context, get_last_data
 from linker.constants import *
+from linker.metadata import get_single_ensembl_metadata_online, get_single_uniprot_metadata_online, \
+    get_single_compound_metadata_online
+from linker.models import Analysis, AnalysisAnnotation
+from linker.reactome import get_reactome_description, get_reaction_entities, pathway_to_reactions
+from linker.views.functions import change_column_order, recur_dictify, get_context, \
+    get_last_data
 from .harmonizomeapi import Harmonizome, Entity
 
 
@@ -29,6 +26,47 @@ def explore_data(request, analysis_id):
     analysis = get_object_or_404(Analysis, pk=analysis_id)
     context = get_context(analysis)
     return render(request, 'linker/explore_data.html', context)
+
+
+def get_firdi_data(request, analysis_id):
+    if request.is_ajax():
+        analysis = get_object_or_404(Analysis, pk=analysis_id)
+        table_data = {}
+        data_fields = {}
+        for k, v in DataRelationType:
+            try:
+                analysis_data = get_last_data(analysis, k)
+                label = MAPPING[k]
+                table_data[label] = analysis_data.json_data
+                if analysis_data.json_design:
+                    data_fields[TABLE_IDS[k]] = list(set(pd.DataFrame(analysis_data.json_design)[SAMPLE_COL]))
+            except IndexError:
+                continue
+            except KeyError:
+                continue
+
+        data = {
+            'tableData': table_data,
+            'tableFields': data_fields,
+        }
+        return JsonResponse(data)
+
+
+def get_heatmap_data(request, analysis_id):
+    if request.is_ajax():
+        analysis = get_object_or_404(Analysis, pk=analysis_id)
+        cluster_data = {}
+        for k, v in DataRelationType:
+            try:
+                analysis_data = get_last_data(analysis, k)
+                if analysis_data.metadata and 'clustergrammer' in analysis_data.metadata:
+                    cluster_data[MAPPING[k]] = analysis_data.metadata['clustergrammer']
+            except IndexError:
+                continue
+            except KeyError:
+                continue
+
+        return JsonResponse(cluster_data)
 
 
 def inference(request, analysis_id):
@@ -200,13 +238,6 @@ def get_uniprot_protein_info(request, analysis_id):
         if measurements is not None:
             data['plot_data'] = measurements
         return JsonResponse(data)
-
-
-def get_swissmodel_protein_pdb(request, analysis_id):
-    pdb_url = request.GET['pdb_url']
-    with urllib.request.urlopen(pdb_url) as response:
-        content = response.read()
-        return HttpResponse(content, content_type="text/plain")
 
 
 def get_kegg_metabolite_info(request, analysis_id):
@@ -441,9 +472,10 @@ def get_reactome_pathway_info(request, analysis_id):
         return JsonResponse(data)
 
 
-def get_short_info(request, data_type, display_name):
+def get_short_info(request):
     if request.is_ajax():
-
+        data_type = request.GET['data_type']
+        display_name = request.GET['display_name']
         # to deal with duplicate indices
         if '-' in display_name:
             display_name = display_name.split('-')[0]

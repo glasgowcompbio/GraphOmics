@@ -9,13 +9,11 @@ from io import StringIO
 import numpy as np
 import pandas as pd
 import requests
-from django.templatetags.static import static
 from clustergrammer import Network
+from django.templatetags.static import static
+from django.urls import reverse
 
-from linker.constants import GENOMICS, PROTEOMICS, METABOLOMICS, REACTIONS, PATHWAYS, GENES_TO_PROTEINS, \
-    PROTEINS_TO_REACTIONS, COMPOUNDS_TO_REACTIONS, REACTIONS_TO_PATHWAYS, SAMPLE_COL, GROUP_COL, \
-    COMPOUND_DATABASE_CHEBI, COMPOUND_DATABASE_KEGG, DEFAULT_GROUP_NAME, IDENTIFIER_COL, PIMP_PEAK_ID_COL, \
-    PADJ_COL_PREFIX, T_TEST_THRESHOLD, FC_COL_PREFIX, T_TEST, IDS, DataRelationType
+from linker.constants import *
 from linker.metadata import get_gene_names, get_compound_metadata, clean_label, get_species_name_to_id
 from linker.models import Analysis, AnalysisData
 from linker.reactome import ensembl_to_uniprot, uniprot_to_reaction, compound_to_reaction, \
@@ -24,13 +22,6 @@ from linker.reactome import get_reaction_df
 from linker.views.pipelines import WebOmicsInference
 
 Relation = collections.namedtuple('Relation', 'keys values mapping_list')
-NA = '-'  # this should be something that will appear first in the table when sorted alphabetically
-
-GENE_PK = 'gene_pk'
-PROTEIN_PK = 'protein_pk'
-COMPOUND_PK = 'compound_pk'
-REACTION_PK = 'reaction_pk'
-PATHWAY_PK = 'pathway_pk'
 
 
 def reactome_mapping(request, genes_str, proteins_str, compounds_str, compound_database_str, species_list,
@@ -102,7 +93,8 @@ def reactome_mapping(request, genes_str, proteins_str, compounds_str, compound_d
         use_kegg = True
     else:
         use_kegg = False
-    reaction_2_compounds_mapping, reaction_to_compound_id_to_names = reaction_to_compound(reaction_ids, species_list, use_kegg)
+    reaction_2_compounds_mapping, reaction_to_compound_id_to_names = reaction_to_compound(reaction_ids, species_list,
+                                                                                          use_kegg)
     reaction_2_compounds = make_relations(reaction_2_compounds_mapping, REACTION_PK, COMPOUND_PK, value_key=None)
     compound_2_reactions = merge_relation(compound_2_reactions, reverse_relation(reaction_2_compounds))
     all_compound_ids = compound_2_reactions.keys
@@ -153,11 +145,13 @@ def reactome_mapping(request, genes_str, proteins_str, compounds_str, compound_d
     rel_path = static('data/gene_names.p')
     pickled_url = request.build_absolute_uri(rel_path)
     metadata_map = get_gene_names(all_gene_ids, pickled_url)
-    genes_json = pk_to_json(GENE_PK, 'gene_id', all_gene_ids, metadata_map, observed_gene_df, observed_ids=observed_gene_ids)
+    genes_json = pk_to_json(GENE_PK, 'gene_id', all_gene_ids, metadata_map, observed_gene_df,
+                            observed_ids=observed_gene_ids)
     gene_2_proteins_json = json.dumps(gene_2_proteins.mapping_list)
 
     # metadata_map = get_uniprot_metadata_online(uniprot_ids)
-    proteins_json = pk_to_json('protein_pk', 'protein_id', all_protein_ids, metadata_map, observed_protein_df, observed_ids=observed_protein_ids)
+    proteins_json = pk_to_json('protein_pk', 'protein_id', all_protein_ids, metadata_map, observed_protein_df,
+                               observed_ids=observed_protein_ids)
     protein_2_reactions_json = json.dumps(protein_2_reactions.mapping_list)
 
     # TODO: this feels like a very bad way to implement this
@@ -200,8 +194,10 @@ def reactome_mapping(request, genes_str, proteins_str, compounds_str, compound_d
     #     pathway_count_df = get_reactome_overrepresentation_df(identifiers, species_list)
 
     pathway_ids = reaction_2_pathways.values
-    reactions_json = pk_to_json('reaction_pk', 'reaction_id', reaction_ids, metadata_map, reaction_count_df, has_species=True)
-    pathways_json = pk_to_json('pathway_pk', 'pathway_id', pathway_ids, metadata_map, pathway_count_df, has_species=True)
+    reactions_json = pk_to_json('reaction_pk', 'reaction_id', reaction_ids, metadata_map, reaction_count_df,
+                                has_species=True)
+    pathways_json = pk_to_json('pathway_pk', 'pathway_id', pathway_ids, metadata_map, pathway_count_df,
+                               has_species=True)
     reaction_2_pathways_json = json.dumps(reaction_2_pathways.mapping_list)
 
     results = {
@@ -309,7 +305,7 @@ def to_clustergrammer(data_df, design_df):
     json_data = None
     if not data_df.empty:
         net = Network()
-        data_df = data_df[~data_df.index.duplicated(keep='first')] # remove rows with duplicate indices
+        data_df = data_df[~data_df.index.duplicated(keep='first')]  # remove rows with duplicate indices
         net.load_df(data_df)
         cats = {}
         for k, v in design_df.groupby('group').groups.items():
@@ -327,8 +323,8 @@ def to_clustergrammer(data_df, design_df):
         # net.swap_nan_for_zero()
         # net.downsample(ds_type='kmeans', axis='col', num_samples=10)
         # net.random_sample(random_state=100, num_samples=10, axis='col')
-        net.cluster(dist_type='cos',views=['N_row_sum', 'N_row_var'] , dendro=True,
-            calc_cat_pval=False, enrichrgram=False)
+        net.cluster(dist_type='cos', views=['N_row_sum', 'N_row_var'], dendro=True,
+                    calc_cat_pval=False, enrichrgram=False)
         json_data = net.export_net_json()
     return json_data
 
@@ -339,50 +335,31 @@ def get_last_data(analysis, data_type):
 
 
 def get_context(analysis):
-    # retrieve the json data linked to this analysis
-    mapping = {
-        GENOMICS: 'genes',
-        PROTEOMICS: 'proteins',
-        METABOLOMICS: 'compounds',
-        REACTIONS: 'reactions',
-        PATHWAYS: 'pathways',
-        GENES_TO_PROTEINS: 'gene_proteins',
-        PROTEINS_TO_REACTIONS: 'protein_reactions',
-        COMPOUNDS_TO_REACTIONS: 'compound_reactions',
-        REACTIONS_TO_PATHWAYS: 'reaction_pathways'
+    view_names = {
+        TABLE_IDS[GENOMICS]: get_reverse_url('get_ensembl_gene_info', analysis),
+        TABLE_IDS[PROTEOMICS]: get_reverse_url('get_uniprot_protein_info', analysis),
+        TABLE_IDS[METABOLOMICS]: get_reverse_url('get_kegg_metabolite_info', analysis),
+        TABLE_IDS[REACTIONS]: get_reverse_url('get_reactome_reaction_info', analysis),
+        TABLE_IDS[PATHWAYS]: get_reverse_url('get_reactome_pathway_info', analysis),
+        'get_firdi_data': get_reverse_url('get_firdi_data', analysis),
+        'get_heatmap_data': get_reverse_url('get_heatmap_data', analysis),
+        'get_short_info': get_reverse_url('get_short_info', None)
     }
-    table_names = {
-        GENOMICS: 'genes_table',
-        PROTEOMICS: 'proteins_table',
-        METABOLOMICS: 'compounds_table'
-    }
-    data = {}
-    data_fields = {}
-    cluster_json = {}
-    for k, v in DataRelationType:
-        try:
-            analysis_data = get_last_data(analysis, k)
-            label = mapping[k]
-            data[label] = analysis_data.json_data
-            if analysis_data.json_design:
-                data_fields[table_names[k]] = list(set(pd.DataFrame(analysis_data.json_design)[SAMPLE_COL]))
-            if analysis_data.metadata and 'clustergrammer' in analysis_data.metadata:
-                cluster_json[mapping[k]] = analysis_data.metadata['clustergrammer']
-        except IndexError:
-            continue
-        except KeyError:
-            continue
-
     context = {
-        'data': json.dumps(data),
-        'data_fields': json.dumps(data_fields),
-        'cluster_json': json.dumps(cluster_json),
         'analysis_id': analysis.pk,
         'analysis_name': analysis.name,
         'analysis_description': analysis.description,
-        'analysis_species': analysis.get_species_str()
+        'analysis_species': analysis.get_species_str(),
+        'view_names': json.dumps(view_names)
     }
     return context
+
+
+def get_reverse_url(viewname, analysis):
+    if analysis is not None:
+        return reverse(viewname, kwargs={'analysis_id': analysis.id})
+    else:
+        return reverse(viewname)
 
 
 # TODO: no longer used, can remove?
@@ -434,7 +411,8 @@ def get_count_df(gene_2_proteins_mapping, protein_2_reactions_mapping, compound_
 def get_reactome_overrepresentation_df(identifiers, species_list):
     try:
         headers = {'content-type': 'text/plain', 'accept': 'application/json'}
-        r = requests.post('https://reactome.org/AnalysisService/identifiers/', data=','.join(identifiers), headers=headers)
+        r = requests.post('https://reactome.org/AnalysisService/identifiers/', data=','.join(identifiers),
+                          headers=headers)
         if r.status_code == 200:
             results = r.json()
             token = results['summary']['token']
@@ -479,7 +457,7 @@ def csv_to_dataframe(csv_str):
     # extract group, if any
     filtered_str = ''
     group_str = None
-    for line in csv_str.splitlines(): # go through all lines and remove the line containing the grouping info
+    for line in csv_str.splitlines():  # go through all lines and remove the line containing the grouping info
         if re.match(GROUP_COL, line, re.I):
             group_str = line
         else:
@@ -489,17 +467,19 @@ def csv_to_dataframe(csv_str):
     data = StringIO(filtered_str)
     try:
         data_df = pd.read_csv(data)
-        data_df.columns = data_df.columns.str.replace('.', '_') # replace period with underscore to prevent alasql breaking
-        data_df.columns = data_df.columns.str.replace('-', '_') # replace dash with underscore to prevent alasql breaking
-        data_df.columns = data_df.columns.str.replace('#', '') # remove funny characters
+        data_df.columns = data_df.columns.str.replace('.',
+                                                      '_')  # replace period with underscore to prevent alasql breaking
+        data_df.columns = data_df.columns.str.replace('-',
+                                                      '_')  # replace dash with underscore to prevent alasql breaking
+        data_df.columns = data_df.columns.str.replace('#', '')  # remove funny characters
         rename = {data_df.columns.values[0]: IDENTIFIER_COL}
-        for i in range(len(data_df.columns.values[1:])): # sql doesn't like column names starting with a number
+        for i in range(len(data_df.columns.values[1:])):  # sql doesn't like column names starting with a number
             col_name = data_df.columns.values[i]
             if col_name[0].isdigit():
-                new_col_name = '_' + col_name # append an underscore in front of the column name
+                new_col_name = '_' + col_name  # append an underscore in front of the column name
                 rename[col_name] = new_col_name
         data_df = data_df.rename(columns=rename)
-        data_df.iloc[:, 0] = data_df.iloc[:, 0].astype(str) # assume id is in the first column and is a string
+        data_df.iloc[:, 0] = data_df.iloc[:, 0].astype(str)  # assume id is in the first column and is a string
         id_list = data_df.iloc[:, 0].values.tolist()
     except pd.errors.EmptyDataError:
         data_df = None
@@ -519,7 +499,8 @@ def csv_to_dataframe(csv_str):
                 group_data = group_str.split(',')[1:]
             else:
                 num_samples = len(sample_data[1:])
-                group_data = [DEFAULT_GROUP_NAME for x in range(num_samples)] # assigns a default group if nothing specified
+                group_data = [DEFAULT_GROUP_NAME for x in
+                              range(num_samples)]  # assigns a default group if nothing specified
             # group_df = pd.DataFrame(list(zip(sample_data[1:], group_data)), columns=[SAMPLE_COL, GROUP_COL])
             group_df = pd.DataFrame(list(zip(sample_data, group_data)), columns=[SAMPLE_COL, GROUP_COL])
 
@@ -533,7 +514,7 @@ def csv_to_dataframe(csv_str):
     if data_df is not None:
         padj_col_count = len(list(filter(lambda x: x.startswith(PADJ_COL_PREFIX), data_df.columns)))
         if padj_col_count > 0:
-            for index, row in data_df.iterrows(): # TODO: very slow!!
+            for index, row in data_df.iterrows():  # TODO: very slow!!
                 filter_col = [col for col in row.index if col.startswith(PADJ_COL_PREFIX)]
                 padj_values = row[filter_col].values
                 significant_all = False
@@ -555,7 +536,7 @@ def get_ids_from_dataframe(df):
     if df is None:
         return []
     else:
-        return df.iloc[:, 0].values.tolist() # id is always the first column
+        return df.iloc[:, 0].values.tolist()  # id is always the first column
 
 
 def merge_relation(r1, r2):
@@ -615,11 +596,11 @@ def without_keys(d, keys):
 def pk_to_json(pk_label, display_label, data, metadata_map, observed_df, has_species=False,
                observed_ids=None, mapping=None):
     if observed_df is not None:
-        if PIMP_PEAK_ID_COL in observed_df.columns: # if peak id is present, rename the identifier column to include it
+        if PIMP_PEAK_ID_COL in observed_df.columns:  # if peak id is present, rename the identifier column to include it
             observed_df[IDENTIFIER_COL] = observed_df[IDENTIFIER_COL] + '_' + observed_df[PIMP_PEAK_ID_COL].astype(str)
         if mapping is not None:
             data = expand_data(data, mapping)
-        observed_df = observed_df.set_index(IDENTIFIER_COL) # set identifier as index
+        observed_df = observed_df.set_index(IDENTIFIER_COL)  # set identifier as index
         observed_df = observed_df[~observed_df.index.duplicated(keep='first')]  # remove row with duplicate indices
         observed_df = observed_df.fillna(value=0)  # replace all NaNs with 0s
 
@@ -678,7 +659,7 @@ def pk_to_json(pk_label, display_label, data, metadata_map, observed_df, has_spe
                 observed_values = {}
                 for col in observed_df.columns:
                     observed_values.update({col: None})
-            observed_values.pop(PIMP_PEAK_ID_COL, None) # remove pimp peakid column
+            observed_values.pop(PIMP_PEAK_ID_COL, None)  # remove pimp peakid column
             # convert numpy bool to python bool, else json serialisation will break
             for k, v in observed_values.items():
                 if type(v) == np.bool_:
@@ -791,7 +772,7 @@ def recur_dictify(frame):
         if frame.values.size == 1: return frame.values[0][0]
         return frame.values.squeeze()
     grouped = frame.groupby(frame.columns[0])
-    d = {k: recur_dictify(g.ix[:,1:]) for k,g in grouped}
+    d = {k: recur_dictify(g.ix[:, 1:]) for k, g in grouped}
     return d
 
 

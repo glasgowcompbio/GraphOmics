@@ -3,6 +3,12 @@ TRUNCATE_LIMIT = 400
 NA = '-'
 ALL = 'ALL'
 
+GENE_PK = 'gene_pk'
+PROTEIN_PK = 'protein_pk'
+COMPOUND_PK = 'compound_pk'
+REACTION_PK = 'reaction_pk'
+PATHWAY_PK = 'pathway_pk'
+
 GENOMICS, TRANSCRIPTOMICS, PROTEOMICS, METABOLOMICS, REACTIONS, PATHWAYS = range(0, 6)
 AddNewDataChoices = (
     (None, NA),
@@ -18,6 +24,13 @@ DataType = (
     (REACTIONS, 'Reactions'),
     (PATHWAYS, 'Pathways')
 )
+TABLE_IDS = {
+    GENOMICS: 'genes_table',
+    PROTEOMICS: 'proteins_table',
+    METABOLOMICS: 'compounds_table',
+    REACTIONS: 'reactions_table',
+    PATHWAYS: 'pathways_table'
+}
 
 GENES_TO_PROTEINS = 6
 PROTEINS_TO_REACTIONS = 7
@@ -29,6 +42,17 @@ DataRelationType = DataType + (
     (COMPOUNDS_TO_REACTIONS, 'Compounds to Reactions'),
     (REACTIONS_TO_PATHWAYS, 'Reaction to Pathways')
 )
+MAPPING = {
+    GENOMICS: 'genes',
+    PROTEOMICS: 'proteins',
+    METABOLOMICS: 'compounds',
+    REACTIONS: 'reactions',
+    PATHWAYS: 'pathways',
+    GENES_TO_PROTEINS: 'gene_proteins',
+    PROTEINS_TO_REACTIONS: 'protein_reactions',
+    COMPOUNDS_TO_REACTIONS: 'compound_reactions',
+    REACTIONS_TO_PATHWAYS: 'reaction_pathways'
+}
 
 T_TEST, CORRELATION, PCA, PLSDA, HIERARCHICAL, KMEANS = range(0, 6)
 InferenceTypeChoices = (

@@ -78,15 +78,10 @@
 
 {% block js_block %}
     <script>
-        const data = JSON.parse('{{ data|escapejs }}');
-        const data_fields = JSON.parse('{{ data_fields|escapejs }}');
-        const clusterJson = JSON.parse('{{ cluster_json|escapejs }}');
-        const get_ensembl_gene_info = "{% url "get_ensembl_gene_info" analysis_id=analysis_id %}";
-        const get_uniprot_protein_info = "{% url "get_uniprot_protein_info" analysis_id=analysis_id %}";
-        const get_swissmodel_protein_pdb = "{% url "get_swissmodel_protein_pdb" analysis_id=analysis_id %}";
-        const get_kegg_metabolite_info = "{% url "get_kegg_metabolite_info" analysis_id=analysis_id %}";
-        const get_reactome_reaction_info = "{% url "get_reactome_reaction_info" analysis_id=analysis_id %}";
-        const get_reactome_pathway_info = "{% url "get_reactome_pathway_info" analysis_id=analysis_id %}";
+        // const data = JSON.parse('{{ data|escapejs }}');
+        // const data_fields = JSON.parse('{{ data_fields|escapejs }}');
+        // const clusterJson = JSON.parse('{{ cluster_json|escapejs }}');
+        const viewNames = JSON.parse('{{ view_names|escapejs }}')
     </script>
     {% render_bundle 'explore_data' 'js' %}
 {% endblock %}

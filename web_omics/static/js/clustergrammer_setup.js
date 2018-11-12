@@ -1,15 +1,17 @@
 const Clustergrammer = require('clustergrammer');
 import check_setup_enrichr from './enrichrgram';
 
+const seenData = {};
+
 function renderHeatmap(elementId, dataType, clusterJson) {
     if (clusterJson.hasOwnProperty(dataType) && clusterJson[dataType]) {
         $(elementId).text('');
         $(elementId).addClass('heatmap_container');
         const jsonData = JSON.parse(clusterJson[dataType]);
         const rowTipCallback = {
-            'gene': getGeneInfo,
-            'protein': getProteinInfo,
-            'compound': getCompoundInfo
+            'genes': getGeneInfo,
+            'proteins': getProteinInfo,
+            'compounds': getCompoundInfo
         }
         const args = {
             root: elementId,
@@ -76,7 +78,11 @@ function getMouseOver(rootTip, displayName, dataType) {
 }
 
 function getRequest(rootTip, displayName, dataType) {
-    var url = baseUrl + dataType + '/' + displayName;
+    const params = $.param({
+        'data_type': dataType,
+        'display_name': displayName
+    });
+    const url = baseUrl + '?' + params;
     $.get(url, function (data) {
         // save data for repeated use
         seenData[displayName] = {}
