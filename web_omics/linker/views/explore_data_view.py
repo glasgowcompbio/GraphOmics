@@ -28,6 +28,11 @@ def explore_data(request, analysis_id):
     return render(request, 'linker/explore_data.html', context)
 
 
+def clustergrammer_demo(request):
+    context = {}
+    return render(request, 'linker/clustergrammer_demo.html', context)
+
+
 def get_firdi_data(request, analysis_id):
     if request.is_ajax():
         analysis = get_object_or_404(Analysis, pk=analysis_id)

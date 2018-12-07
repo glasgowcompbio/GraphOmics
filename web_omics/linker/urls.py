@@ -32,4 +32,6 @@ urlpatterns = [
     path('settings/<int:analysis_id>', views.settings, name='settings'),
     path('settings/add_data/<int:analysis_id>', views.add_data, name='add_data'),
 
+    path('clustergrammer_demo/', views.clustergrammer_demo, name='clustergrammer_demo'),
+
 ]

@@ -1,3 +1,4 @@
+require('bootstrap');
 const Clustergrammer = require('clustergrammer');
 import check_setup_enrichr from './enrichrgram';
 
