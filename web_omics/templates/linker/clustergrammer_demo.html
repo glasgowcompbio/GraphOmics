@@ -1,4 +1,5 @@
 {% load static %}
+{% load render_bundle from webpack_loader %}
 <!DOCTYPE html>
 <html lang="en">
 
@@ -11,38 +12,42 @@
     <meta name="author" content="">
 
     <title>Clustergrammer.js</title>
-    <link rel="stylesheet" href="{% static 'clustergrammer/lib/css/font-awesome.min.css' %}">
-    <link rel="stylesheet" href="{% static 'clustergrammer/lib/css/bootstrap.css' %}">
-    <link rel="stylesheet" href="{% static 'clustergrammer/custom.css' %}">
+    <link rel="stylesheet" href="{% static 'clustergrammer_demo/lib/css/font-awesome.min.css' %}">
+    <link rel="stylesheet" href="{% static 'clustergrammer_demo/lib/css/bootstrap.css' %}">
+    <link rel="stylesheet" href="{% static 'clustergrammer_demo/custom.css' %}">
+
+    {% render_bundle 'explore_data' 'css' %}
 
 </head>
 
 <body>
 
-  <div id='container-id-1'>
-      <h1 class='wait_message'>Please wait ...</h1>
-  </div>
+<div id='container-id-1'>
+    <h1 class='wait_message'>Please wait ...</h1>
+</div>
 
 
-  <!-- Required JS Libraries -->
-  <script src="{% static 'clustergrammer/lib/js/d3.js' %}"></script>
-  <script src="{% static 'clustergrammer/lib/js/jquery-1.11.2.min.js' %}"></script>
-  <script src="{% static 'clustergrammer/lib/js/underscore-min.js' %}"></script>
-  <script src="{% static 'clustergrammer/lib/js/bootstrap.min.js' %}"></script>
+<!-- Required JS Libraries -->
+<script src="{% static 'clustergrammer/lib/js/d3.js' %}"></script>
+<script src="{% static 'clustergrammer/lib/js/jquery-1.11.2.min.js' %}"></script>
+<script src="{% static 'clustergrammer/lib/js/underscore-min.js' %}"></script>
+<script src="{% static 'clustergrammer/lib/js/bootstrap.min.js' %}"></script>
 
-  <!-- Clustergrammer JS -->
-  <script src="{% static 'clustergrammer/clustergrammer.js' %}"></script>
+<!-- Clustergrammer JS -->
+<script src="{% static 'clustergrammer/clustergrammer.js' %}"></script>
 
-  <!-- optional modules -->
-  <script src="{% static 'clustergrammer/Enrichrgram.js' %}"></script>
-  <script src="{% static 'clustergrammer/hzome_functions.js' %}"></script>
-  <script src="{% static 'clustergrammer/send_to_Enrichr.js' %}"></script>
+<!-- optional modules -->
+<script src="{% static 'clustergrammer/Enrichrgram.js' %}"></script>
+<script src="{% static 'clustergrammer/hzome_functions.js' %}"></script>
+<script src="{% static 'clustergrammer/send_to_Enrichr.js' %}"></script>
 
-  <!-- make clustergram -->
-  <script>
-      let json_data = "{% static 'clustergrammer/json/mult_view.json' %}";
-  </script>
-  <script src="{% static 'clustergrammer/load_clustergram.js' %}"></script>
+<!-- make clustergram -->
+<script>
+    let json_data = "{% static 'clustergrammer/json/mult_view.json' %}";
+</script>
+<script src="{% static 'clustergrammer/load_clustergram.js' %}"></script>
+
+{% render_bundle 'explore_data' 'js' %}
 
 </body>
 
