@@ -1,5 +1,5 @@
-require('bootstrap');
-const Clustergrammer = require('clustergrammer');
+import 'bootstrap';
+import Clustergrammer from './clustergrammer/main';
 import check_setup_enrichr from './enrichrgram';
 
 const seenData = {};

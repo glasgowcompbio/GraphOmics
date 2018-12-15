@@ -95,7 +95,7 @@ const defaultDataTablesSettings = {
                 return colNames.indexOf(x);
             });
             const filtered_logfc = filtered.map(x => data[x]);
-            const colorScale = d3.scaleLinear()
+            const colorScale = d3.scale.linear()
                 .range(["red", "green"])
                 .domain([-2, 2]);
             const filteredColours = filtered_logfc.map(x => colorScale(x));
