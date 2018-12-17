@@ -28,26 +28,24 @@
 
 
 <!-- Required JS Libraries -->
-<script src="{% static 'clustergrammer/lib/js/d3.js' %}"></script>
-<script src="{% static 'clustergrammer/lib/js/jquery-1.11.2.min.js' %}"></script>
-<script src="{% static 'clustergrammer/lib/js/underscore-min.js' %}"></script>
-<script src="{% static 'clustergrammer/lib/js/bootstrap.min.js' %}"></script>
+<script src="{% static 'clustergrammer_demo/lib/js/d3.js' %}"></script>
+<script src="{% static 'clustergrammer_demo/lib/js/jquery-1.11.2.min.js' %}"></script>
+<script src="{% static 'clustergrammer_demo/lib/js/underscore-min.js' %}"></script>
+<script src="{% static 'clustergrammer_demo/lib/js/bootstrap.min.js' %}"></script>
 
 <!-- Clustergrammer JS -->
-<script src="{% static 'clustergrammer/clustergrammer.js' %}"></script>
+<script src="{% static 'clustergrammer_demo/clustergrammer.js' %}"></script>
 
 <!-- optional modules -->
-<script src="{% static 'clustergrammer/Enrichrgram.js' %}"></script>
-<script src="{% static 'clustergrammer/hzome_functions.js' %}"></script>
-<script src="{% static 'clustergrammer/send_to_Enrichr.js' %}"></script>
+<script src="{% static 'clustergrammer_demo/Enrichrgram.js' %}"></script>
+<script src="{% static 'clustergrammer_demo/hzome_functions.js' %}"></script>
+<script src="{% static 'clustergrammer_demo/send_to_Enrichr.js' %}"></script>
 
 <!-- make clustergram -->
 <script>
-    let json_data = "{% static 'clustergrammer/json/mult_view.json' %}";
+    let json_data = "{% static 'clustergrammer_demo/json/mult_view.json' %}";
 </script>
-<script src="{% static 'clustergrammer/load_clustergram.js' %}"></script>
-
-{% render_bundle 'explore_data' 'js' %}
+<script src="{% static 'clustergrammer_demo/load_clustergram.js' %}"></script>
 
 </body>
 
