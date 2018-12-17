@@ -75,7 +75,7 @@ module.exports = function sidebar(cgm) {
 
   set_up_search(sidebar, params);
 
-  set_up_opacity_slider(sidebar);
+  set_up_opacity_slider(cgm, sidebar);
 
   var possible_filter_names = underscore.keys(params.viz.possible_filters);
 

@@ -14,20 +14,22 @@ function renderHeatmap(elementId, dataType, clusterJson) {
             'proteins': getProteinInfo,
             'compounds': getCompoundInfo
         }
+        const about_string = 'Zoom, scroll, and click buttons to interact with the clustergram. <a href="http://amp.pharm.mssm.edu/clustergrammer/help"> <i class="fa fa-question-circle" aria-hidden="true"></i> </a>';
         const args = {
             root: elementId,
             network_data: jsonData,
-            // opacity_scale: 'linear',
+            about: about_string,
             row_tip_callback: rowTipCallback[dataType],
             col_tip_callback: testColCallback,
             tile_tip_callback: testTileCallback,
-            dendro_callback: dendroCallback
+            dendro_callback: dendroCallback,
+            sidebar_width: 200
         };
         const cgm = Clustergrammer(args);
-        // TODO: buggy modal dialog!!
-        // if (dataType === 'gene') {
-        //     check_setup_enrichr(cgm);
-        // }
+        // TODO: still broken!!
+        if (dataType === 'genes') {
+            check_setup_enrichr(cgm);
+        }
     } else {
         $(elementId).text('No data is available.');
     }

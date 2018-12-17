@@ -30,10 +30,13 @@ module.exports = function make_slider_filter(cgm, filter_type, div_filters){
     .style('margin-bottom', '3px')
     .text(filter_title.text + filter_title.state + filter_title.suffix);
 
+  var sidebar_width = cgm.config.sidebar_width;
+  var slider_width = (sidebar_width-20) + 'px';
   div_filters
     .append('div')
     .classed('slider_'+filter_type,true)
     .classed('slider',true)
+    .style('width', slider_width)
     .attr('current_state', filter_title.state);
 
   var views = params.network_data.views;
