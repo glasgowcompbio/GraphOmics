@@ -323,8 +323,10 @@ def to_clustergrammer(data_df, design_df):
         # net.swap_nan_for_zero()
         # net.downsample(ds_type='kmeans', axis='col', num_samples=10)
         # net.random_sample(random_state=100, num_samples=10, axis='col')
-        net.cluster(dist_type='cos', views=['N_row_sum', 'N_row_var'], dendro=True,
-                    calc_cat_pval=False, enrichrgram=False)
+        net.cluster(dist_type='cosine', run_clustering=True,
+                 dendro=True, views=['N_row_sum', 'N_row_var'],
+                 linkage_type='average', sim_mat=False, filter_sim=0.1,
+                 calc_cat_pval=False, run_enrichr=None, enrichrgram=True)
         json_data = net.export_net_json()
     return json_data
 
