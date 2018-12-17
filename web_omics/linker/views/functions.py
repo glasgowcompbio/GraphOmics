@@ -312,7 +312,7 @@ def to_clustergrammer(data_df, design_df):
             cats[k] = v.values.tolist()
         net.add_cats('col', [
             {
-                'title': 'Column Category',
+                'title': 'Group',
                 'cats': cats
             }
         ])
