@@ -27,9 +27,9 @@ function renderHeatmap(elementId, dataType, clusterJson) {
         };
         const cgm = Clustergrammer(args);
         // TODO: still broken!!
-        if (dataType === 'genes') {
-            check_setup_enrichr(cgm);
-        }
+        // if (dataType === 'genes') {
+        //     check_setup_enrichr(cgm);
+        // }
     } else {
         $(elementId).text('No data is available.');
     }

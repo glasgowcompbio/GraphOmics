@@ -326,7 +326,7 @@ def to_clustergrammer(data_df, design_df):
         net.cluster(dist_type='cosine', run_clustering=True,
                  dendro=True, views=['N_row_sum', 'N_row_var'],
                  linkage_type='average', sim_mat=False, filter_sim=0.1,
-                 calc_cat_pval=False, run_enrichr=None, enrichrgram=True)
+                 calc_cat_pval=False, run_enrichr=None, enrichrgram=False)
         json_data = net.export_net_json()
     return json_data
 
