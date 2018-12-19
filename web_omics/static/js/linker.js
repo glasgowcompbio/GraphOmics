@@ -237,7 +237,7 @@ class Linker {
         // $.fn.DataTable.ext.pager.numbers_length = 3;
 
         const infoPanesManager = new InfoPanesManager(viewNames);
-        FiRDI.init(tables, defaultDataTablesSettings, infoPanesManager);
+        const firdi = new FiRDI(tables, defaultDataTablesSettings, infoPanesManager);
 
         // Hide certain columns
         let columnsToHidePerTable = [
