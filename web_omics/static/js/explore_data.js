@@ -1,8 +1,8 @@
 import Linker from './linker.js';
-require('../css/linker.css');
-require('webpack-jquery-ui');
-require('webpack-jquery-ui/css');
-require('../css/summary.css');
+import '../css/linker.css';
+import 'webpack-jquery-ui';
+import 'webpack-jquery-ui/css';
+import '../css/summary.css';
 import { setupCsrfForAjax, showAnnotateDialog, handleAnnotateSubmit } from './annotate';
 import renderHeatmap from './clustergrammer_setup';
 

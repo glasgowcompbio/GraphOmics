@@ -1,17 +1,17 @@
-require('datatables.net');
-require('datatables.net-dt/css/jquery.dataTables.css');
-require('datatables.net-buttons');
-require('datatables.net-buttons-dt/css/buttons.dataTables.min.css');
-require('datatables.net-buttons/js/buttons.colVis.js'); // Column visibility
-require('datatables.net-responsive');
-require('datatables.net-responsive-dt/css/responsive.dataTables.min.css');
-require('datatables.net-scroller');
-require('datatables.net-scroller-dt/css/scroller.dataTables.min.css');
-require('datatables.net-select');
-require('datatables.net-select-dt/css/select.dataTables.min.css');
+import 'datatables.net';
+import 'datatables.net-dt/css/jquery.dataTables.css';
+import 'datatables.net-buttons';
+import 'datatables.net-buttons-dt/css/buttons.dataTables.min.css';
+import 'datatables.net-buttons/js/buttons.colVis.js'; // Column visibility
+import 'datatables.net-responsive';
+import 'datatables.net-responsive-dt/css/responsive.dataTables.min.css';
+import 'datatables.net-scroller';
+import 'datatables.net-scroller-dt/css/scroller.dataTables.min.css';
+import 'datatables.net-select';
+import 'datatables.net-select-dt/css/select.dataTables.min.css';
 
-require('block-ui');
-const alasql = require('alasql');
+import 'block-ui';
+import alasql from 'alasql';
 
 const FiRDI = (function () {
     const isTableVisible = tableInfo => tableInfo["options"]["visible"];
