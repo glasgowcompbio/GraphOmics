@@ -19,6 +19,14 @@ class InfoPanesManager {
         }
     }
 
+    clearAllInfoPanes() {
+        this.clearInfoPanel('gene-row-info', 'Gene Information');
+        this.clearInfoPanel('protein-row-info', 'Protein Information');
+        this.clearInfoPanel('compound-row-info', 'Compound Information');
+        this.clearInfoPanel('reaction-row-info', 'Reaction Information');
+        this.clearInfoPanel('pathway-row-info', 'Pathway Information');
+    }
+
     getEntityInfo(tableId, rowObject) {
         // Wrapper function to call the appropriate info function for the given table/entity
         if (tableId === 'genes_table') {

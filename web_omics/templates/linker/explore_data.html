@@ -33,8 +33,11 @@
         </div>
 
         <p>
-            <small><strong>{{ analysis_name }}</strong>: {{ analysis_description }} ({{ analysis_species }})
+            <small>
+                <strong>{{ analysis_name }}</strong>: {{ analysis_description }} ({{ analysis_species }})<br/>
+                <strong>Selected</strong>: <span id="selectedItems">-</span>
             </small>
+            <button type="button" id="selectResetBtn" class="btn btn-sm btn-link">(Reset)</button>
         </p>
 
         <div class="m-1 mb-3 mt-2">

@@ -441,6 +441,7 @@ class FiRDI {
 
     constructor(tablesInfo, defaultDataTablesSettings, infoPanelManager) {
         this.tablesInfo = tablesInfo;
+        this.originalTablesInfo = JSON.parse(JSON.stringify(tablesInfo)); // https://stackoverflow.com/questions/122102/what-is-the-most-efficient-way-to-deep-clone-an-object-in-javascript/5344074#5344074
         this.infoPanelManager = infoPanelManager;
 
         // Some minimum DataTables settings are required
@@ -499,14 +500,9 @@ class FiRDI {
         $('#all_tables').unblock();
     }
 
-    resetFiRDI(newTablesInfo) {
-        // copy tablesInfo into newTablesInfo
-        // replace the data with the newData
-
-        this.tablesInfo = this.tablesInfo.map(t => {
-            t['tableData'] = newTablesInfo[t['tableName']];
-            return t;
-        });
+    resetFiRDI() {
+        // restore originalTablesInfo
+        this.tablesInfo = JSON.parse(JSON.stringify(this.originalTablesInfo));
         this.sqlManager.clearAlasqlTables(this.tablesInfo);
         this.sqlManager.addNewData(this.tablesInfo);
         this.stackManager.emptyStack();

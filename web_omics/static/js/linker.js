@@ -291,6 +291,12 @@ class Linker {
             $.fn.dataTable.tables({api: true}).search(val).draw();
         });
 
+        // enable reset button
+        $('#selectResetBtn').on('click', function() {
+            firdi.resetFiRDI();
+            infoPanesManager.clearAllInfoPanes();
+        })
+
     }
 
 }
