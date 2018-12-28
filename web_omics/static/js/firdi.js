@@ -15,6 +15,9 @@ import alasql from 'alasql';
 
 const isTableVisible = tableInfo => tableInfo["options"]["visible"];
 
+// https://stackoverflow.com/questions/122102/what-is-the-most-efficient-way-to-deep-clone-an-object-in-javascript/5344074#5344074
+const deepCopy = obj => JSON.parse(JSON.stringify(obj));
+
 class DataTablesOptionsManager {
 
     constructor(tablesInfo) {
@@ -314,55 +317,16 @@ class SqlManager {
 
 }
 
-class StackManager {
-
-    constructor() {
-        this.stack = [];
-    }
-
-    addToStack(name) {
-        let nameIdx;
-        // Find if name is in the stack
-        this.stack.forEach(function (d, i) {
-            if (d === name) {
-                nameIdx = i;
-            }
-        })
-        // If the name is in the stack, remove it
-        if (nameIdx) {
-            this.stack.splice(nameIdx, 1);
-        }
-        // Add name to the stack
-        this.stack.push(name);
-    }
-
-    removeFromStack(name) {
-        let nameIdx;
-        this.stack.forEach(function (d, i) {
-            if (d == name) {
-                nameIdx = i;
-            }
-        })
-        this.stack.splice(nameIdx, 1);
-    }
-
-    emptyStack() {
-        this.stack = [];
-    }
-
-    peek() {
-        return this.stack[this.stack.length - 1];
-    }
-
-}
-
 class ConstraintsManager {
-    constructor(tablesInfo, sqlManager, stackManager) {
+    constructor(tablesInfo, sqlManager) {
         this.sqlManager = sqlManager;
-        this.stackManager = stackManager;
         this.tableKeys = sqlManager.getTableKeys(tablesInfo);
         this.defaultConstraints = this.getDefaultConstraints(tablesInfo);
         this.constraints = this.initConstraints();
+        this.selections = this.makeEmptyConstraint(tablesInfo);
+        this.numSelected = this.makeEmptyCount(tablesInfo);
+        this.totalSelected = 0;
+        this.firstTableClicked = null;
 
         this.constraintTablesConstraintKeyNames = sqlManager.getConstraintTablesConstraintKeyName(tablesInfo)
         this.tableIdToIdColumnMap = this.getTableKeysAsSingleObject(tablesInfo);
@@ -399,15 +363,30 @@ class ConstraintsManager {
             }, {});
     }
 
-    initConstraints() {
-        // hack for deep copy
-        return JSON.parse(JSON.stringify(this.defaultConstraints));
-    }
-
-    getFocusConstraints(focus, tablesInfo) {
+    makeEmptyCount(tablesInfo) {
         return this.sqlManager.getConstraintTablesConstraintKeyName(tablesInfo)
             .reduce((constraints, tableInfo) => {
-                constraints[tableInfo['tableName']] = (focus === tableInfo['tableName']) ? this.defaultConstraints[tableInfo['tableName']] : this.constraints[tableInfo['tableName']];
+                constraints[tableInfo['tableName']] = 0;
+                return constraints;
+            }, {});
+    }
+
+
+    initConstraints() {
+        return deepCopy(this.defaultConstraints);
+    }
+
+    getFocusConstraints(focusTable, tablesInfo) {
+        return this.sqlManager.getConstraintTablesConstraintKeyName(tablesInfo)
+            .reduce((constraints, tableInfo) => {
+                const tableName = tableInfo['tableName'];
+                let tableConstraints = undefined;
+                if (focusTable && focusTable === tableName) {
+                    tableConstraints = this.defaultConstraints[tableName];
+                } else {
+                    tableConstraints =  this.selectionToConstraint(tableName);
+                }
+                constraints[tableName] = tableConstraints;
                 return constraints;
             }, {});
     }
@@ -419,20 +398,53 @@ class ConstraintsManager {
             .reduce((o, v) => Object.assign(o, v), {});
     }
 
+    getId(tableName, rowObject) {
+        const idColumn = this.tableIdToIdColumnMap[tableName];
+        return rowObject[idColumn];
+    }
+
     addConstraint(tableName, rowObject) {
-        this.stackManager.addToStack(tableName);
-        this.constraints[tableName] = [rowObject[this.tableIdToIdColumnMap[tableName]]];
+        this.numSelected[tableName]++;
+        this.totalSelected++;
+        const idVal = this.getId(tableName, rowObject);
+        this.selections[tableName].push(idVal);
+        this.constraints[tableName] = this.selectionToConstraint(tableName);
     }
 
-    updateConstraint(tableName, rowObject) {
-        this.stackManager.removeFromStack(tableName);
-        this.stackManager.addToStack(tableName);
-        this.constraints[tableName] = [rowObject[this.tableIdToIdColumnMap[tableName]]];
+    removeConstraint(tableName, rowObject) {
+        this.numSelected[tableName]--;
+        this.totalSelected--;
+        const idVal = this.getId(tableName, rowObject);
+        this.selections[tableName] = this.selections[tableName].filter(x => x !== idVal);
+        this.constraints[tableName] = this.selectionToConstraint(tableName);
     }
 
-    removeConstraint(tableName) {
-        this.stackManager.removeFromStack(tableName);
-        this.constraints[tableName] = this.defaultConstraints[tableName];
+    selectionToConstraint(tableName) {
+        if (this.numSelected[tableName] == 0) {
+            return this.defaultConstraints[tableName];
+        } else {
+            return this.selections[tableName];
+        }
+    }
+
+    getFocusTable() {
+        // count tables with 0 selection
+        let found = 0;
+        let nnz = null;
+        for(let tableName in this.numSelected) {
+            if (this.numSelected[tableName] == 0) {
+                found++;
+            } else {
+                nnz = tableName;
+            }
+        }
+        // check if there's exactly one table with non-zero selection
+        const totalTables = Object.keys(this.numSelected).length;
+        if (found + 1 == totalTables) {
+            return nnz;
+        }
+        // otherwise use the first table that was clicked
+        return null;
     }
 
 }
@@ -441,7 +453,7 @@ class FiRDI {
 
     constructor(tablesInfo, defaultDataTablesSettings, infoPanelManager) {
         this.tablesInfo = tablesInfo;
-        this.originalTablesInfo = JSON.parse(JSON.stringify(tablesInfo)); // https://stackoverflow.com/questions/122102/what-is-the-most-efficient-way-to-deep-clone-an-object-in-javascript/5344074#5344074
+        this.originalTablesInfo = deepCopy(tablesInfo);
         this.infoPanelManager = infoPanelManager;
 
         // Some minimum DataTables settings are required
@@ -463,8 +475,8 @@ class FiRDI {
 
         this.dataTablesOptionsManager = new DataTablesOptionsManager(this.tablesInfo);
         this.sqlManager = new SqlManager(this.tablesInfo);
-        this.stackManager = new StackManager();
-        this.constraintsManager = new ConstraintsManager(this.tablesInfo, this.sqlManager, this.stackManager);
+        // this.stackManager = new StackManager();
+        this.constraintsManager = new ConstraintsManager(this.tablesInfo, this.sqlManager);
 
         this.tableFieldNames = this.getFieldNames();
 
@@ -505,7 +517,7 @@ class FiRDI {
         this.tablesInfo = JSON.parse(JSON.stringify(this.originalTablesInfo));
         this.sqlManager.clearAlasqlTables(this.tablesInfo);
         this.sqlManager.addNewData(this.tablesInfo);
-        this.stackManager.emptyStack();
+        // this.stackManager.emptyStack();
         this.constraintsManager.defaultConstraints = this.constraintsManager.getDefaultConstraints(this.tablesInfo);
         this.constraintsManager.constraints = this.constraintsManager.initConstraints()
 
@@ -572,45 +584,41 @@ class FiRDI {
     }
 
     updateTables() {
-        if (this.stackManager.stack.length > 0) {
-            // debugger;
-
+        if (this.constraintsManager.totalSelected > 0) {
             console.log('queryResult');
-            let dataForTables = this.constraintsManager.makeEmptyConstraint(this.tablesInfo);
             const queryResult = this.sqlManager.queryDatabase(this.tablesInfo, this.constraintsManager.constraints, this.constraintsManager.whereType);
 
             console.log('focusResult');
-            const focus = this.stackManager.peek();
-            const focusConstraints = this.constraintsManager.getFocusConstraints(focus, this.tablesInfo);
+            // the focus table is the table where multiple selection is possible
+            let focusTable = this.constraintsManager.getFocusTable();
+            const focusConstraints = this.constraintsManager.getFocusConstraints(focusTable, this.tablesInfo);
             const focusResult = this.sqlManager.queryDatabase(this.tablesInfo, focusConstraints, this.constraintsManager.whereType);
 
-            this.tableFieldNames.forEach(tableFieldNames => this.getFocusData(dataForTables, focusResult, queryResult, tableFieldNames, focus));
+            let dataForTables = this.constraintsManager.makeEmptyConstraint(this.tablesInfo);
+            this.tableFieldNames.forEach(tableFieldNames => this.getFocusData(dataForTables, focusResult, queryResult, tableFieldNames, focusTable));
         } else {
             this.resetTables();
         }
     }
 
     addSelectionStyle(tableName) {
-        // console.log(tableName);
-        const tableAPI = $(this.dataTablesIds[tableName]).DataTable(),
-            idNum = this.constraintsManager.constraints[tableName];
+        const tableAPI = $(this.dataTablesIds[tableName]).DataTable()
+        const idNum = this.constraintsManager.selections[tableName];
 
-        // idNum has a single element when a constraint (different from the initial constraint) is
-        // applied.
-        if (idNum.length === 1) {
+        if (idNum.length > 0) {
             // Find page that contains the row of interest
             // Go to it
             // add selection to that row.
-
-            const pageInfo = tableAPI.page.info();
-            const rowIndex = tableAPI.rows()[0].indexOf(tableAPI.row('#' + idNum).index());
-            const thePage = Math.floor(rowIndex / pageInfo['length']);
-            // console.log('idNum=' + idNum + ' rowIndex=' + rowIndex + ' thePage=' + thePage);
-
-            tableAPI.page(thePage).draw('page');
-
-            $(tableAPI.row('#' + idNum).node()).addClass('selected');
-
+            for (let i = 0; i < idNum.length; i++) {
+                const item = '#' + idNum[i];
+                const pageInfo = tableAPI.page.info();
+                const rowIndex = tableAPI.rows()[0].indexOf(tableAPI.row(item).index());
+                if (rowIndex != -1) {
+                    const thePage = Math.floor(rowIndex / pageInfo['length']);
+                    tableAPI.page(thePage).draw('page');
+                    $(tableAPI.row(item).node()).addClass('selected');
+                }
+            }
         }
     }
 
@@ -677,17 +685,18 @@ class FiRDI {
         const targetTr = $(originalEvent.target).closest('tr'),
             rowObject = tableAPI.row(targetTr).data();
 
-        // console.log("before", this.stackManager.stack, this.constraintsManager.constraints);
+        // if some rows are already selected in the table
         if (tableAPI.rows('.selected').any()) {
-            if (!targetTr.hasClass('selected')) {
-                $('#' + tableName + ' .selected').removeClass('selected');
-                this.constraintsManager.updateConstraint(tableName, rowObject);
+            // if the current row is already selected then unselect it
+            if (targetTr.hasClass('selected')) {
+                targetTr.removeClass('selected');
+                this.constraintsManager.removeConstraint(tableName, rowObject);
                 this.updateTables();
-            } else {
-                this.constraintsManager.removeConstraint(tableName);
+            } else { // otherwise select the current row
+                this.constraintsManager.addConstraint(tableName, rowObject);
                 this.updateTables();
             }
-        } else {
+        } else { // otherwise just select this row
             this.constraintsManager.addConstraint(tableName, rowObject);
             this.updateTables();
         }
