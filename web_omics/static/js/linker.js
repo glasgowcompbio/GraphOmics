@@ -293,7 +293,7 @@ class Linker {
 
         // enable reset button
         $('#selectResetBtn').on('click', function() {
-            firdi.resetFiRDI();
+            firdi.resetTables();
             infoPanesManager.clearAllInfoPanes();
         })
 

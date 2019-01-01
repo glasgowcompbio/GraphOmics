@@ -326,7 +326,6 @@ class ConstraintsManager {
         this.selections = this.makeEmptyConstraint(tablesInfo);
         this.numSelected = this.makeEmptyCount(tablesInfo);
         this.totalSelected = 0;
-        this.firstTableClicked = null;
 
         this.constraintTablesConstraintKeyNames = sqlManager.getConstraintTablesConstraintKeyName(tablesInfo)
         this.tableIdToIdColumnMap = this.getTableKeysAsSingleObject(tablesInfo);
@@ -376,21 +375,6 @@ class ConstraintsManager {
         return deepCopy(this.defaultConstraints);
     }
 
-    getFocusConstraints(focusTable, tablesInfo) {
-        return this.sqlManager.getConstraintTablesConstraintKeyName(tablesInfo)
-            .reduce((constraints, tableInfo) => {
-                const tableName = tableInfo['tableName'];
-                let tableConstraints = undefined;
-                if (focusTable && focusTable === tableName) {
-                    tableConstraints = this.defaultConstraints[tableName];
-                } else {
-                    tableConstraints =  this.selectionToConstraint(tableName);
-                }
-                constraints[tableName] = tableConstraints;
-                return constraints;
-            }, {});
-    }
-
     getTableKeysAsSingleObject(tablesInfo) {
         // Get the table name and key used in the WHERE clause in the form tableName: key
         return this.sqlManager.getConstraintTablesConstraintKeyName(tablesInfo)
@@ -425,26 +409,6 @@ class ConstraintsManager {
         } else {
             return this.selections[tableName];
         }
-    }
-
-    getFocusTable() {
-        // count tables with 0 selection
-        let found = 0;
-        let nnz = null;
-        for(let tableName in this.numSelected) {
-            if (this.numSelected[tableName] == 0) {
-                found++;
-            } else {
-                nnz = tableName;
-            }
-        }
-        // check if there's exactly one table with non-zero selection
-        const totalTables = Object.keys(this.numSelected).length;
-        if (found + 1 == totalTables) {
-            return nnz;
-        }
-        // otherwise use the first table that was clicked
-        return null;
     }
 
 }
@@ -517,9 +481,11 @@ class FiRDI {
         this.tablesInfo = JSON.parse(JSON.stringify(this.originalTablesInfo));
         this.sqlManager.clearAlasqlTables(this.tablesInfo);
         this.sqlManager.addNewData(this.tablesInfo);
-        // this.stackManager.emptyStack();
         this.constraintsManager.defaultConstraints = this.constraintsManager.getDefaultConstraints(this.tablesInfo);
         this.constraintsManager.constraints = this.constraintsManager.initConstraints()
+        this.constraintsManager.selections = this.constraintsManager.makeEmptyConstraint(this.tablesInfo);
+        this.constraintsManager.numSelected = this.constraintsManager.makeEmptyCount(this.tablesInfo);
+        this.constraintsManager.totalSelected = 0;
 
         this.tablesInfo.forEach(t => {
             const tableAPI = $(this.dataTablesIds[t['tableName']]).DataTable();
@@ -564,61 +530,67 @@ class FiRDI {
         return temp;
     }
 
-    getFocusData(dataForTables, focusResult, queryResult, tableFieldNames, focus) {
-        // Function to get the default constraints for the focus table
-        // debugger;
-        const tableName = tableFieldNames['tableName'];
-        let dataSource = undefined;
-        if (focus !== tableName) {
-            dataSource = queryResult;
-        } else {
-            dataSource = focusResult;
-        }
-
-        dataForTables[tableName] = this.prefixQuery(tableFieldNames, dataSource);
-        $(this.dataTablesIds[tableName]).DataTable().clear();
-        $(this.dataTablesIds[tableName]).DataTable().rows.add(dataForTables[tableName]);
-        $(this.dataTablesIds[tableName]).DataTable().draw();
-        this.addSelectionStyle(tableName);
-
-    }
-
     updateTables() {
         if (this.constraintsManager.totalSelected > 0) {
-            console.log('queryResult');
-            const queryResult = this.sqlManager.queryDatabase(this.tablesInfo, this.constraintsManager.constraints, this.constraintsManager.whereType);
 
-            console.log('focusResult');
-            // the focus table is the table where multiple selection is possible
-            let focusTable = this.constraintsManager.getFocusTable();
-            const focusConstraints = this.constraintsManager.getFocusConstraints(focusTable, this.tablesInfo);
-            const focusResult = this.sqlManager.queryDatabase(this.tablesInfo, focusConstraints, this.constraintsManager.whereType);
+            console.log('queryResult');
+            const queryResult = this.sqlManager.queryDatabase(this.tablesInfo, this.constraintsManager.constraints,
+                this.constraintsManager.whereType);
 
             let dataForTables = this.constraintsManager.makeEmptyConstraint(this.tablesInfo);
-            this.tableFieldNames.forEach(tableFieldNames => this.getFocusData(dataForTables, focusResult, queryResult, tableFieldNames, focusTable));
+            for (let i = 0; i < this.tableFieldNames.length; i++) { // update all the tables
+                const tableFieldName = this.tableFieldNames[i];
+                const tableName = tableFieldName['tableName'];
+                if (this.constraintsManager.numSelected[tableName] > 0) { // if table already has some selection
+                    // don't change table content, just change the selection style
+                    this.addSelectionStyle(tableName);
+                } else {
+                    // otherwise update table content and selection style
+                    this.updateTable(tableFieldName, queryResult);
+                    this.addSelectionStyle(tableName);
+                }
+            }
+
         } else {
             this.resetTables();
         }
     }
 
-    addSelectionStyle(tableName) {
-        const tableAPI = $(this.dataTablesIds[tableName]).DataTable()
-        const idNum = this.constraintsManager.selections[tableName];
+    updateTable(tableFieldName, queryResult) {
+        const tableName = tableFieldName['tableName'];
+        const data = this.prefixQuery(tableFieldName, queryResult);
+        $(this.dataTablesIds[tableName]).DataTable().clear();
+        $(this.dataTablesIds[tableName]).DataTable().rows.add(data);
+        $(this.dataTablesIds[tableName]).DataTable().draw();
+    }
 
-        if (idNum.length > 0) {
+    addSelectionStyle(tableName) {
+        const tableAPI = $(this.dataTablesIds[tableName]).DataTable();
+        const tableSelections = this.constraintsManager.selections[tableName];
+
+        if (tableSelections.length > 0) {
             // Find page that contains the row of interest
             // Go to it
             // add selection to that row.
-            for (let i = 0; i < idNum.length; i++) {
-                const item = '#' + idNum[i];
+            for (let i = 0; i < tableSelections.length; i++) {
+                const item = '#' + tableSelections[i];
                 const pageInfo = tableAPI.page.info();
                 const rowIndex = tableAPI.rows()[0].indexOf(tableAPI.row(item).index());
                 if (rowIndex != -1) {
                     const thePage = Math.floor(rowIndex / pageInfo['length']);
                     tableAPI.page(thePage).draw('page');
-                    $(tableAPI.row(item).node()).addClass('selected');
+                    const node = $(tableAPI.row(item).node());
+                    if (!node.hasClass('selected')) {
+                        node.addClass('selected');
+                    }
                 }
             }
+        }
+    }
+
+    removeSelectionStyle(targetTr) {
+        if (targetTr.hasClass('selected')) {
+            targetTr.removeClass('selected');
         }
     }
 
@@ -627,22 +599,10 @@ class FiRDI {
         dataForTables[tableName] = this.prefixQuery(tableFieldNames, queryResult);
 
         const tableAPI = $(this.dataTablesIds[tableName]).DataTable();
-        const oldPageInfo = tableAPI.page.info();
-        const oldRowIndex = oldPageInfo['start'];
-        const rowID = tableAPI.row(oldRowIndex).id();
-
         tableAPI.clear();
         tableAPI.rows.add(dataForTables[tableName]);
         tableAPI.draw();
-
-        // go back to the previous page
-        let newRowIndex = tableAPI.row('#' + rowID).index();
-        const thePage = Math.floor(newRowIndex / tableAPI.page.info()['length']);
-        tableAPI.page(thePage).draw('page');
-
-        // always go to the first page instead
-        // tableAPI.page(0).draw('page');
-
+        tableAPI.page(0).draw('page');
     }
 
     resetTables() {
@@ -681,16 +641,16 @@ class FiRDI {
 
         // Calls the appropriate constraint function depending on the state of the bound table
         const tableName = e.currentTarget.id;
-        const tableAPI = $(this.dataTablesIds[tableName]).DataTable()
-        const targetTr = $(originalEvent.target).closest('tr'),
-            rowObject = tableAPI.row(targetTr).data();
+        const tableAPI = $(this.dataTablesIds[tableName]).DataTable();
+        const targetTr = $(originalEvent.target).closest('tr');
+        const rowObject = tableAPI.row(targetTr).data();
 
         // if some rows are already selected in the table
         if (tableAPI.rows('.selected').any()) {
             // if the current row is already selected then unselect it
             if (targetTr.hasClass('selected')) {
-                targetTr.removeClass('selected');
                 this.constraintsManager.removeConstraint(tableName, rowObject);
+                this.removeSelectionStyle(targetTr);
                 this.updateTables();
             } else { // otherwise select the current row
                 this.constraintsManager.addConstraint(tableName, rowObject);
@@ -703,6 +663,7 @@ class FiRDI {
     }
 
     initTableFilters() {
+        const currObj = this;
         function filterTable(tableManager) {
             return function(e) {
                 let filterColumnName = undefined;
@@ -717,9 +678,7 @@ class FiRDI {
                 tableManager.resetTables();
                 const sqlQuery = tableManager.sqlManager.makeSignificantFilterSQLquery(tableManager.tablesInfo, filterColumnName);
                 const queryResult = alasql(sqlQuery);
-                let dataForTables = tableManager.constraintsManager.makeEmptyConstraint(tableManager.tablesInfo);
-                tableManager.tableFieldNames.forEach(x => tableManager.getFocusData(dataForTables, undefined,
-                    queryResult, x, ''));
+                tableManager.tableFieldNames.forEach(tableFieldName => currObj.updateTable(tableFieldName, queryResult));
                 tableManager.constraintsManager.constraints = tableManager.constraintsManager.initConstraints();
                 tableManager.constraintsManager.whereType = filterColumnName;
             };
