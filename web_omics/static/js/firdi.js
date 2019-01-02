@@ -370,7 +370,6 @@ class ConstraintsManager {
             }, {});
     }
 
-
     initConstraints() {
         return deepCopy(this.defaultConstraints);
     }
@@ -537,7 +536,6 @@ class FiRDI {
             const queryResult = this.sqlManager.queryDatabase(this.tablesInfo, this.constraintsManager.constraints,
                 this.constraintsManager.whereType);
 
-            let dataForTables = this.constraintsManager.makeEmptyConstraint(this.tablesInfo);
             for (let i = 0; i < this.tableFieldNames.length; i++) { // update all the tables
                 const tableFieldName = this.tableFieldNames[i];
                 const tableName = tableFieldName['tableName'];
