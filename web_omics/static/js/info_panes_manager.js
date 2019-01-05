@@ -1,7 +1,60 @@
+import { getRowObj, goToPage } from './common'
+
 class InfoPanesManager {
 
     constructor(viewNames) {
         this.viewNames = viewNames;
+
+        // hide all buttons initially
+        const buttonIds = [
+            'gene-previous',
+            'protein-previous',
+            'compound-previous',
+            'reaction-previous',
+            'pathway-previous',
+            'gene-next',
+            'protein-next',
+            'compound-next',
+            'reaction-next',
+            'pathway-next'
+        ];
+        buttonIds.forEach(x => $(`#${x}`).hide());
+
+        // to track the current selections for each table
+        this.selections = {};
+        this.selectedIndex = {};
+        this.initNextPrevButtons()
+    }
+
+    initNextPrevButtons() {
+        const currObj = this;
+        const handlePrevFunc = (tableName) => {
+            const selections = currObj.selections[tableName];
+            const selectedIndex = currObj.selectedIndex[tableName]-1;
+            currObj.updateEntityInfo(tableName, selections, selectedIndex);
+            currObj.selections[tableName] = selections;
+            currObj.selectedIndex[tableName] = selectedIndex;
+        }
+        const handleNextFunc = (tableName) => {
+            const selections = currObj.selections[tableName];
+            const selectedIndex = currObj.selectedIndex[tableName]+1;
+            currObj.updateEntityInfo(tableName, selections, selectedIndex);
+            currObj.selections[tableName] = selections;
+            currObj.selectedIndex[tableName] = selectedIndex;
+        }
+
+        $('#gene-previous').on('click', () => { handlePrevFunc('genes_table'); });
+        $('#protein-previous').on('click', () => { handlePrevFunc('proteins_table'); });
+        $('#compound-previous').on('click', () => { handlePrevFunc('compounds_table'); });
+        $('#reaction-previous').on('click', () => { handlePrevFunc('reactions_table'); });
+        $('#pathway-previous').on('click', () => { handlePrevFunc('pathways_table'); });
+
+        $('#gene-next').on('click', () => { handleNextFunc('genes_table'); });
+        $('#protein-next').on('click', () => { handleNextFunc('proteins_table'); });
+        $('#compound-next').on('click', () => { handleNextFunc('compounds_table'); });
+        $('#reaction-next').on('click', () => { handleNextFunc('reactions_table'); });
+        $('#pathway-next').on('click', () => { handleNextFunc('pathways_table'); });
+
     }
 
     clearInfoPane(tableId) {
@@ -27,167 +80,227 @@ class InfoPanesManager {
         this.clearInfoPanel('pathway-row-info', 'Pathway Information');
     }
 
-    getEntityInfo(tableId, rowObject) {
-        // Wrapper function to call the appropriate info function for the given table/entity
+    updateEntityInfo(tableId, selections, selectedIndex) {
+        const selectedValue = selections[selectedIndex].idVal;
+        const rowObject = getRowObj(tableId, selectedValue);
+        goToPage(rowObject);
+
+        // call the appropriate info function for the given table/entity
+        const viewUrl = this.viewNames[tableId];
         if (tableId === 'genes_table') {
-            this.getInfoPanel(rowObject, this.viewNames[tableId],
-                'gene-row-info', 'gene_pk',
-                'gene_id', 'Gene Information');
+            this.updateInfoPanel(tableId, rowObject, viewUrl,
+                'gene-row-info',
+                'gene-title', 'gene-previous', 'gene-next', selections, selectedIndex);
         } else if (tableId === 'proteins_table') {
-            this.getInfoPanel(rowObject, this.viewNames[tableId],
-                'protein-row-info', 'protein_pk',
-                'protein_id', 'Protein Information');
+            this.updateInfoPanel(tableId, rowObject, viewUrl,
+                'protein-row-info',
+                'protein-title', 'protein-previous', 'protein-next', selections, selectedIndex);
         } else if (tableId === 'compounds_table') {
-            this.getInfoPanel(rowObject, this.viewNames[tableId],
-                'compound-row-info', 'compound_pk',
-                'compound_id', 'Compound Information');
+            this.updateInfoPanel(tableId, rowObject, viewUrl,
+                'compound-row-info',
+                'compound-title',  'compound-previous', 'compound-next', selections, selectedIndex);
         } else if (tableId === 'reactions_table') {
-            this.getInfoPanel(rowObject, this.viewNames[tableId],
-                'reaction-row-info', 'reaction_pk',
-                'reaction_id', 'Reaction Information');
+            this.updateInfoPanel(tableId, rowObject, viewUrl,
+                'reaction-row-info',
+                'reaction-title', 'reaction-previous', 'reaction-next', selections, selectedIndex);
         } else if (tableId === 'pathways_table') {
-            this.getInfoPanel(rowObject, this.viewNames[tableId],
-                'pathway-row-info', 'pathway_pk',
-                'pathway_id', 'Pathway Information');
+            this.updateInfoPanel(tableId, rowObject, viewUrl,
+                'pathway-row-info',
+                'pathway-title', 'pathway-previous', 'pathway-next', selections, selectedIndex);
         }
     }
 
-    getInfoPanel(rowObject, dataUrl, rowId, pkCol, displayNameCol, title) {
-        this.clearInfoPanel(rowId, title);
-        if (rowObject[displayNameCol] !== '-') {
+    getPkValue(rowObject, tableId) {
+        if (tableId === 'genes_table') {
+            return rowObject['gene_pk'];
+        } else if (tableId === 'proteins_table') {
+            return rowObject['protein_pk'];
+        } else if (tableId === 'compounds_table') {
+            return rowObject['compound_pk'];
+        } else if (tableId === 'reactions_table') {
+            return rowObject['reaction_pk'];
+        } else if (tableId === 'pathways_table') {
+            return rowObject['pathway_pk'];
+        }
+        return null;
+    }
 
-            const tableData = {
-                'id': rowObject[pkCol]
-            };
-            const displayName = rowObject[displayNameCol];
-            let infoDiv = $('<div/>');
-            let infoTitle = $('<h6/>', {
-                'text': displayName
-            });
-            infoDiv.append(infoTitle);
+    getDisplayName(rowObject, tableId) {
+        if (tableId === 'genes_table') {
+            return rowObject['gene_id'];
+        } else if (tableId === 'proteins_table') {
+            return rowObject['protein_id'];
+        } else if (tableId === 'compounds_table') {
+            return rowObject['compound_id'];
+        } else if (tableId === 'reactions_table') {
+            return rowObject['reaction_id'];
+        } else if (tableId === 'pathways_table') {
+            return rowObject['pathway_id'];
+        }
+        return null;
+    }
 
-            let dataDiv = $('<div\>', {
-                'html': '<p>Loading data...</p>'
-            });
-            $.getJSON(dataUrl, tableData, data => {
-                const annotation = data['annotation'];
-                const annotationUrl = data['annotation_url'];
-                const annotationId = data['annotation_id'];
-                const annotationLink = '<button type="button" class="btn btn-outline-primary btn-sm" style="margin-left: 5px"' +
-                    `onclick="annotate('${annotationId}', '${annotationUrl}', '${displayName}')">📝</button>`;
-                infoTitle.append(annotationLink);
-
-                let annotationHtml = '';
-                if (annotation.length > 0) {
-                    annotationHtml = `<p><strong>Annotation</strong>: ${annotation}</p>`
-                }
-                const annotationDiv = $('<div\>', {
-                    id: `annotation-${annotationId}`,
-                    html: annotationHtml,
-                    class: 'annotation'
-                });
-                infoDiv.append(annotationDiv);
-
-                // loop over additional information
-                let infos = data['infos'];
-                for (let item of infos) {
-                    const key = item.key;
-                    const val = item.value + ''; // ensure that val is always a string
-                    const url = item.url;
-                    if (val.includes((';'))) {
-                        let html = `<p><strong>${key}</strong>:</p><ul>`;
-                        const tokens = val.split(';').map(x => x.trim());
-                        if (url) {
-                            const links = url.split(';').map(x => x.trim());
-                            for (let i = 0; i < tokens.length; i++) {
-                                html += `<li><a href="${links[i]}" target="_blank">${tokens[i]}</a></li>`;
-                            }
-                        } else { // no url
-                            for (let w of tokens) {
-                                html += `<li>${w}</li>`;
-                            }
-                        }
-                        html += '</ul>';
-                        infoDiv.append(html);
-                    } else {
-                        infoDiv.append(`<p><strong>${key}</strong>: ${val}</p>`);
-                    }
-                }
-
-                // loop over external links
-                dataDiv.empty();
-                let links = data['links'];
-                for (let link of links) {
-                    let newLink = $('<p/>').append($('<a/>', {
-                        'href': link.href,
-                        'text': link.text,
-                        'target': '_blank'
-                    }));
-                    dataDiv.append(newLink);
-                }
-
-                // loop over images
-                function isImageUrl(url) {
-                    return (url.match(/\.(jpeg|jpg|gif|png)$/) != null) || url.includes('chebi');
-                }
-
-                let images = data['images'];
-                for (let item of images) {
-                    if (isImageUrl(item)) {
-                        let newImage = $('<img/>', {
-                            'src': item,
-                            'class': 'img-fluid'
-                        });
-                        dataDiv.append(newImage);
-                    } else if (item.includes('reactome')) { // handle reactome images
-                        let newLink = $('<a/>', {
-                            'href': item + "&quality=7",
-                            'target': '_blank'
-                        }).append(
-                            $('<img/>', {
-                                'src': item + "&quality=3",
-                                'class': 'img-fluid'
-                            })
-                        );
-                        dataDiv.append(newLink);
-                    }
-                }
-
-                // plot intensities here
-                const plotData = data['plot_data']
-                if (data.hasOwnProperty('plot_data')) {
-                    let plotDiv = document.createElement('div');
-                    let d3_intensity_chart_load_btn = $('<button/>', {
-                        'class': 'btn btn-sm btn-outline-primary',
-                        'text': 'Show measurements',
-                        'css': {
-                            'margin-top': '10px'
-                        }
-                    });
-                    dataDiv.append(d3_intensity_chart_load_btn);
-                    dataDiv.append(plotDiv);
-                    this.plotPeakIntensitySamples(plotDiv, plotData);
-
-                    let $_plotDiv = $(plotDiv);
-                    $_plotDiv.hide();
-                    d3_intensity_chart_load_btn.click(function() {
-                        $_plotDiv.toggle('fast');
-                    });
-                }
-
-            });
-
-            const selector = '#' + rowId;
-            $(selector).empty();
-            $(selector).append(infoDiv);
-            $(selector).append(dataDiv);
+    updateInfoPanel(tableId, rowObject, dataUrl, rowId,
+                    titleId, titlePrevId, titleNextId, selections, selectionIndex) {
+        const rowData = rowObject.data;
+        const displayNameCol = this.getDisplayName(rowObject, tableId);
+        this.clearInfoPanel(rowId);
+        if (rowData[displayNameCol] !== '-') {
+            this.updateTitle(rowData, titleId, titlePrevId, titleNextId, selections, selectionIndex)
+            this.updateContent(rowData, tableId, dataUrl, rowId);
         } else {
+            const selector = '#' + rowId;
             $(selector).text('Select an entry above.');
         }
-
     }
 
-    clearInfoPanel(rowId, title) {
+    updateTitle(rowObject, titleId, titlePrevId, titleNextId, selections, selectionIndex) {
+        const selectionLength = selections.length;
+        const updatedTitle = `${selectionIndex+1}/${selectionLength}`;
+        $(`#${titleId}`).text(updatedTitle);
+        // hide previous button if necessary
+        if (selectionIndex == 0) {
+            $(`#${titlePrevId}`).hide();
+        } else {
+            $(`#${titlePrevId}`).show();
+        }
+        // hide next button if necessary
+        if (selectionIndex+1 == selectionLength) {
+            $(`#${titleNextId}`).hide();
+        } else {
+            $(`#${titleNextId}`).show();
+        }
+    }
+
+    updateContent(rowObject, tableId, dataUrl, rowId) {
+        const tableData = {
+            'id': this.getPkValue(rowObject, tableId)
+        };
+        const displayName = this.getDisplayName(rowObject, tableId);
+        let infoDiv = $('<div/>');
+        let infoTitle = $('<h6/>', {
+            'text': displayName
+        });
+        infoDiv.append(infoTitle);
+
+        let dataDiv = $('<div\>', {
+            'html': '<p>Loading data...</p>'
+        });
+        $.getJSON(dataUrl, tableData, data => {
+            const annotation = data['annotation'];
+            const annotationUrl = data['annotation_url'];
+            const annotationId = data['annotation_id'];
+            const annotationLink = '<button type="button" class="btn btn-outline-primary btn-sm" style="margin-left: 5px"' +
+                `onclick="annotate('${annotationId}', '${annotationUrl}', '${displayName}')">📝</button>`;
+            infoTitle.append(annotationLink);
+
+            let annotationHtml = '';
+            if (annotation.length > 0) {
+                annotationHtml = `<p><strong>Annotation</strong>: ${annotation}</p>`
+            }
+            const annotationDiv = $('<div\>', {
+                id: `annotation-${annotationId}`,
+                html: annotationHtml,
+                class: 'annotation'
+            });
+            infoDiv.append(annotationDiv);
+
+            // loop over additional information
+            let infos = data['infos'];
+            for (let item of infos) {
+                const key = item.key;
+                const val = item.value + ''; // ensure that val is always a string
+                const url = item.url;
+                if (val.includes((';'))) {
+                    let html = `<p><strong>${key}</strong>:</p><ul>`;
+                    const tokens = val.split(';').map(x => x.trim());
+                    if (url) {
+                        const links = url.split(';').map(x => x.trim());
+                        for (let i = 0; i < tokens.length; i++) {
+                            html += `<li><a href="${links[i]}" target="_blank">${tokens[i]}</a></li>`;
+                        }
+                    } else { // no url
+                        for (let w of tokens) {
+                            html += `<li>${w}</li>`;
+                        }
+                    }
+                    html += '</ul>';
+                    infoDiv.append(html);
+                } else {
+                    infoDiv.append(`<p><strong>${key}</strong>: ${val}</p>`);
+                }
+            }
+
+            // loop over external links
+            dataDiv.empty();
+            let links = data['links'];
+            for (let link of links) {
+                let newLink = $('<p/>').append($('<a/>', {
+                    'href': link.href,
+                    'text': link.text,
+                    'target': '_blank'
+                }));
+                dataDiv.append(newLink);
+            }
+
+            // loop over images
+            function isImageUrl(url) {
+                return (url.match(/\.(jpeg|jpg|gif|png)$/) != null) || url.includes('chebi');
+            }
+
+            let images = data['images'];
+            for (let item of images) {
+                if (isImageUrl(item)) {
+                    let newImage = $('<img/>', {
+                        'src': item,
+                        'class': 'img-fluid'
+                    });
+                    dataDiv.append(newImage);
+                } else if (item.includes('reactome')) { // handle reactome images
+                    let newLink = $('<a/>', {
+                        'href': item + "&quality=7",
+                        'target': '_blank'
+                    }).append(
+                        $('<img/>', {
+                            'src': item + "&quality=3",
+                            'class': 'img-fluid'
+                        })
+                    );
+                    dataDiv.append(newLink);
+                }
+            }
+
+            // plot intensities here
+            const plotData = data['plot_data']
+            if (data.hasOwnProperty('plot_data')) {
+                let plotDiv = document.createElement('div');
+                let d3_intensity_chart_load_btn = $('<button/>', {
+                    'class': 'btn btn-sm btn-outline-primary',
+                    'text': 'Show measurements',
+                    'css': {
+                        'margin-top': '10px'
+                    }
+                });
+                dataDiv.append(d3_intensity_chart_load_btn);
+                dataDiv.append(plotDiv);
+                this.plotPeakIntensitySamples(plotDiv, plotData);
+
+                let $_plotDiv = $(plotDiv);
+                $_plotDiv.hide();
+                d3_intensity_chart_load_btn.click(function () {
+                    $_plotDiv.toggle('fast');
+                });
+            }
+
+        });
+
+        const selector = '#' + rowId;
+        $(selector).empty();
+        $(selector).append(infoDiv);
+        $(selector).append(dataDiv);
+    }
+
+    clearInfoPanel(rowId) {
         let content = $('<p/>', {
             'text': 'Select an entry above.'
         });

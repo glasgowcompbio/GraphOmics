@@ -1,4 +1,4 @@
-import FiRDI from './firdi.js';
+import FiRDI from './firdi';
 import InfoPanesManager from './info_panes_manager';
 
 // https://stackoverflow.com/questions/1199352/smart-way-to-shorten-long-strings-with-javascript

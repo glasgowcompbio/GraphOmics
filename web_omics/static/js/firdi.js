@@ -10,13 +10,9 @@ import 'datatables.net-scroller-dt/css/scroller.dataTables.min.css';
 import 'datatables.net-select';
 import 'datatables.net-select-dt/css/select.dataTables.min.css';
 
-import 'block-ui';
 import alasql from 'alasql';
 
-const isTableVisible = tableInfo => tableInfo["options"]["visible"];
-
-// https://stackoverflow.com/questions/122102/what-is-the-most-efficient-way-to-deep-clone-an-object-in-javascript/5344074#5344074
-const deepCopy = obj => JSON.parse(JSON.stringify(obj));
+import { isTableVisible, deepCopy, getRowObj, goToPage, blockUI, unblockUI } from './common'
 
 class DataTablesOptionsManager {
 
@@ -319,17 +315,17 @@ class SqlManager {
 
 class ConstraintsManager {
     constructor(tablesInfo, sqlManager) {
+        this.tablesInfo = tablesInfo;
+        this.tableKeys = sqlManager.getTableKeys();
         this.sqlManager = sqlManager;
-        this.tableKeys = sqlManager.getTableKeys(tablesInfo);
-        this.defaultConstraints = this.getDefaultConstraints(tablesInfo);
+        this.constraintTablesConstraintKeyNames = sqlManager.getConstraintTablesConstraintKeyName(this.tablesInfo)
+        this.tableIdToIdColumnMap = this.getTableKeysAsSingleObject();
+        this.defaultConstraints = this.getDefaultConstraints();
         this.constraints = this.initConstraints();
-        this.selections = this.makeEmptyConstraint(tablesInfo);
-        this.numSelected = this.makeEmptyCount(tablesInfo);
+        this.selections = this.makeEmptyConstraint();
+        this.numSelected = this.makeEmptyCount();
         this.totalSelected = 0;
-
-        this.constraintTablesConstraintKeyNames = sqlManager.getConstraintTablesConstraintKeyName(tablesInfo)
-        this.tableIdToIdColumnMap = this.getTableKeysAsSingleObject(tablesInfo);
-        this.whereType = undefined;
+        this.whereType = null;
     }
 
     getKeys(tablesInfo, tableName, k) {
@@ -346,24 +342,25 @@ class ConstraintsManager {
         return keys;
     }
 
-    getDefaultConstraints(tablesInfo) {
-        return this.sqlManager.getConstraintTablesConstraintKeyName(tablesInfo)
+    getDefaultConstraints() {
+        return this.sqlManager.getConstraintTablesConstraintKeyName(this.tablesInfo)
             .reduce((constraints, tableInfo) => {
-                constraints[tableInfo['tableName']] = this.getKeys(tablesInfo, tableInfo['tableName'], tableInfo['constraintKeyName']);
+                constraints[tableInfo['tableName']] = this.getKeys(
+                    this.tablesInfo, tableInfo['tableName'], tableInfo['constraintKeyName']);
                 return constraints;
             }, {});
     }
 
-    makeEmptyConstraint(tablesInfo) {
-        return this.sqlManager.getConstraintTablesConstraintKeyName(tablesInfo)
+    makeEmptyConstraint() {
+        return this.sqlManager.getConstraintTablesConstraintKeyName(this.tablesInfo)
             .reduce((constraints, tableInfo) => {
                 constraints[tableInfo['tableName']] = [];
                 return constraints;
             }, {});
     }
 
-    makeEmptyCount(tablesInfo) {
-        return this.sqlManager.getConstraintTablesConstraintKeyName(tablesInfo)
+    makeEmptyCount() {
+        return this.sqlManager.getConstraintTablesConstraintKeyName(this.tablesInfo)
             .reduce((constraints, tableInfo) => {
                 constraints[tableInfo['tableName']] = 0;
                 return constraints;
@@ -374,9 +371,9 @@ class ConstraintsManager {
         return deepCopy(this.defaultConstraints);
     }
 
-    getTableKeysAsSingleObject(tablesInfo) {
+    getTableKeysAsSingleObject() {
         // Get the table name and key used in the WHERE clause in the form tableName: key
-        return this.sqlManager.getConstraintTablesConstraintKeyName(tablesInfo)
+        return this.sqlManager.getConstraintTablesConstraintKeyName(this.tablesInfo)
             .map(t => ({[t['tableName']]: t['constraintKeyName']}))
             .reduce((o, v) => Object.assign(o, v), {});
     }
@@ -386,19 +383,24 @@ class ConstraintsManager {
         return rowObject[idColumn];
     }
 
-    addConstraint(tableName, rowObject) {
+    addConstraint(tableName, rowData, rowIndex) {
         this.numSelected[tableName]++;
         this.totalSelected++;
-        const idVal = this.getId(tableName, rowObject);
-        this.selections[tableName].push(idVal);
+        const idVal = this.getId(tableName, rowData);
+        this.selections[tableName].push({
+            idVal: idVal,
+            rowIndex: rowIndex
+        });
+        // ensure that entries are sorted by rowIndex asc
+        this.selections[tableName].sort((a, b) => a.rowIndex - b.rowIndex);
         this.constraints[tableName] = this.selectionToConstraint(tableName);
     }
 
-    removeConstraint(tableName, rowObject) {
+    removeConstraint(tableName, rowData) {
         this.numSelected[tableName]--;
         this.totalSelected--;
-        const idVal = this.getId(tableName, rowObject);
-        this.selections[tableName] = this.selections[tableName].filter(x => x !== idVal);
+        const idVal = this.getId(tableName, rowData);
+        this.selections[tableName] = this.selections[tableName].filter(x => x.idVal !== idVal);
         this.constraints[tableName] = this.selectionToConstraint(tableName);
     }
 
@@ -406,7 +408,7 @@ class ConstraintsManager {
         if (this.numSelected[tableName] == 0) {
             return this.defaultConstraints[tableName];
         } else {
-            return this.selections[tableName];
+            return this.selections[tableName].map(x => x.idVal);
         }
     }
 
@@ -450,29 +452,6 @@ class FiRDI {
 
         this.initTableClicks();
         this.initTableFilters();
-    }
-
-    blockUI() {
-        $('#all_tables').block({
-            centerY: 0,
-            message: '<h5>Please wait ...</h5>',
-            css: {
-                top: '10px',
-                left: '',
-                right: '10px',
-                border: 'none',
-                padding: '15px',
-                backgroundColor: '#000',
-                '-webkit-border-radius': '10px',
-                '-moz-border-radius': '10px',
-                opacity: .5,
-                color: '#fff'
-            }
-        });
-    }
-
-    unblockUI() {
-        $('#all_tables').unblock();
     }
 
     resetFiRDI() {
@@ -571,13 +550,11 @@ class FiRDI {
             // Go to it
             // add selection to that row.
             for (let i = 0; i < tableSelections.length; i++) {
-                const item = '#' + tableSelections[i];
-                const pageInfo = tableAPI.page.info();
-                const rowIndex = tableAPI.rows()[0].indexOf(tableAPI.row(item).index());
-                if (rowIndex != -1) {
-                    const thePage = Math.floor(rowIndex / pageInfo['length']);
-                    tableAPI.page(thePage).draw('page');
-                    const node = $(tableAPI.row(item).node());
+                const selection = tableSelections[i];
+                const found = getRowObj(tableName, selection.idVal);
+                if (found) {
+                    goToPage(found);
+                    const node = found.node;
                     if (!node.hasClass('selected')) {
                         node.addClass('selected');
                     }
@@ -613,75 +590,91 @@ class FiRDI {
 
     trClickHandler(e, dt, type, cell, originalEvent) {
         e.preventDefault();
-        this.blockUI();
+        blockUI();
         const obj = this;
         window.setTimeout(function() {
-            obj.trClickHandlerUpdate(e, dt, type, cell, originalEvent);
-            obj.unblockUI();
+
+            // clear search result
+            $('#global_filter').val('');
+            $.fn.dataTable.tables({api: true}).search('').draw();
+
+            // find the selected row
+            const tableName = e.currentTarget.id;
+            const tableAPI = $(obj.dataTablesIds[tableName]).DataTable();
+            const targetTr = $(originalEvent.target).closest('tr');
+            const row = tableAPI.row(targetTr);
+            const rowData = row.data();
+            const rowIndex = tableAPI.rows()[0].indexOf(row.index());
+            const anyRowSelected = tableAPI.rows('.selected').any();
+
+            obj.trClickHandlerUpdate(tableName, targetTr, rowData, rowIndex, anyRowSelected);
+            unblockUI();
             if (obj.infoPanelManager) { // update the related info panel for this table, if any
-                const tableId = e.currentTarget.id;
-                const tables = $('.dataTable').DataTable();
-                const tableAPI = tables.table('#' + tableId);
-                const selectedData = tableAPI.row('.selected').data();
-                if (selectedData) {
-                    obj.infoPanelManager.getEntityInfo(tableId, selectedData);
+                if (obj.constraintsManager.numSelected[tableName] > 0) {
+
+                    // assume that entries in the array is always in sorted order by their row index
+                    // (the sorting is done upon insertion in addConstraint)
+                    const selections = deepCopy(obj.constraintsManager.selections[tableName]);
+
+                    // find the pk value that has been clicked and its index in selections
+                    const selectedValue = obj.infoPanelManager.getPkValue(rowData, tableName);
+                    const selectedIndex = selections.map(x => x.idVal).indexOf(selectedValue);
+
+                    // update the bottom panel
+                    obj.infoPanelManager.updateEntityInfo(tableName, selections, selectedIndex);
+
+                    // store for use in buttons etc later
+                    obj.infoPanelManager.selections[tableName] = selections;
+                    obj.infoPanelManager.selectedIndex[tableName] = selectedIndex;
+
                 } else {
-                    obj.infoPanelManager.clearInfoPane(tableId);
+                    obj.infoPanelManager.clearInfoPane(tableName);
                 }
             }
         }, 1); // we need a small delay to allow blockUI to be rendered correctly
     }
 
-    trClickHandlerUpdate(e, dt, type, cell, originalEvent) {
-        // clear search result
-        $('#global_filter').val('');
-        $.fn.dataTable.tables({api: true}).search('').draw();
-
-        // Calls the appropriate constraint function depending on the state of the bound table
-        const tableName = e.currentTarget.id;
-        const tableAPI = $(this.dataTablesIds[tableName]).DataTable();
-        const targetTr = $(originalEvent.target).closest('tr');
-        const rowObject = tableAPI.row(targetTr).data();
-
+    trClickHandlerUpdate(tableName, targetTr, rowData, rowIndex, anyRowSelected) {
         // if some rows are already selected in the table
-        if (tableAPI.rows('.selected').any()) {
+        if (anyRowSelected) {
             // if the current row is already selected then unselect it
             if (targetTr.hasClass('selected')) {
-                this.constraintsManager.removeConstraint(tableName, rowObject);
+                this.constraintsManager.removeConstraint(tableName, rowData);
                 this.removeSelectionStyle(targetTr);
                 this.updateTables();
             } else { // otherwise select the current row
-                this.constraintsManager.addConstraint(tableName, rowObject);
+                this.constraintsManager.addConstraint(tableName, rowData, rowIndex);
                 this.updateTables();
             }
         } else { // otherwise just select this row
-            this.constraintsManager.addConstraint(tableName, rowObject);
+            this.constraintsManager.addConstraint(tableName, rowData, rowIndex);
             this.updateTables();
         }
     }
 
     initTableFilters() {
         const currObj = this;
-        function filterTable(tableManager) {
-            return function(e) {
-                let filterColumnName = undefined;
-                if (this.value == 'all') {
-                    filterColumnName = 'significant_all';
-                } else if (this.value == 'any') {
-                    filterColumnName = 'significant_any';
-                }
-                Object.keys(tableManager.constraintsManager.constraints).forEach(x => {
-                    tableManager.constraintsManager.constraints[x] = []
-                });
-                tableManager.resetTables();
-                const sqlQuery = tableManager.sqlManager.makeSignificantFilterSQLquery(tableManager.tablesInfo, filterColumnName);
-                const queryResult = alasql(sqlQuery);
-                tableManager.tableFieldNames.forEach(tableFieldName => currObj.updateTable(tableFieldName, queryResult));
-                tableManager.constraintsManager.constraints = tableManager.constraintsManager.initConstraints();
-                tableManager.constraintsManager.whereType = filterColumnName;
-            };
-        }
-        $('input[type=radio][name=inlineRadioOptions]').change(filterTable(this));
+        const filterTableFunc = function() {
+            let filterColumnName = undefined;
+            if (this.value == 'all') {
+                filterColumnName = 'significant_all';
+            } else if (this.value == 'any') {
+                filterColumnName = 'significant_any';
+            }
+            Object.keys(currObj.constraintsManager.constraints).forEach(x => {
+                currObj.constraintsManager.constraints[x] = []
+            });
+            currObj.resetTables();
+            const sqlQuery = currObj.sqlManager.makeSignificantFilterSQLquery(currObj.tablesInfo, filterColumnName);
+            const queryResult = alasql(sqlQuery);
+            currObj.tableFieldNames.forEach(tableFieldName => currObj.updateTable(tableFieldName, queryResult));
+            currObj.constraintsManager.constraints = currObj.constraintsManager.initConstraints();
+            currObj.constraintsManager.whereType = filterColumnName;
+            currObj.selections = currObj.constraintsManager.makeEmptyConstraint();
+            currObj.numSelected = currObj.constraintsManager.makeEmptyCount();
+            currObj.totalSelected = 0;
+        };
+        $('input[type=radio][name=inlineRadioOptions]').change(filterTableFunc);
     }
 
 }
