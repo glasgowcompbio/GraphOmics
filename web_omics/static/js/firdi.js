@@ -220,9 +220,11 @@ class SqlManager {
             .map(t => JSON.parse(t));
     }
 
-    makeWhereSubClauses() {
-        return this.constraintTableConstraintKeyNames
-            .map(t => t['tableName'] + "." + t['constraintKeyName'])
+    makeSQLquery(tablesInfo, skipConstraints, whereType) {
+        const selectClause = this.makeSelectClause(tablesInfo);
+        const innerJoinClause = this.makeInnerJoinClause();
+        const whereClause = this.makeWhereClause(tablesInfo, skipConstraints, whereType);
+        return [selectClause, innerJoinClause, whereClause].join(" ");
     }
 
     makeWhereClause(tablesInfo, skipConstraints, whereType) {
@@ -252,11 +254,15 @@ class SqlManager {
         }
     }
 
-    makeSQLquery(tablesInfo, skipConstraints, whereType) {
+    makeWhereSubClauses() {
+        return this.constraintTableConstraintKeyNames
+            .map(t => t['tableName'] + "." + t['constraintKeyName'])
+    }
+
+    makeSignificantFilterSQLquery(tablesInfo, whereType) {
         const selectClause = this.makeSelectClause(tablesInfo);
         const innerJoinClause = this.makeInnerJoinClause();
-        const whereClause = this.makeWhereClause(tablesInfo, skipConstraints, whereType);
-
+        const whereClause = this.makeSignificantWhereClause(tablesInfo, whereType);
         return [selectClause, innerJoinClause, whereClause].join(" ");
     }
 
@@ -269,14 +275,6 @@ class SqlManager {
         } else {
             return "";
         }
-    }
-
-    makeSignificantFilterSQLquery(tablesInfo, whereType) {
-        const selectClause = this.makeSelectClause(tablesInfo);
-        const innerJoinClause = this.makeInnerJoinClause();
-        const whereClause = this.makeSignificantWhereClause(tablesInfo, whereType);
-
-        return [selectClause, innerJoinClause, whereClause].join(" ");
     }
 
     queryDatabase(tablesInfo, constraints, whereType) {
@@ -293,7 +291,7 @@ class SqlManager {
 
             // if the where subClause includes ALL the data of that table, then skip it
             let sc = false
-            if (uc.length == myTable['tableData'].length) {
+            if (uc.length == 0 || uc.length == myTable['tableData'].length) {
                 sc = true;
             }
             if (!sc) {
@@ -466,12 +464,13 @@ class FiRDI {
         this.constraintsManager.totalSelected = 0;
 
         this.tablesInfo.forEach(t => {
-            const tableAPI = $(this.dataTablesIds[t['tableName']]).DataTable();
+            const tableName = t['tableName'];
+            const tableAPI = $(this.dataTablesIds[tableName]).DataTable();
             tableAPI.clear();
             tableAPI.rows.add(t['tableData']);
             tableAPI.draw();
         });
-
+        this.infoPanelManager.clearAllInfoPanels();
     }
 
     initTableClicks() {
@@ -509,6 +508,18 @@ class FiRDI {
     }
 
     updateTables() {
+        console.log('queryResult');
+        const queryResult = this.sqlManager.queryDatabase(this.tablesInfo, this.constraintsManager.constraints,
+            this.constraintsManager.whereType);
+
+        for (let i = 0; i < this.tableFieldNames.length; i++) { // update all the tables
+            const tableFieldName = this.tableFieldNames[i];
+            const tableName = tableFieldName['tableName'];
+            this.updateSingleTable(tableFieldName, queryResult);
+        }
+    }
+
+    updateTablesForClickUpdate() {
         if (this.constraintsManager.totalSelected > 0) {
 
             console.log('queryResult');
@@ -523,7 +534,7 @@ class FiRDI {
                     this.addSelectionStyle(tableName);
                 } else {
                     // otherwise update table content and selection style
-                    this.updateTable(tableFieldName, queryResult);
+                    this.updateSingleTable(tableFieldName, queryResult);
                     this.addSelectionStyle(tableName);
                 }
             }
@@ -533,7 +544,7 @@ class FiRDI {
         }
     }
 
-    updateTable(tableFieldName, queryResult) {
+    updateSingleTable(tableFieldName, queryResult) {
         const tableName = tableFieldName['tableName'];
         const data = this.prefixQuery(tableFieldName, queryResult);
         $(this.dataTablesIds[tableName]).DataTable().clear();
@@ -633,7 +644,7 @@ class FiRDI {
                     obj.infoPanelManager.selectedIndex[tableName] = selectedIndex;
 
                 } else {
-                    obj.infoPanelManager.clearInfoPane(tableName);
+                    obj.infoPanelManager.clearInfoPanel(tableName);
                 }
             }
         }, 1); // we need a small delay to allow blockUI to be rendered correctly
@@ -646,38 +657,29 @@ class FiRDI {
             if (targetTr.hasClass('selected')) {
                 this.constraintsManager.removeConstraint(tableName, rowData);
                 this.removeSelectionStyle(targetTr);
-                this.updateTables();
+                this.updateTablesForClickUpdate();
             } else { // otherwise select the current row
                 this.constraintsManager.addConstraint(tableName, rowData, rowIndex);
-                this.updateTables();
+                this.updateTablesForClickUpdate();
             }
         } else { // otherwise just select this row
             this.constraintsManager.addConstraint(tableName, rowData, rowIndex);
-            this.updateTables();
+            this.updateTablesForClickUpdate();
         }
     }
 
     initTableFilters() {
         const currObj = this;
         const filterTableFunc = function() {
-            let filterColumnName = undefined;
-            if (this.value == 'all') {
-                filterColumnName = 'significant_all';
-            } else if (this.value == 'any') {
-                filterColumnName = 'significant_any';
-            }
-            Object.keys(currObj.constraintsManager.constraints).forEach(x => {
-                currObj.constraintsManager.constraints[x] = []
-            });
-            currObj.resetTables();
-            const sqlQuery = currObj.sqlManager.makeSignificantFilterSQLquery(currObj.tablesInfo, filterColumnName);
-            const queryResult = alasql(sqlQuery);
-            currObj.tableFieldNames.forEach(tableFieldName => currObj.updateTable(tableFieldName, queryResult));
-            currObj.constraintsManager.constraints = currObj.constraintsManager.initConstraints();
-            currObj.constraintsManager.whereType = filterColumnName;
-            currObj.selections = currObj.constraintsManager.makeEmptyConstraint();
-            currObj.numSelected = currObj.constraintsManager.makeEmptyCount();
-            currObj.totalSelected = 0;
+            blockUI();
+            const selectedValue = this.value;
+            window.setTimeout(function() {
+                currObj.resetFiRDI();
+                let filterColumnName = selectedValue.length > 0 ? selectedValue : null;
+                currObj.constraintsManager.whereType = filterColumnName;
+                currObj.updateTables();
+                unblockUI();
+            }, 1); // we need a small delay to allow blockUI to be rendered correctly
         };
         $('input[type=radio][name=inlineRadioOptions]').change(filterTableFunc);
     }

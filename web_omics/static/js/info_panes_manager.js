@@ -65,27 +65,11 @@ class InfoPanesManager {
 
     }
 
-    clearInfoPane(tableId) {
-        // Wrapper function to call the appropriate info function for the given table/entity
-        if (tableId === 'genes_table') {
-            this.clearInfoPanel('gene-row-info', 'Gene Information');
-        } else if (tableId === 'proteins_table') {
-            this.clearInfoPanel('protein-row-info', 'Protein Information');
-        } else if (tableId === 'compounds_table') {
-            this.clearInfoPanel('compound-row-info', 'Compound Information');
-        } else if (tableId === 'reactions_table') {
-            this.clearInfoPanel('reaction-row-info', 'Reaction Information');
-        } else if (tableId === 'pathways_table') {
-            this.clearInfoPanel('pathway-row-info', 'Pathway Information');
-        }
-    }
-
-    clearAllInfoPanes() {
-        this.clearInfoPanel('gene-row-info', 'Gene Information');
-        this.clearInfoPanel('protein-row-info', 'Protein Information');
-        this.clearInfoPanel('compound-row-info', 'Compound Information');
-        this.clearInfoPanel('reaction-row-info', 'Reaction Information');
-        this.clearInfoPanel('pathway-row-info', 'Pathway Information');
+    clearAllInfoPanels() {
+        const allTables = [
+            'genes_table', 'proteins_table', 'compounds_table', 'reactions_table', 'pathways_table'
+        ];
+        allTables.forEach(tableId => this.clearInfoPanel(tableId));
     }
 
     updateEntityInfo(tableId, selections, selectedIndex, updatePage) {
@@ -100,27 +84,10 @@ class InfoPanesManager {
 
         // call the appropriate info function for the given table/entity
         const viewUrl = this.viewNames[tableId];
-        if (tableId === 'genes_table') {
-            this.updateInfoPanel(tableId, rowObject, viewUrl,
-                'gene-row-info',
-                'gene-title', 'gene-previous', 'gene-next', selections, selectedIndex);
-        } else if (tableId === 'proteins_table') {
-            this.updateInfoPanel(tableId, rowObject, viewUrl,
-                'protein-row-info',
-                'protein-title', 'protein-previous', 'protein-next', selections, selectedIndex);
-        } else if (tableId === 'compounds_table') {
-            this.updateInfoPanel(tableId, rowObject, viewUrl,
-                'compound-row-info',
-                'compound-title',  'compound-previous', 'compound-next', selections, selectedIndex);
-        } else if (tableId === 'reactions_table') {
-            this.updateInfoPanel(tableId, rowObject, viewUrl,
-                'reaction-row-info',
-                'reaction-title', 'reaction-previous', 'reaction-next', selections, selectedIndex);
-        } else if (tableId === 'pathways_table') {
-            this.updateInfoPanel(tableId, rowObject, viewUrl,
-                'pathway-row-info',
-                'pathway-title', 'pathway-previous', 'pathway-next', selections, selectedIndex);
-        }
+        const [titleId, rowId] = this.getRowIds(tableId);
+        const [buttonPreviousId, buttonNextId] = this.getButtonIds(tableId);
+        this.updateInfoPanel(tableId, rowObject, viewUrl,
+            rowId, titleId, buttonPreviousId, buttonNextId, selections, selectedIndex);
     }
 
     getPkValue(rowObject, tableId) {
@@ -153,13 +120,35 @@ class InfoPanesManager {
         return null;
     }
 
+    getRowIds(tableId) {
+        const tableIdToRowIds = {
+            'genes_table': ['gene-title', 'gene-row-info'],
+            'proteins_table': ['protein-title', 'protein-row-info'],
+            'compounds_table': ['compound-title', 'compound-row-info'],
+            'reactions_table': ['reaction-title', 'reaction-row-info'],
+            'pathways_table': ['pathway-title', 'pathway-row-info']
+        }
+        return tableIdToRowIds[tableId];
+    }
+
+    getButtonIds(tableId) {
+        const tableIdToButtonIds = {
+            'genes_table': ['gene-previous', 'gene-next'],
+            'proteins_table': ['protein-previous', 'protein-next'],
+            'compounds_table': ['compound-previous', 'compound-next'],
+            'reactions_table': ['reaction-previous', 'reaction-next'],
+            'pathways_table': ['pathway-previous', 'pathway-next']
+        }
+        return tableIdToButtonIds[tableId];
+    }
+
     updateInfoPanel(tableId, rowObject, dataUrl, rowId,
-                    titleId, titlePrevId, titleNextId, selections, selectionIndex) {
+                    titleId, buttonPreviousId, buttonNextId, selections, selectionIndex) {
         const rowData = rowObject.data;
         const displayNameCol = this.getDisplayName(rowObject, tableId);
-        this.clearInfoPanel(rowId);
+        this.clearInfoPanel(tableId);
         if (rowData[displayNameCol] !== '-') {
-            this.updateTitle(rowData, titleId, titlePrevId, titleNextId, selections, selectionIndex)
+            this.updateTitle(rowData, titleId, buttonPreviousId, buttonNextId, selections, selectionIndex)
             this.updateContent(rowData, tableId, dataUrl, rowId);
         } else {
             const selector = '#' + rowId;
@@ -331,12 +320,18 @@ class InfoPanesManager {
         });
     }
 
-    clearInfoPanel(rowId) {
-        let content = $('<p/>', {
+    clearInfoPanel(tableId) {
+        const [titleId, rowId] = this.getRowIds(tableId);
+        const [buttonPreviousId, buttonNextId] = this.getButtonIds(tableId);
+        $('#' + titleId).text('-');
+        $('#' + buttonPreviousId).hide();
+        $('#' + buttonNextId).hide();
+        const content = $('<p/>', {
             'text': 'Select an entry above.'
         });
-        const selector = '#' + rowId;
-        $(selector).empty().append(content);
+        $('#' + rowId).empty().append(content);
+        this.selections[tableId] = [];
+        this.selectedIndex[tableId] = null;
     }
 
     plotPeakIntensitySamples(plotDiv, data) { // slightly modified from ross' pimp_quick_results_firdi.js
