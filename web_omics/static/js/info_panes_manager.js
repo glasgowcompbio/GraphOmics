@@ -1,4 +1,12 @@
-import { getRowObj, goToPage } from './common'
+import * as d3 from 'd3-latest';
+import { getRowObj, goToPage } from './common';
+
+function getInfoTitle(displayName) {
+    let infoTitle = $('<h6/>', {
+        'text': displayName
+    });
+    return infoTitle;
+}
 
 class InfoPanesManager {
 
@@ -183,118 +191,31 @@ class InfoPanesManager {
         };
         const displayName = this.getDisplayName(rowObject, tableId);
         let infoDiv = $('<div/>');
-        let infoTitle = $('<h6/>', {
-            'text': displayName
-        });
+        let infoTitle = getInfoTitle(displayName);
         infoDiv.append(infoTitle);
 
         let dataDiv = $('<div\>', {
             'html': '<p>Loading data...</p>'
         });
         $.getJSON(dataUrl, tableData, data => {
-            const annotation = data['annotation'];
-            const annotationUrl = data['annotation_url'];
-            const annotationId = data['annotation_id'];
-            const annotationLink = '<button type="button" class="btn btn-outline-primary btn-sm" style="margin-left: 5px"' +
-                `onclick="annotate('${annotationId}', '${annotationUrl}', '${displayName}')">📝</button>`;
-            infoTitle.append(annotationLink);
-
-            let annotationHtml = '';
-            if (annotation.length > 0) {
-                annotationHtml = `<p><strong>Annotation</strong>: ${annotation}</p>`
-            }
-            const annotationDiv = $('<div\>', {
-                id: `annotation-${annotationId}`,
-                html: annotationHtml,
-                class: 'annotation'
-            });
+            const annotationDiv = this.getAnnotationDiv(data, displayName, infoTitle);
             infoDiv.append(annotationDiv);
 
             // loop over additional information
             let infos = data['infos'];
-            for (let item of infos) {
-                const key = item.key;
-                const val = item.value + ''; // ensure that val is always a string
-                const url = item.url;
-                if (val.includes((';'))) {
-                    let html = `<p><strong>${key}</strong>:</p><ul>`;
-                    const tokens = val.split(';').map(x => x.trim());
-                    if (url) {
-                        const links = url.split(';').map(x => x.trim());
-                        for (let i = 0; i < tokens.length; i++) {
-                            html += `<li><a href="${links[i]}" target="_blank">${tokens[i]}</a></li>`;
-                        }
-                    } else { // no url
-                        for (let w of tokens) {
-                            html += `<li>${w}</li>`;
-                        }
-                    }
-                    html += '</ul>';
-                    infoDiv.append(html);
-                } else {
-                    infoDiv.append(`<p><strong>${key}</strong>: ${val}</p>`);
-                }
-            }
+            this.updateInfoDivAdditional(infos, infoDiv);
 
             // loop over external links
             dataDiv.empty();
-            let links = data['links'];
-            for (let link of links) {
-                let newLink = $('<p/>').append($('<a/>', {
-                    'href': link.href,
-                    'text': link.text,
-                    'target': '_blank'
-                }));
-                dataDiv.append(newLink);
-            }
+            this.updateDataDivLinks(data, dataDiv);
 
             // loop over images
-            function isImageUrl(url) {
-                return (url.match(/\.(jpeg|jpg|gif|png)$/) != null) || url.includes('chebi');
-            }
-
             let images = data['images'];
-            for (let item of images) {
-                if (isImageUrl(item)) {
-                    let newImage = $('<img/>', {
-                        'src': item,
-                        'class': 'img-fluid'
-                    });
-                    dataDiv.append(newImage);
-                } else if (item.includes('reactome')) { // handle reactome images
-                    let newLink = $('<a/>', {
-                        'href': item + "&quality=7",
-                        'target': '_blank'
-                    }).append(
-                        $('<img/>', {
-                            'src': item + "&quality=3",
-                            'class': 'img-fluid'
-                        })
-                    );
-                    dataDiv.append(newLink);
-                }
-            }
+            this.updateDataDivImages(images, dataDiv);
 
-            // plot intensities here
-            const plotData = data['plot_data']
+            // update intensity data if provided
             if (data.hasOwnProperty('plot_data')) {
-                let plotDiv = document.createElement('div');
-                let d3_intensity_chart_load_btn = $('<button/>', {
-                    'class': 'btn btn-sm btn-outline-primary',
-                    'text': 'Show measurements',
-                    'css': {
-                        'margin-top': '10px'
-                    }
-                });
-                dataDiv.append(d3_intensity_chart_load_btn);
-                dataDiv.append(plotDiv);
-                this.plotPeakIntensitySamples(plotDiv, plotData);
-
-                let $_plotDiv = $(plotDiv);
-                $_plotDiv.hide();
-                d3_intensity_chart_load_btn.click(function () {
-                    $_plotDiv.toggle('fast');
-                });
+                this.updatePlotData(data, dataDiv);
             }
 
         });
@@ -303,6 +224,111 @@ class InfoPanesManager {
         $(selector).empty();
         $(selector).append(infoDiv);
         $(selector).append(dataDiv);
+    }
+
+    getAnnotationDiv(data, displayName, infoTitle) {
+        const annotation = data['annotation'];
+        const annotationUrl = data['annotation_url'];
+        const annotationId = data['annotation_id'];
+        const annotationLink = '<button type="button" class="btn btn-outline-primary btn-sm" style="margin-left: 5px"' +
+            `onclick="annotate('${annotationId}', '${annotationUrl}', '${displayName}')">📝</button>`;
+        infoTitle.append(annotationLink);
+
+        let annotationHtml = '';
+        if (annotation.length > 0) {
+            annotationHtml = `<p><strong>Annotation</strong>: ${annotation}</p>`
+        }
+        const annotationDiv = $('<div\>', {
+            id: `annotation-${annotationId}`,
+            html: annotationHtml,
+            class: 'annotation'
+        });
+        return annotationDiv;
+    }
+
+    updateInfoDivAdditional(infos, infoDiv) {
+        for (let item of infos) {
+            const key = item.key;
+            const val = item.value + ''; // ensure that val is always a string
+            const url = item.url;
+            if (val.includes((';'))) {
+                let html = `<p><strong>${key}</strong>:</p><ul>`;
+                const tokens = val.split(';').map(x => x.trim());
+                if (url) {
+                    const links = url.split(';').map(x => x.trim());
+                    for (let i = 0; i < tokens.length; i++) {
+                        html += `<li><a href="${links[i]}" target="_blank">${tokens[i]}</a></li>`;
+                    }
+                } else { // no url
+                    for (let w of tokens) {
+                        html += `<li>${w}</li>`;
+                    }
+                }
+                html += '</ul>';
+                infoDiv.append(html);
+            } else {
+                infoDiv.append(`<p><strong>${key}</strong>: ${val}</p>`);
+            }
+        }
+    }
+
+    updateDataDivLinks(data, dataDiv) {
+        let links = data['links'];
+        for (let link of links) {
+            let newLink = $('<p/>').append($('<a/>', {
+                'href': link.href,
+                'text': link.text,
+                'target': '_blank'
+            }));
+            dataDiv.append(newLink);
+        }
+    }
+
+    updateDataDivImages(images, dataDiv) {
+        function isImageUrl(url) {
+            return (url.match(/\.(jpeg|jpg|gif|png)$/) != null) || url.includes('chebi');
+        }
+        for (let item of images) {
+            if (isImageUrl(item)) {
+                let newImage = $('<img/>', {
+                    'src': item,
+                    'class': 'img-fluid'
+                });
+                dataDiv.append(newImage);
+            } else if (item.includes('reactome')) { // handle reactome images
+                let newLink = $('<a/>', {
+                    'href': item + "&quality=7",
+                    'target': '_blank'
+                }).append(
+                    $('<img/>', {
+                        'src': item + "&quality=3",
+                        'class': 'img-fluid'
+                    })
+                );
+                dataDiv.append(newLink);
+            }
+        }
+    }
+
+    updatePlotData(data, dataDiv) {
+        const plotData = data['plot_data']
+        let plotDiv = document.createElement('div');
+        let d3_intensity_chart_load_btn = $('<button/>', {
+            'class': 'btn btn-sm btn-primary',
+            'text': 'Show measurements',
+            'css': {
+                'margin-top': '10px'
+            }
+        });
+        dataDiv.append(d3_intensity_chart_load_btn);
+        dataDiv.append(plotDiv);
+        this.plotPeakIntensitySamples(plotDiv, plotData);
+
+        let $_plotDiv = $(plotDiv);
+        $_plotDiv.hide();
+        d3_intensity_chart_load_btn.click(function () {
+            $_plotDiv.toggle('fast');
+        });
     }
 
     clearInfoPanel(rowId) {
