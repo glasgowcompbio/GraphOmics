@@ -414,12 +414,31 @@ class ConstraintsManager {
 
 class FiRDI {
 
-    constructor(tablesInfo, defaultDataTablesSettings, infoPanelManager) {
+    constructor(tablesInfo, defaultDataTablesSettings, columnsToHidePerTable, tableFields, infoPanelManager) {
         this.tablesInfo = tablesInfo;
         this.originalTablesInfo = deepCopy(tablesInfo);
         this.infoPanelManager = infoPanelManager;
 
         // Some minimum DataTables settings are required
+        // set defaults across all tables
+        const minDataTablesSettings = this.getMinTablesSettings();
+        this.defaultDataTablesSettings = Object.assign(minDataTablesSettings, defaultDataTablesSettings || {});
+        $.extend(true, $.fn.dataTable.defaults, this.defaultDataTablesSettings);
+
+        this.dataTablesOptionsManager = new DataTablesOptionsManager(this.tablesInfo);
+        this.sqlManager = new SqlManager(this.tablesInfo);
+        this.constraintsManager = new ConstraintsManager(this.tablesInfo, this.sqlManager);
+        this.tableFieldNames = this.getFieldNames();
+        this.dataTablesIds = this.getDataTableIds(tablesInfo);
+
+        this.initTableClicks();
+        this.initHideColumnClicks(columnsToHidePerTable);
+        this.initSignificantFilters();
+        this.initSearchBox();
+        this.hideColumns(columnsToHidePerTable, tableFields);
+    }
+
+    getMinTablesSettings() {
         const minDataTablesSettings = {
             "dom": "rpt",
             "select": { // Needed for row selection i.e. the user-select event and limiting to selecting one row at a time. Don't change the select settings.
@@ -430,26 +449,82 @@ class FiRDI {
             "orderClasses": false, // needed for speed with large datasets
             "paging": true // used with deferRender for speed. Paginiation is used explicitly in code elsewhere: it must be left on!
         };
+        return minDataTablesSettings;
+    }
 
-
-        // set defaults across all tables
-        this.defaultDataTablesSettings = Object.assign(minDataTablesSettings, defaultDataTablesSettings || {});
-        $.extend(true, $.fn.dataTable.defaults, this.defaultDataTablesSettings);
-
-        this.dataTablesOptionsManager = new DataTablesOptionsManager(this.tablesInfo);
-        this.sqlManager = new SqlManager(this.tablesInfo);
-        // this.stackManager = new StackManager();
-        this.constraintsManager = new ConstraintsManager(this.tablesInfo, this.sqlManager);
-
-        this.tableFieldNames = this.getFieldNames();
-
-        this.dataTablesIds = tablesInfo.filter(isTableVisible).reduce((apis, t) => {
+    getDataTableIds(tablesInfo) {
+        return tablesInfo.filter(isTableVisible).reduce((apis, t) => {
             apis[t['tableName']] = "#" + t['tableName'];
             return apis
         }, {});
+    }
 
-        this.initTableClicks();
-        this.initTableFilters();
+    initTableClicks() {
+        const dataTablesIdsKeys = Object.keys(this.dataTablesIds);
+        dataTablesIdsKeys.forEach(id => $(this.dataTablesIds[id]).DataTable().on('user-select', this.trClickHandler.bind(this)));
+    }
+
+    initHideColumnClicks(columnsToHidePerTable) {
+        $('#showDataCheck').change(function () {
+            let visible = false;
+            if (this.checked) {
+                visible = true;
+            }
+            columnsToHidePerTable.forEach(function (tableInfo) {
+                const tableAPI = $('#' + tableInfo['tableName']).DataTable();
+                if (tableInfo['colData']) {
+                    tableAPI
+                        .columns(tableInfo['colData'].map(columnName => columnName + ":name")) // append ":name" to each columnName for the selector
+                        .visible(visible);
+                }
+            });
+        });
+    }
+
+    initSignificantFilters() {
+        const currObj = this;
+        const filterTableFunc = function() {
+            blockUI();
+            const selectedValue = this.value;
+            window.setTimeout(function() {
+                currObj.resetFiRDI();
+                let filterColumnName = selectedValue.length > 0 ? selectedValue : null;
+                currObj.constraintsManager.whereType = filterColumnName;
+                currObj.updateTables();
+                unblockUI();
+            }, 1); // we need a small delay to allow blockUI to be rendered correctly
+        };
+        $('input[type=radio][name=inlineRadioOptions]').change(filterTableFunc);
+    }
+
+    initSearchBox() {
+        $('#global_filter').on('keyup click', function () {
+            const val = $('#global_filter').val();
+            $.fn.dataTable.tables({api: true}).search(val).draw();
+        });
+    }
+
+    hideColumns(columnsToHidePerTable, tableFields) {
+        columnsToHidePerTable.forEach(function (tableInfo) {
+            const tableAPI = $('#' + tableInfo['tableName']).DataTable();
+            // get all column names containing the word 'padj' or 'species' to hide as well
+            const colNames = tableAPI.settings()[0].aoColumns.map(x => x.sName);
+            const filtered = colNames.filter(x => x.indexOf('padj') > -1 || x.indexOf('species') > -1);
+            tableInfo['columnNames'] = tableInfo['columnNames'].concat(filtered);
+            // get all columns names for the raw data and hide them as well
+            const colData = tableFields[tableInfo['tableName']];
+            if (colData) {
+                tableInfo['colData'] = colData;
+                tableAPI
+                    .columns(tableInfo['colData'].map(columnName => columnName + ":name")) // append ":name" to each columnName for the selector
+                    .visible(false);
+            }
+            // do the hiding here
+            tableAPI
+                .columns(tableInfo['columnNames'].map(columnName => columnName + ":name")) // append ":name" to each columnName for the selector
+                .visible(false);
+
+        });
     }
 
     resetFiRDI() {
@@ -471,11 +546,6 @@ class FiRDI {
             tableAPI.draw();
         });
         this.infoPanelManager.clearAllInfoPanels();
-    }
-
-    initTableClicks() {
-        const dataTablesIdsKeys = Object.keys(this.dataTablesIds);
-        dataTablesIdsKeys.forEach(id => $(this.dataTablesIds[id]).DataTable().on('user-select', this.trClickHandler.bind(this)));
     }
 
     getFieldNames() {
@@ -666,22 +736,6 @@ class FiRDI {
             this.constraintsManager.addConstraint(tableName, rowData, rowIndex);
             this.updateTablesForClickUpdate();
         }
-    }
-
-    initTableFilters() {
-        const currObj = this;
-        const filterTableFunc = function() {
-            blockUI();
-            const selectedValue = this.value;
-            window.setTimeout(function() {
-                currObj.resetFiRDI();
-                let filterColumnName = selectedValue.length > 0 ? selectedValue : null;
-                currObj.constraintsManager.whereType = filterColumnName;
-                currObj.updateTables();
-                unblockUI();
-            }, 1); // we need a small delay to allow blockUI to be rendered correctly
-        };
-        $('input[type=radio][name=inlineRadioOptions]').change(filterTableFunc);
     }
 
 }

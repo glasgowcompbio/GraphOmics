@@ -233,12 +233,6 @@ class Linker {
 
         ];
 
-        // https://stackoverflow.com/questions/24383805/datatables-change-number-of-pagination-buttons
-        // $.fn.DataTable.ext.pager.numbers_length = 3;
-
-        const infoPanesManager = new InfoPanesManager(viewNames);
-        const firdi = new FiRDI(tables, defaultDataTablesSettings, infoPanesManager);
-
         // Hide certain columns
         let columnsToHidePerTable = [
             {"tableName": "genes_table", "columnNames": ["obs", "gene_pk", "significant_all", "significant_any"]},
@@ -248,48 +242,11 @@ class Linker {
             {"tableName": "pathways_table", "columnNames": ["obs", "pathway_pk", "significant_all", "significant_any"]}
         ];
 
-        columnsToHidePerTable.forEach(function (tableInfo) {
-            const tableAPI = $('#' + tableInfo['tableName']).DataTable();
-            // get all column names containing the word 'padj' or 'species' to hide as well
-            const colNames = tableAPI.settings()[0].aoColumns.map(x => x.sName);
-            const filtered = colNames.filter(x => x.indexOf('padj') > -1 || x.indexOf('species') > -1);
-            tableInfo['columnNames'] = tableInfo['columnNames'].concat(filtered);
-            // get all columns names for the raw data and hide them as well
-            const colData = tableFields[tableInfo['tableName']];
-            if (colData) {
-                tableInfo['colData'] = colData;
-                tableAPI
-                    .columns(tableInfo['colData'].map(columnName => columnName + ":name")) // append ":name" to each columnName for the selector
-                    .visible(false);
-            }
-            // do the hiding here
-            tableAPI
-                .columns(tableInfo['columnNames'].map(columnName => columnName + ":name")) // append ":name" to each columnName for the selector
-                .visible(false);
+        // https://stackoverflow.com/questions/24383805/datatables-change-number-of-pagination-buttons
+        // $.fn.DataTable.ext.pager.numbers_length = 3;
 
-        });
-
-        // show/hide data columns
-        $('#showDataCheck').change(function () {
-            let visible = false;
-            if (this.checked) {
-                visible = true;
-            }
-            columnsToHidePerTable.forEach(function (tableInfo) {
-                const tableAPI = $('#' + tableInfo['tableName']).DataTable();
-                if (tableInfo['colData']) {
-                    tableAPI
-                        .columns(tableInfo['colData'].map(columnName => columnName + ":name")) // append ":name" to each columnName for the selector
-                        .visible(visible);
-                }
-            });
-        });
-
-        // enable global search box
-        $('#global_filter').on('keyup click', function () {
-            const val = $('#global_filter').val();
-            $.fn.dataTable.tables({api: true}).search(val).draw();
-        });
+        const infoPanesManager = new InfoPanesManager(viewNames);
+        const firdi = new FiRDI(tables, defaultDataTablesSettings, columnsToHidePerTable, tableFields, infoPanesManager);
 
     }
 
