@@ -596,7 +596,7 @@ class FiRDI {
 
             // clear search result
             $('#global_filter').val('');
-            $.fn.dataTable.tables({api: true}).search('').draw();
+            $.fn.dataTable.tables({api: true}).search('');
 
             // find the selected row
             const tableName = e.currentTarget.id;
@@ -618,10 +618,15 @@ class FiRDI {
 
                     // find the pk value that has been clicked and its index in selections
                     const selectedValue = obj.infoPanelManager.getPkValue(rowData, tableName);
-                    const selectedIndex = selections.map(x => x.idVal).indexOf(selectedValue);
-
-                    // update the bottom panel
-                    obj.infoPanelManager.updateEntityInfo(tableName, selections, selectedIndex);
+                    let selectedIndex = selections.map(x => x.idVal).indexOf(selectedValue);
+                    let updatePage = true;
+                    if (selectedIndex == -1 && selections.length > 0) { // if the current row has been unclicked
+                        // update the bottom panel to show the first item in selections,
+                        // but don't change the current page in the datatable
+                        selectedIndex = 0;
+                        updatePage = false;
+                    }
+                    obj.infoPanelManager.updateEntityInfo(tableName, selections, selectedIndex, updatePage);
 
                     // store for use in buttons etc later
                     obj.infoPanelManager.selections[tableName] = selections;

@@ -31,14 +31,14 @@ class InfoPanesManager {
         const handlePrevFunc = (tableName) => {
             const selections = currObj.selections[tableName];
             const selectedIndex = currObj.selectedIndex[tableName]-1;
-            currObj.updateEntityInfo(tableName, selections, selectedIndex);
+            currObj.updateEntityInfo(tableName, selections, selectedIndex, true);
             currObj.selections[tableName] = selections;
             currObj.selectedIndex[tableName] = selectedIndex;
         }
         const handleNextFunc = (tableName) => {
             const selections = currObj.selections[tableName];
             const selectedIndex = currObj.selectedIndex[tableName]+1;
-            currObj.updateEntityInfo(tableName, selections, selectedIndex);
+            currObj.updateEntityInfo(tableName, selections, selectedIndex, true);
             currObj.selections[tableName] = selections;
             currObj.selectedIndex[tableName] = selectedIndex;
         }
@@ -80,10 +80,15 @@ class InfoPanesManager {
         this.clearInfoPanel('pathway-row-info', 'Pathway Information');
     }
 
-    updateEntityInfo(tableId, selections, selectedIndex) {
+    updateEntityInfo(tableId, selections, selectedIndex, updatePage) {
+        if (selectedIndex == -1) {
+            return;
+        }
         const selectedValue = selections[selectedIndex].idVal;
         const rowObject = getRowObj(tableId, selectedValue);
-        goToPage(rowObject);
+        if (updatePage) {
+            goToPage(rowObject);
+        }
 
         // call the appropriate info function for the given table/entity
         const viewUrl = this.viewNames[tableId];
