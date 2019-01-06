@@ -13,6 +13,7 @@ import 'datatables.net-select-dt/css/select.dataTables.min.css';
 import alasql from 'alasql';
 
 import { isTableVisible, deepCopy, getRowObj, goToPage, blockUI, unblockUI } from './common'
+import InfoPanesManager from './info_panes_manager';
 
 class DataTablesOptionsManager {
 
@@ -312,18 +313,111 @@ class SqlManager {
 }
 
 class ConstraintsManager {
-    constructor(tablesInfo, sqlManager) {
+    constructor(tablesInfo, sqlManager, state) {
         this.tablesInfo = tablesInfo;
         this.tableKeys = sqlManager.getTableKeys();
         this.sqlManager = sqlManager;
-        this.constraintTablesConstraintKeyNames = sqlManager.getConstraintTablesConstraintKeyName(this.tablesInfo)
         this.tableIdToIdColumnMap = this.getTableKeysAsSingleObject();
-        this.defaultConstraints = this.getDefaultConstraints();
-        this.constraints = this.initConstraints();
-        this.selections = this.makeEmptyConstraint();
-        this.numSelected = this.makeEmptyCount();
+        this.state = state;
+    }
+
+    getTableKeysAsSingleObject() {
+        // Get the table name and key used in the WHERE clause in the form tableName: key
+        return this.sqlManager.getConstraintTablesConstraintKeyName(this.tablesInfo)
+            .map(t => ({[t['tableName']]: t['constraintKeyName']}))
+            .reduce((o, v) => Object.assign(o, v), {});
+    }
+
+    getId(tableName, rowObject) {
+        const idColumn = this.tableIdToIdColumnMap[tableName];
+        return rowObject[idColumn];
+    }
+
+    addConstraint(tableName, rowData, rowIndex) {
+        this.state.numSelected[tableName]++;
+        this.state.totalSelected++;
+        const idVal = this.getId(tableName, rowData);
+        this.state.selections[tableName].push({
+            idVal: idVal,
+            rowIndex: rowIndex
+        });
+        // ensure that entries are sorted by rowIndex asc
+        this.state.selections[tableName].sort((a, b) => a.rowIndex - b.rowIndex);
+        this.state.constraints[tableName] = this.selectionToConstraint(tableName);
+    }
+
+    removeConstraint(tableName, rowData) {
+        this.state.numSelected[tableName]--;
+        this.state.totalSelected--;
+        const idVal = this.getId(tableName, rowData);
+        this.state.selections[tableName] = this.state.selections[tableName].filter(x => x.idVal !== idVal);
+        this.state.constraints[tableName] = this.selectionToConstraint(tableName);
+    }
+
+    selectionToConstraint(tableName) {
+        if (this.state.numSelected[tableName] == 0) {
+            return this.state.defaultConstraints[tableName];
+        } else {
+            return this.state.selections[tableName].map(x => x.idVal);
+        }
+    }
+
+}
+
+class FiRDIState {
+
+    constructor(defaultConstraints, initConstraints, emptySelections, emptyCounts) {
+        this.defaultConstraints = defaultConstraints;
+        this.constraints = initConstraints;
+        this.selections = emptySelections;
+        this.numSelected = emptyCounts;
         this.totalSelected = 0;
         this.whereType = null;
+        this.selectedIndex = {};
+    }
+
+}
+
+class FiRDI {
+
+    constructor(tablesInfo, defaultDataTablesSettings, columnsToHidePerTable, tableFields, viewNames) {
+        this.tablesInfo = tablesInfo;
+        this.originalTablesInfo = deepCopy(tablesInfo);
+
+        // Some minimum DataTables settings are required
+        // set defaults across all tables
+        const minDataTablesSettings = this.getMinTablesSettings();
+        const dataTablesSettings = Object.assign(minDataTablesSettings, defaultDataTablesSettings || {});
+        $.extend(true, $.fn.dataTable.defaults, dataTablesSettings);
+
+        this.dataTablesOptionsManager = new DataTablesOptionsManager(this.tablesInfo);
+        this.sqlManager = new SqlManager(this.tablesInfo);
+
+        const defaultConstraints = this.getDefaultConstraints();
+        const initConstraints = deepCopy(defaultConstraints);
+        const emptySelections = this.makeEmptyConstraint();
+        const emptyCounts = this.makeEmptyCount();
+        this.state = new FiRDIState(defaultConstraints, initConstraints, emptySelections, emptyCounts);
+
+        this.constraintsManager = new ConstraintsManager(this.tablesInfo, this.sqlManager, this.state);
+        this.infoPanelManager = new InfoPanesManager(viewNames, this.state);
+        this.tableFieldNames = this.getFieldNames();
+        this.dataTablesIds = this.getDataTableIds(tablesInfo);
+
+        this.initTableClicks();
+        this.initHideColumnClicks(columnsToHidePerTable);
+        this.initSignificantFilters();
+        this.initSearchBox();
+        this.hideColumns(columnsToHidePerTable, tableFields);
+    }
+
+    getDefaultConstraints() {
+        return this.sqlManager.getConstraintTablesConstraintKeyName(this.tablesInfo)
+            .reduce((constraints, tableInfo) => {
+                constraints[tableInfo['tableName']] = this.getKeys(
+                    this.tablesInfo, tableInfo['tableName'], tableInfo['constraintKeyName']);
+                return constraints;
+            }, {});
     }
 
     getKeys(tablesInfo, tableName, k) {
@@ -338,15 +432,6 @@ class ConstraintsManager {
             .filter((k, idx, arr) => arr.indexOf(k) === idx);
 
         return keys;
-    }
-
-    getDefaultConstraints() {
-        return this.sqlManager.getConstraintTablesConstraintKeyName(this.tablesInfo)
-            .reduce((constraints, tableInfo) => {
-                constraints[tableInfo['tableName']] = this.getKeys(
-                    this.tablesInfo, tableInfo['tableName'], tableInfo['constraintKeyName']);
-                return constraints;
-            }, {});
     }
 
     makeEmptyConstraint() {
@@ -367,75 +452,6 @@ class ConstraintsManager {
 
     initConstraints() {
         return deepCopy(this.defaultConstraints);
-    }
-
-    getTableKeysAsSingleObject() {
-        // Get the table name and key used in the WHERE clause in the form tableName: key
-        return this.sqlManager.getConstraintTablesConstraintKeyName(this.tablesInfo)
-            .map(t => ({[t['tableName']]: t['constraintKeyName']}))
-            .reduce((o, v) => Object.assign(o, v), {});
-    }
-
-    getId(tableName, rowObject) {
-        const idColumn = this.tableIdToIdColumnMap[tableName];
-        return rowObject[idColumn];
-    }
-
-    addConstraint(tableName, rowData, rowIndex) {
-        this.numSelected[tableName]++;
-        this.totalSelected++;
-        const idVal = this.getId(tableName, rowData);
-        this.selections[tableName].push({
-            idVal: idVal,
-            rowIndex: rowIndex
-        });
-        // ensure that entries are sorted by rowIndex asc
-        this.selections[tableName].sort((a, b) => a.rowIndex - b.rowIndex);
-        this.constraints[tableName] = this.selectionToConstraint(tableName);
-    }
-
-    removeConstraint(tableName, rowData) {
-        this.numSelected[tableName]--;
-        this.totalSelected--;
-        const idVal = this.getId(tableName, rowData);
-        this.selections[tableName] = this.selections[tableName].filter(x => x.idVal !== idVal);
-        this.constraints[tableName] = this.selectionToConstraint(tableName);
-    }
-
-    selectionToConstraint(tableName) {
-        if (this.numSelected[tableName] == 0) {
-            return this.defaultConstraints[tableName];
-        } else {
-            return this.selections[tableName].map(x => x.idVal);
-        }
-    }
-
-}
-
-class FiRDI {
-
-    constructor(tablesInfo, defaultDataTablesSettings, columnsToHidePerTable, tableFields, infoPanelManager) {
-        this.tablesInfo = tablesInfo;
-        this.originalTablesInfo = deepCopy(tablesInfo);
-        this.infoPanelManager = infoPanelManager;
-
-        // Some minimum DataTables settings are required
-        // set defaults across all tables
-        const minDataTablesSettings = this.getMinTablesSettings();
-        this.defaultDataTablesSettings = Object.assign(minDataTablesSettings, defaultDataTablesSettings || {});
-        $.extend(true, $.fn.dataTable.defaults, this.defaultDataTablesSettings);
-
-        this.dataTablesOptionsManager = new DataTablesOptionsManager(this.tablesInfo);
-        this.sqlManager = new SqlManager(this.tablesInfo);
-        this.constraintsManager = new ConstraintsManager(this.tablesInfo, this.sqlManager);
-        this.tableFieldNames = this.getFieldNames();
-        this.dataTablesIds = this.getDataTableIds(tablesInfo);
-
-        this.initTableClicks();
-        this.initHideColumnClicks(columnsToHidePerTable);
-        this.initSignificantFilters();
-        this.initSearchBox();
-        this.hideColumns(columnsToHidePerTable, tableFields);
     }
 
     getMinTablesSettings() {
@@ -489,7 +505,7 @@ class FiRDI {
             window.setTimeout(function() {
                 currObj.resetFiRDI();
                 let filterColumnName = selectedValue.length > 0 ? selectedValue : null;
-                currObj.constraintsManager.whereType = filterColumnName;
+                currObj.state.whereType = filterColumnName;
                 currObj.updateTables();
                 unblockUI();
             }, 1); // we need a small delay to allow blockUI to be rendered correctly
@@ -532,11 +548,12 @@ class FiRDI {
         this.tablesInfo = JSON.parse(JSON.stringify(this.originalTablesInfo));
         this.sqlManager.clearAlasqlTables(this.tablesInfo);
         this.sqlManager.addNewData(this.tablesInfo);
-        this.constraintsManager.defaultConstraints = this.constraintsManager.getDefaultConstraints(this.tablesInfo);
-        this.constraintsManager.constraints = this.constraintsManager.initConstraints()
-        this.constraintsManager.selections = this.constraintsManager.makeEmptyConstraint(this.tablesInfo);
-        this.constraintsManager.numSelected = this.constraintsManager.makeEmptyCount(this.tablesInfo);
-        this.constraintsManager.totalSelected = 0;
+        this.state.defaultConstraints = this.getDefaultConstraints();
+        this.state.constraints = deepCopy(this.state.defaultConstraints);
+        this.state.selections = this.makeEmptyConstraint();
+        this.state.numSelected = this.makeEmptyCount();
+        this.state.totalSelected = 0;
+        this.state.whereType = null;
 
         this.tablesInfo.forEach(t => {
             const tableName = t['tableName'];
@@ -579,8 +596,8 @@ class FiRDI {
 
     updateTables() {
         console.log('queryResult');
-        const queryResult = this.sqlManager.queryDatabase(this.tablesInfo, this.constraintsManager.constraints,
-            this.constraintsManager.whereType);
+        const queryResult = this.sqlManager.queryDatabase(this.tablesInfo, this.state.constraints,
+            this.state.whereType);
 
         for (let i = 0; i < this.tableFieldNames.length; i++) { // update all the tables
             const tableFieldName = this.tableFieldNames[i];
@@ -590,16 +607,16 @@ class FiRDI {
     }
 
     updateTablesForClickUpdate() {
-        if (this.constraintsManager.totalSelected > 0) {
+        if (this.state.totalSelected > 0) {
 
             console.log('queryResult');
-            const queryResult = this.sqlManager.queryDatabase(this.tablesInfo, this.constraintsManager.constraints,
-                this.constraintsManager.whereType);
+            const queryResult = this.sqlManager.queryDatabase(this.tablesInfo, this.state.constraints,
+                this.state.whereType);
 
             for (let i = 0; i < this.tableFieldNames.length; i++) { // update all the tables
                 const tableFieldName = this.tableFieldNames[i];
                 const tableName = tableFieldName['tableName'];
-                if (this.constraintsManager.numSelected[tableName] > 0) { // if table already has some selection
+                if (this.state.numSelected[tableName] > 0) { // if table already has some selection
                     // don't change table content, just change the selection style
                     this.addSelectionStyle(tableName);
                 } else {
@@ -624,7 +641,7 @@ class FiRDI {
 
     addSelectionStyle(tableName) {
         const tableAPI = $(this.dataTablesIds[tableName]).DataTable();
-        const tableSelections = this.constraintsManager.selections[tableName];
+        const tableSelections = this.state.selections[tableName];
 
         if (tableSelections.length > 0) {
             // Find page that contains the row of interest
@@ -662,10 +679,10 @@ class FiRDI {
     }
 
     resetTables() {
-        let dataForTables = this.constraintsManager.makeEmptyConstraint(this.tablesInfo);
+        let dataForTables = this.makeEmptyConstraint(this.tablesInfo);
         console.log('resetTable');
-        const queryResult = this.sqlManager.queryDatabase(this.tablesInfo, this.constraintsManager.constraints,
-            this.constraintsManager.whereType);
+        const queryResult = this.sqlManager.queryDatabase(this.tablesInfo, this.state.constraints,
+            this.state.whereType);
         this.tableFieldNames.forEach(tableFieldNames => this.resetTable(tableFieldNames, dataForTables, queryResult));
     }
 
@@ -690,32 +707,30 @@ class FiRDI {
 
             obj.trClickHandlerUpdate(tableName, targetTr, rowData, rowIndex, anyRowSelected);
             unblockUI();
-            if (obj.infoPanelManager) { // update the related info panel for this table, if any
-                if (obj.constraintsManager.numSelected[tableName] > 0) {
+            // update the related info panel for this table, if any
+            if (obj.state.numSelected[tableName] > 0) {
 
-                    // assume that entries in the array is always in sorted order by their row index
-                    // (the sorting is done upon insertion in addConstraint)
-                    const selections = deepCopy(obj.constraintsManager.selections[tableName]);
+                // assume that entries in the array is always in sorted order by their row index
+                // (the sorting is done upon insertion in addConstraint)
+                const selections = obj.state.selections[tableName];
 
-                    // find the pk value that has been clicked and its index in selections
-                    const selectedValue = obj.infoPanelManager.getPkValue(rowData, tableName);
-                    let selectedIndex = selections.map(x => x.idVal).indexOf(selectedValue);
-                    let updatePage = true;
-                    if (selectedIndex == -1 && selections.length > 0) { // if the current row has been unclicked
-                        // update the bottom panel to show the first item in selections,
-                        // but don't change the current page in the datatable
-                        selectedIndex = 0;
-                        updatePage = false;
-                    }
-                    obj.infoPanelManager.updateEntityInfo(tableName, selections, selectedIndex, updatePage);
-
-                    // store for use in buttons etc later
-                    obj.infoPanelManager.selections[tableName] = selections;
-                    obj.infoPanelManager.selectedIndex[tableName] = selectedIndex;
-
-                } else {
-                    obj.infoPanelManager.clearInfoPanel(tableName);
+                // find the pk value that has been clicked and its index in selections
+                const selectedValue = obj.infoPanelManager.getPkValue(rowData, tableName);
+                let selectedIndex = selections.map(x => x.idVal).indexOf(selectedValue);
+                let updatePage = true;
+                if (selectedIndex == -1 && selections.length > 0) { // if the current row has been unclicked
+                    // update the bottom panel to show the first item in selections,
+                    // but don't change the current page in the datatable
+                    selectedIndex = 0;
+                    updatePage = false;
                 }
+                obj.infoPanelManager.updateEntityInfo(tableName, selections, selectedIndex, updatePage);
+
+                // store for use in buttons etc later
+                obj.state.selectedIndex[tableName] = selectedIndex;
+
+            } else {
+                obj.infoPanelManager.clearInfoPanel(tableName);
             }
         }, 1); // we need a small delay to allow blockUI to be rendered correctly
     }

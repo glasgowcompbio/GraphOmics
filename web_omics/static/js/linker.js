@@ -1,5 +1,4 @@
 import FiRDI from './firdi';
-import InfoPanesManager from './info_panes_manager';
 
 // https://stackoverflow.com/questions/1199352/smart-way-to-shorten-long-strings-with-javascript
 String.prototype.trunc = String.prototype.trunc ||
@@ -245,8 +244,7 @@ class Linker {
         // https://stackoverflow.com/questions/24383805/datatables-change-number-of-pagination-buttons
         // $.fn.DataTable.ext.pager.numbers_length = 3;
 
-        const infoPanesManager = new InfoPanesManager(viewNames);
-        const firdi = new FiRDI(tables, defaultDataTablesSettings, columnsToHidePerTable, tableFields, infoPanesManager);
+        const firdi = new FiRDI(tables, defaultDataTablesSettings, columnsToHidePerTable, tableFields, viewNames);
 
     }
 

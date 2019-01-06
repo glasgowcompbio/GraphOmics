@@ -10,8 +10,9 @@ function getInfoTitle(displayName) {
 
 class InfoPanesManager {
 
-    constructor(viewNames) {
+    constructor(viewNames, state) {
         this.viewNames = viewNames;
+        this.state = state;
 
         // hide all buttons initially
         const buttonIds = [
@@ -29,26 +30,22 @@ class InfoPanesManager {
         buttonIds.forEach(x => $(`#${x}`).hide());
 
         // to track the current selections for each table
-        this.selections = {};
-        this.selectedIndex = {};
         this.initNextPrevButtons()
     }
 
     initNextPrevButtons() {
         const currObj = this;
         const handlePrevFunc = (tableName) => {
-            const selections = currObj.selections[tableName];
-            const selectedIndex = currObj.selectedIndex[tableName]-1;
+            const selections = currObj.state.selections[tableName];
+            const selectedIndex = currObj.state.selectedIndex[tableName]-1;
             currObj.updateEntityInfo(tableName, selections, selectedIndex, true);
-            currObj.selections[tableName] = selections;
-            currObj.selectedIndex[tableName] = selectedIndex;
+            currObj.state.selectedIndex[tableName] = selectedIndex;
         }
         const handleNextFunc = (tableName) => {
-            const selections = currObj.selections[tableName];
-            const selectedIndex = currObj.selectedIndex[tableName]+1;
+            const selections = currObj.state.selections[tableName];
+            const selectedIndex = currObj.state.selectedIndex[tableName]+1;
             currObj.updateEntityInfo(tableName, selections, selectedIndex, true);
-            currObj.selections[tableName] = selections;
-            currObj.selectedIndex[tableName] = selectedIndex;
+            currObj.state.selectedIndex[tableName] = selectedIndex;
         }
 
         $('#gene-previous').on('click', () => { handlePrevFunc('genes_table'); });
@@ -330,8 +327,7 @@ class InfoPanesManager {
             'text': 'Select an entry above.'
         });
         $('#' + rowId).empty().append(content);
-        this.selections[tableId] = [];
-        this.selectedIndex[tableId] = null;
+        this.state.selectedIndex[tableId] = null;
     }
 
     plotPeakIntensitySamples(plotDiv, data) { // slightly modified from ross' pimp_quick_results_firdi.js
