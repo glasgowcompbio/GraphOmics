@@ -35,6 +35,11 @@ module.exports = function run_dendro_filter(cgm, d, inst_rc){
     // keep the names of all the nodes
     cgm.params.dendro_filter[inst_rc] = tmp_names;
 
+    // run optional callback function
+    if (cgm.params.dendro_filter_callback != null){
+      cgm.params.dendro_filter_callback(cgm);
+    }
+
   /* reset filter */
   } else {
 

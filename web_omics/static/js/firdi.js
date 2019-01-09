@@ -12,7 +12,8 @@ import 'datatables.net-select-dt/css/select.dataTables.min.css';
 
 import alasql from 'alasql';
 
-import { isTableVisible, deepCopy, getPkValue, getDisplayName, getRowObj, goToPage, blockUI, unblockUI } from './common'
+import { isTableVisible, deepCopy, getPkValue, getDisplayName, getDisplayNameCol, getRowObj, goToPage, blockUI,
+    unblockUI, FIRDI_UPDATE_EVENT, CLUSTERGRAMMER_UPDATE_EVENT } from './common'
 import InfoPanesManager from './info_panes_manager';
 
 class DataTablesOptionsManager {
@@ -369,7 +370,7 @@ class ConstraintsManager {
 class FiRDIState {
 
     constructor(defaultConstraints, initConstraints, emptySelections, emptyCounts) {
-        this.lastQueryResults = {};
+        // Firdi fields
         this.defaultConstraints = defaultConstraints;
         this.constraints = initConstraints;
         this.selections = emptySelections;
@@ -377,8 +378,13 @@ class FiRDIState {
         this.totalSelected = 0;
         this.whereType = null;
         this.selectedIndex = {};
+
+        // observer pattern
         this.observers = [];
-        this.originalCgmNodes = {};
+        this.lastQueryResults = {}; // to store firdi updates
+        this.originalCgmNodes = {}; // to restore original cgm nodes when we reset the view
+        this.cgmLastClickedName = undefined; // to store the table name linked to a last-clicked clustergrammer
+        this.cgmSelections = undefined; // to store the selections linked to a last-clicked clustergrammer
     }
 
     subscribe(observer) {
@@ -392,10 +398,10 @@ class FiRDIState {
         }
     }
 
-    notifyAll(source) {
+    notifyAll(source, eventType) {
         for (let o of this.observers) {
             if (o !== source) { // only update other observers
-                o.observe(this);
+                o.observe(this, eventType);
             }
         }
     }
@@ -623,9 +629,15 @@ class FiRDI {
         return temp;
     }
 
-    observe(data) {
-        console.log('firdi observe called');
-        console.log(data);
+    observe(data, eventType) {
+        if (eventType == CLUSTERGRAMMER_UPDATE_EVENT) {
+            console.log('firdi observe called: ' + eventType);
+            console.log(data);
+            const tableName = data.cgmLastClickedName;
+            const selectedDisplayNames = data.cgmSelections;
+            this.resetFiRDI();
+            this.multipleTrClickHandlerUpdate(tableName, selectedDisplayNames);
+        }
     }
 
     updateTables() {
@@ -638,7 +650,7 @@ class FiRDI {
             const tableName = tableFieldName['tableName'];
             this.updateSingleTable(tableFieldName, queryResult);
         }
-        this.state.notifyAll(this);
+        this.state.notifyAll(this, FIRDI_UPDATE_EVENT);
     }
 
     updateTablesForClickUpdate() {
@@ -664,7 +676,7 @@ class FiRDI {
         } else {
             this.resetTables();
         }
-        this.state.notifyAll(this);
+        this.state.notifyAll(this, FIRDI_UPDATE_EVENT);
     }
 
     updateSingleTable(tableFieldName, queryResult) {
@@ -788,6 +800,52 @@ class FiRDI {
             this.constraintsManager.addConstraint(tableName, rowData, rowIndex);
             this.updateTablesForClickUpdate();
         }
+    }
+
+    multipleTrClickHandlerUpdate(tableName, selectedDisplayNames) {
+        const tableAPI = $('#' + tableName).DataTable();
+
+        // find rows based on selectedDisplayNames (e.g. 'Adenine')
+        const displayNameCol = getDisplayNameCol(tableName);
+        const rows = tableAPI.rows((idx, data, node) => {
+            const displayName = data[displayNameCol];
+            return selectedDisplayNames.includes(displayName) ? true : false;
+        });
+        const allRowData = rows.data();
+        const allRowIndices = rows.indexes();
+
+        // add rows as multiple selections
+        for (let i = 0; i < selectedDisplayNames.length; i++) {
+            const rowData = allRowData[i];
+            const rowIndex = allRowIndices[i];
+            this.constraintsManager.addConstraint(tableName, rowData, rowIndex);
+        }
+
+        // query db based on multiple selections
+        console.log('queryResult');
+        const queryResult = this.sqlManager.queryDatabase(this.tablesInfo, this.state.constraints,
+            this.state.whereType);
+
+        // update table content and selection style
+        for (let i = 0; i < this.tableFieldNames.length; i++) { // update all the tables
+            const tableFieldName = this.tableFieldNames[i];
+            const tName = tableFieldName['tableName'];
+            if (tName === tableName) { // if table name is the one with multiple selections
+                // don't change table content, just change the selection style
+                this.addSelectionStyle(tableName);
+            } else {
+                // otherwise update table content and selection style
+                this.updateSingleTable(tableFieldName, queryResult);
+                this.addSelectionStyle(tableName);
+            }
+        }
+
+        // update bottom panel
+        this.state.selectedIndex[tableName] = 0;
+        const selections = this.state.selections[tableName];
+        const selectedIndex = 0;
+        const updatePage = true;
+        this.infoPanelManager.updateEntityInfo(tableName, selections, selectedIndex, updatePage);
     }
 
 }

@@ -21,19 +21,28 @@ const getPkValue = function(rowObject, tableId) {
 };
 
 const getDisplayName = function(rowObject, tableId) {
+    const displayNameCol = getDisplayNameCol(tableId);
+    if (displayNameCol) {
+        return rowObject[displayNameCol];
+    } else {
+        return null;
+    }
+};
+
+const getDisplayNameCol = function(tableId) {
     if (tableId === 'genes_table') {
-        return rowObject['gene_id'];
+        return 'gene_id';
     } else if (tableId === 'proteins_table') {
-        return rowObject['protein_id'];
+        return 'protein_id';
     } else if (tableId === 'compounds_table') {
-        return rowObject['compound_id'];
+        return 'compound_id';
     } else if (tableId === 'reactions_table') {
-        return rowObject['reaction_id'];
+        return 'reaction_id';
     } else if (tableId === 'pathways_table') {
-        return rowObject['pathway_id'];
+        return 'pathway_id';
     }
     return null;
-};
+}
 
 const getRowObj = function(tableName, selectedValue) {
     const tableAPI = $('#' + tableName).DataTable();
@@ -86,4 +95,19 @@ const unblockUI = function() {
     $('#all_tables').unblock();
 };
 
-export { isTableVisible, deepCopy, getPkValue, getDisplayName, getRowObj, goToPage, blockUI, unblockUI }
+const FIRDI_UPDATE_EVENT = 0;
+const CLUSTERGRAMMER_UPDATE_EVENT = 1;
+
+export {
+    isTableVisible,
+    deepCopy,
+    getPkValue,
+    getDisplayName,
+    getDisplayNameCol,
+    getRowObj,
+    goToPage,
+    blockUI,
+    unblockUI,
+    FIRDI_UPDATE_EVENT,
+    CLUSTERGRAMMER_UPDATE_EVENT
+}

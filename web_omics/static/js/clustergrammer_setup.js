@@ -2,7 +2,7 @@ import Clustergrammer from './clustergrammer/main';
 import filter_network_using_new_nodes from './clustergrammer/network/filter_network_using_new_nodes';
 import update_viz_with_network from './clustergrammer/update/update_viz_with_network';
 
-import {deepCopy} from './common'
+import {deepCopy, FIRDI_UPDATE_EVENT, CLUSTERGRAMMER_UPDATE_EVENT} from './common'
 import check_setup_enrichr from './enrichrgram';
 
 const seenData = {};
@@ -70,9 +70,11 @@ function renderHeatmap(elementId, dataType, clusterJson, linkerState) {
             network_data: jsonData,
             about: about_string,
             row_tip_callback: rowTipCallback[dataType],
-            col_tip_callback: testColCallback,
-            tile_tip_callback: testTileCallback,
+            col_tip_callback: colTipCallback,
+            tile_tip_callback: tileTipCallback,
             dendro_callback: dendroCallback,
+            matrix_update_callback: matrixUpdateCallback,
+            dendro_filter_callback: dendroFilterCallback,
             sidebar_width: 200
         };
         const cgm = Clustergrammer(args);
@@ -91,21 +93,28 @@ function renderHeatmap(elementId, dataType, clusterJson, linkerState) {
             'proteins': ['proteins_table', 'protein_id'],
             'compounds': ['compounds_table', 'compound_id']
         };
-        cgm.observe = (data) => {
-            const [tableName, idName] = queryResultNames[dataType];
-            let names = [];
-            if (data.lastQueryResults.hasOwnProperty(tableName)) {
-                // populate names based on the last query results for this table
-                const queryResult = data.lastQueryResults[tableName];
-                names = queryResult.map(x => x[idName]);
-            } else { // if no last query result for this table, then use the selections for the table
-                const selections = data.selections[tableName];
-                names = selections.map(x => x.displayName);
+        const [tableName, idName] = queryResultNames[dataType];
+        cgm.tableName = tableName;
+        cgm.observe = (data, eventType) => {
+            if (eventType == FIRDI_UPDATE_EVENT) {
+                let names = [];
+                if (data.lastQueryResults.hasOwnProperty(tableName)) {
+                    // populate names based on the last query results for this table
+                    const queryResult = data.lastQueryResults[tableName];
+                    names = queryResult.map(x => x[idName]);
+                } else { // if no last query result for this table, then use the selections for the table
+                    const selections = data.selections[tableName];
+                    names = selections.map(x => x.displayName);
+                }
+                const originalCgmNodes = data.originalCgmNodes[dataType];
+                filter_viz_using_names({'row': names}, cgm, originalCgmNodes);
             }
-            const originalCgmNodes = data.originalCgmNodes[dataType];
-            filter_viz_using_names({'row': names}, cgm, originalCgmNodes);
         };
-        linkerState.subscribe(cgm); // used to notify other observers of linker state changes
+
+        // save current linkerState instance to clustergrammer, and also
+        // add the cgm as a subscriber. This is used to update this cgm when the data browser changes
+        cgm.linkerState = linkerState;
+        cgm.linkerState.subscribe(cgm);
 
     } else {
         $(elementId).text('No data is available.');
@@ -173,15 +182,15 @@ function getRequest(rootTip, displayName, dataType) {
     });
 }
 
-function testTileCallback(tile_data) {
+function tileTipCallback(tile_data) {
     var row_name = tile_data.row_name;
     var col_name = tile_data.col_name;
-    console.log(`tile_callback ${row_name} ${col_name}`);
+    console.log(`tile_tip_callback ${row_name} ${col_name}`);
 }
 
-function testColCallback(col_data) {
+function colTipCallback(col_data) {
     var col_name = col_data.name;
-    console.log(`col_callback ${col_name}`);
+    console.log(`col_tip_callback ${col_name}`);
 }
 
 function dendroCallback(instSelection) {
@@ -196,6 +205,25 @@ function dendroCallback(instSelection) {
     //     d3.select('.enrichr_export_section')
     //         .style('display', 'none');
     // }
+}
+
+function matrixUpdateCallback(cgm) {
+    console.log('matrix_update_callback');
+}
+
+// Note: clustergrammer/dendrogram/run_dendro_filter.js has been modified to call this method
+function dendroFilterCallback(cgm) {
+    console.log('dendro_filter_callback');
+
+    // get the selections in the clustergrammer for each table type
+    const tableName = cgm.tableName;
+    const nodeNames = deepCopy(this.network_data.row_nodes_names);
+
+    // save into the global app state, and notify other observers that we've made a clustergrammer selection
+    const linkerState = cgm.linkerState;
+    linkerState.cgmLastClickedName = tableName;
+    linkerState.cgmSelections = nodeNames;
+    linkerState.notifyAll(cgm, CLUSTERGRAMMER_UPDATE_EVENT);
 }
 
 export default renderHeatmap;
