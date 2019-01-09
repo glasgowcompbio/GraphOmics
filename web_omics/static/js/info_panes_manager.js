@@ -1,5 +1,5 @@
 import * as d3 from 'd3-latest';
-import { getRowObj, goToPage } from './common';
+import { getRowObj, getPkValue, getDisplayName, goToPage } from './common';
 
 function getInfoTitle(displayName) {
     let infoTitle = $('<h6/>', {
@@ -87,36 +87,6 @@ class InfoPanesManager {
             rowId, titleId, buttonPreviousId, buttonNextId, selections, selectedIndex);
     }
 
-    getPkValue(rowObject, tableId) {
-        if (tableId === 'genes_table') {
-            return rowObject['gene_pk'];
-        } else if (tableId === 'proteins_table') {
-            return rowObject['protein_pk'];
-        } else if (tableId === 'compounds_table') {
-            return rowObject['compound_pk'];
-        } else if (tableId === 'reactions_table') {
-            return rowObject['reaction_pk'];
-        } else if (tableId === 'pathways_table') {
-            return rowObject['pathway_pk'];
-        }
-        return null;
-    }
-
-    getDisplayName(rowObject, tableId) {
-        if (tableId === 'genes_table') {
-            return rowObject['gene_id'];
-        } else if (tableId === 'proteins_table') {
-            return rowObject['protein_id'];
-        } else if (tableId === 'compounds_table') {
-            return rowObject['compound_id'];
-        } else if (tableId === 'reactions_table') {
-            return rowObject['reaction_id'];
-        } else if (tableId === 'pathways_table') {
-            return rowObject['pathway_id'];
-        }
-        return null;
-    }
-
     getRowIds(tableId) {
         const tableIdToRowIds = {
             'genes_table': ['gene-title', 'gene-row-info'],
@@ -142,7 +112,7 @@ class InfoPanesManager {
     updateInfoPanel(tableId, rowObject, dataUrl, rowId,
                     titleId, buttonPreviousId, buttonNextId, selections, selectionIndex) {
         const rowData = rowObject.data;
-        const displayNameCol = this.getDisplayName(rowObject, tableId);
+        const displayNameCol = getDisplayName(rowObject, tableId);
         this.clearInfoPanel(tableId);
         if (rowData[displayNameCol] !== '-') {
             this.updateTitle(rowData, titleId, buttonPreviousId, buttonNextId, selections, selectionIndex)
@@ -173,9 +143,9 @@ class InfoPanesManager {
 
     updateContent(rowObject, tableId, dataUrl, rowId) {
         const tableData = {
-            'id': this.getPkValue(rowObject, tableId)
+            'id': getPkValue(rowObject, tableId)
         };
-        const displayName = this.getDisplayName(rowObject, tableId);
+        const displayName = getDisplayName(rowObject, tableId);
         let infoDiv = $('<div/>');
         let infoTitle = getInfoTitle(displayName);
         infoDiv.append(infoTitle);

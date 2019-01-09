@@ -5,6 +5,36 @@ const isTableVisible = tableInfo => tableInfo["options"]["visible"];
 // https://stackoverflow.com/questions/122102/what-is-the-most-efficient-way-to-deep-clone-an-object-in-javascript/5344074#5344074
 const deepCopy = obj => JSON.parse(JSON.stringify(obj));
 
+const getPkValue = function(rowObject, tableId) {
+    if (tableId === 'genes_table') {
+        return rowObject['gene_pk'];
+    } else if (tableId === 'proteins_table') {
+        return rowObject['protein_pk'];
+    } else if (tableId === 'compounds_table') {
+        return rowObject['compound_pk'];
+    } else if (tableId === 'reactions_table') {
+        return rowObject['reaction_pk'];
+    } else if (tableId === 'pathways_table') {
+        return rowObject['pathway_pk'];
+    }
+    return null;
+};
+
+const getDisplayName = function(rowObject, tableId) {
+    if (tableId === 'genes_table') {
+        return rowObject['gene_id'];
+    } else if (tableId === 'proteins_table') {
+        return rowObject['protein_id'];
+    } else if (tableId === 'compounds_table') {
+        return rowObject['compound_id'];
+    } else if (tableId === 'reactions_table') {
+        return rowObject['reaction_id'];
+    } else if (tableId === 'pathways_table') {
+        return rowObject['pathway_id'];
+    }
+    return null;
+};
+
 const getRowObj = function(tableName, selectedValue) {
     const tableAPI = $('#' + tableName).DataTable();
     const item = '#' + selectedValue;
@@ -56,4 +86,4 @@ const unblockUI = function() {
     $('#all_tables').unblock();
 };
 
-export { isTableVisible, deepCopy, getRowObj, goToPage, blockUI, unblockUI }
+export { isTableVisible, deepCopy, getPkValue, getDisplayName, getRowObj, goToPage, blockUI, unblockUI }

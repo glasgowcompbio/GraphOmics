@@ -12,7 +12,7 @@ import 'datatables.net-select-dt/css/select.dataTables.min.css';
 
 import alasql from 'alasql';
 
-import { isTableVisible, deepCopy, getRowObj, goToPage, blockUI, unblockUI } from './common'
+import { isTableVisible, deepCopy, getPkValue, getDisplayName, getRowObj, goToPage, blockUI, unblockUI } from './common'
 import InfoPanesManager from './info_panes_manager';
 
 class DataTablesOptionsManager {
@@ -337,9 +337,11 @@ class ConstraintsManager {
         this.state.numSelected[tableName]++;
         this.state.totalSelected++;
         const idVal = this.getId(tableName, rowData);
+        const displayName = getDisplayName(rowData, tableName);
         this.state.selections[tableName].push({
             idVal: idVal,
-            rowIndex: rowIndex
+            rowIndex: rowIndex,
+            displayName: displayName
         });
         // ensure that entries are sorted by rowIndex asc
         this.state.selections[tableName].sort((a, b) => a.rowIndex - b.rowIndex);
@@ -750,7 +752,7 @@ class FiRDI {
                 const selections = obj.state.selections[tableName];
 
                 // find the pk value that has been clicked and its index in selections
-                const selectedValue = obj.infoPanelManager.getPkValue(rowData, tableName);
+                const selectedValue = getPkValue(rowData, tableName);
                 let selectedIndex = selections.map(x => x.idVal).indexOf(selectedValue);
                 let updatePage = true;
                 if (selectedIndex == -1 && selections.length > 0) { // if the current row has been unclicked
