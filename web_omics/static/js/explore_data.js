@@ -17,18 +17,22 @@ async function loadData(viewUrl) {
 
 $(document).ready(function () {
 
+    let linker = undefined;
+    window.baseUrl = viewNames['get_short_info']; // TODO: shouldn't put this in global scope
+
     // load tables data
     loadData(viewNames['get_firdi_data']).then(function(data) {
-        new Linker(data.tableData, data.tableFields, viewNames);
-    })
-
-    // load heatmap data
-    window.baseUrl = viewNames['get_short_info']; // TODO: shouldn't put this in global scope
-    loadData(viewNames['get_heatmap_data']).then(function(data) {
-        renderHeatmap('#summary-vis-gene', 'genes', data);
-        renderHeatmap('#summary-vis-protein', 'proteins', data);
-        renderHeatmap('#summary-vis-compound', 'compounds', data);
-    })
+        // populate tables data
+        linker = new Linker(data.tableData, data.tableFields, viewNames);
+    }).then(function() {
+        // load heatmap data
+        return loadData(viewNames['get_heatmap_data']);
+    }).then(function(data) {
+        // populate heatmap data
+        renderHeatmap('#summary-vis-gene', 'genes', data, linker.state);
+        renderHeatmap('#summary-vis-protein', 'proteins', data, linker.state);
+        renderHeatmap('#summary-vis-compound', 'compounds', data, linker.state);
+    });
 
     // TODO: shouldn't put this in global scope
     window.annotate = showAnnotateDialog

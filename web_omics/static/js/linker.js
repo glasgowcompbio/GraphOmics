@@ -245,6 +245,7 @@ class Linker {
         // $.fn.DataTable.ext.pager.numbers_length = 3;
 
         const firdi = new FiRDI(tables, defaultDataTablesSettings, columnsToHidePerTable, tableFields, viewNames);
+        this.state = firdi.state;
 
     }
 

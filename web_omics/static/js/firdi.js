@@ -367,6 +367,7 @@ class ConstraintsManager {
 class FiRDIState {
 
     constructor(defaultConstraints, initConstraints, emptySelections, emptyCounts) {
+        this.lastQueryResults = {};
         this.defaultConstraints = defaultConstraints;
         this.constraints = initConstraints;
         this.selections = emptySelections;
@@ -374,6 +375,27 @@ class FiRDIState {
         this.totalSelected = 0;
         this.whereType = null;
         this.selectedIndex = {};
+        this.observers = [];
+        this.originalCgmNodes = {};
+    }
+
+    subscribe(observer) {
+        this.observers.push(observer);
+    }
+
+    unsubscribe(observer) {
+        const index = this.observers.indexOf(observer);
+        if (index >= -1) {
+            this.observers.slice(index, 1);
+        }
+    }
+
+    notifyAll(source) {
+        for (let o of this.observers) {
+            if (o !== source) { // only update other observers
+                o.observe(this);
+            }
+        }
     }
 
 }
@@ -392,12 +414,8 @@ class FiRDI {
 
         this.dataTablesOptionsManager = new DataTablesOptionsManager(this.tablesInfo);
         this.sqlManager = new SqlManager(this.tablesInfo);
-
-        const defaultConstraints = this.getDefaultConstraints();
-        const initConstraints = deepCopy(defaultConstraints);
-        const emptySelections = this.makeEmptyConstraint();
-        const emptyCounts = this.makeEmptyCount();
-        this.state = new FiRDIState(defaultConstraints, initConstraints, emptySelections, emptyCounts);
+        this.state = this.getFirdiState();
+        this.state.subscribe(this);
 
         this.constraintsManager = new ConstraintsManager(this.tablesInfo, this.sqlManager, this.state);
         this.infoPanelManager = new InfoPanesManager(viewNames, this.state);
@@ -409,6 +427,15 @@ class FiRDI {
         this.initSignificantFilters();
         this.initSearchBox();
         this.hideColumns(columnsToHidePerTable, tableFields);
+    }
+
+    getFirdiState() {
+        const defaultConstraints = this.getDefaultConstraints();
+        const initConstraints = deepCopy(defaultConstraints);
+        const emptySelections = this.makeEmptyConstraint();
+        const emptyCounts = this.makeEmptyCount();
+        const state = new FiRDIState(defaultConstraints, initConstraints, emptySelections, emptyCounts);
+        return state;
     }
 
     getDefaultConstraints() {
@@ -594,6 +621,11 @@ class FiRDI {
         return temp;
     }
 
+    observe(data) {
+        console.log('firdi observe called');
+        console.log(data);
+    }
+
     updateTables() {
         console.log('queryResult');
         const queryResult = this.sqlManager.queryDatabase(this.tablesInfo, this.state.constraints,
@@ -604,6 +636,7 @@ class FiRDI {
             const tableName = tableFieldName['tableName'];
             this.updateSingleTable(tableFieldName, queryResult);
         }
+        this.state.notifyAll(this);
     }
 
     updateTablesForClickUpdate() {
@@ -629,6 +662,7 @@ class FiRDI {
         } else {
             this.resetTables();
         }
+        this.state.notifyAll(this);
     }
 
     updateSingleTable(tableFieldName, queryResult) {
@@ -637,6 +671,8 @@ class FiRDI {
         $(this.dataTablesIds[tableName]).DataTable().clear();
         $(this.dataTablesIds[tableName]).DataTable().rows.add(data);
         $(this.dataTablesIds[tableName]).DataTable().draw();
+        // store the last query results for updates in other views later
+        this.state.lastQueryResults[tableName] = data;
     }
 
     addSelectionStyle(tableName) {
@@ -667,23 +703,22 @@ class FiRDI {
         }
     }
 
-    resetTable(tableFieldNames, dataForTables, queryResult) {
+    resetTable(tableFieldNames, queryResult) {
         const tableName = tableFieldNames['tableName'];
-        dataForTables[tableName] = this.prefixQuery(tableFieldNames, queryResult);
-
+        const data = this.prefixQuery(tableFieldNames, queryResult);
         const tableAPI = $(this.dataTablesIds[tableName]).DataTable();
         tableAPI.clear();
-        tableAPI.rows.add(dataForTables[tableName]);
+        tableAPI.rows.add(data);
         tableAPI.draw();
         tableAPI.page(0).draw('page');
+        this.state.lastQueryResults[tableName] = data;
     }
 
     resetTables() {
-        let dataForTables = this.makeEmptyConstraint(this.tablesInfo);
         console.log('resetTable');
         const queryResult = this.sqlManager.queryDatabase(this.tablesInfo, this.state.constraints,
             this.state.whereType);
-        this.tableFieldNames.forEach(tableFieldNames => this.resetTable(tableFieldNames, dataForTables, queryResult));
+        this.tableFieldNames.forEach(tableFieldNames => this.resetTable(tableFieldNames, queryResult));
     }
 
     trClickHandler(e, dt, type, cell, originalEvent) {
