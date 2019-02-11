@@ -84,8 +84,16 @@
                         <tbody>
                             <tr>
                                 <td>Gene data</td>
-                                <td>{{ data.observed_genes }}</td>
-                                <td>{{ data.inferred_genes }}</td>
+                                <td>
+                                    <a href="{% url 'download_list' analysis_id=analysis_id data_type=0 observed=True %}" target="_blank">
+                                        {{ data.observed_genes }}
+                                    </a>
+                                </td>
+                                <td>
+                                    <a href="{% url 'download_list' analysis_id=analysis_id data_type=0 observed=False %}" target="_blank">
+                                        {{ data.inferred_genes }}
+                                    </a>
+                                </td>
                                 <td>{{ data.total_genes }}</td>
                                 <td>
                                     <ul>
@@ -97,8 +105,16 @@
                             </tr>
                             <tr>
                                 <td>Protein data</td>
-                                <td>{{ data.observed_proteins }}</td>
-                                <td>{{ data.inferred_proteins }}</td>
+                                <td>
+                                    <a href="{% url 'download_list' analysis_id=analysis_id data_type=2 observed=True %}" target="_blank">
+                                        {{ data.observed_proteins }}
+                                    </a>
+                                </td>
+                                <td>
+                                    <a href="{% url 'download_list' analysis_id=analysis_id data_type=2 observed=False %}" target="_blank">
+                                        {{ data.inferred_proteins }}
+                                    </a>
+                                </td>
                                 <td>{{ data.total_proteins }}</td>
                                 <td>
                                     <ul>
@@ -110,8 +126,16 @@
                             </tr>
                             <tr>
                                 <td>Compound data<br/>(mapped using their {{ data.compound_database }} identifiers)</td>
-                                <td>{{ data.observed_compounds }}</td>
-                                <td>{{ data.inferred_compounds }}</td>
+                                <td>
+                                    <a href="{% url 'download_list' analysis_id=analysis_id data_type=3 observed=True %}" target="_blank">
+                                        {{ data.observed_compounds }}
+                                    </a>
+                                </td>
+                                <td>
+                                    <a href="{% url 'download_list' analysis_id=analysis_id data_type=3 observed=False %}" target="_blank">
+                                        {{ data.inferred_compounds }}
+                                    </a>
+                                </td>
                                 <td>{{ data.total_compounds }}</td>
                                 <td>
                                     <ul>

@@ -1,4 +1,4 @@
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponse
 from django.shortcuts import render, get_object_or_404
 
 from linker.constants import *
@@ -52,6 +52,17 @@ def summary(request, analysis_id):
     return render(request, 'linker/summary.html', context)
 
 
+def download_list(request, analysis_id, data_type, observed):
+    observed = (observed == 'True')
+    analysis = get_object_or_404(Analysis, pk=analysis_id)
+    observed_list, inferred_list = get_names(analysis, int(data_type))
+    if observed:
+        content = '\n'.join(observed_list)
+    else:
+        content = '\n'.join(inferred_list)
+    return HttpResponse(content, content_type='text/plain')
+
+
 def get_counts(analysis, data_type):
     analysis_data = get_last_analysis_data(analysis, data_type)
     json_data = analysis_data.json_data
@@ -60,6 +71,21 @@ def get_counts(analysis, data_type):
     inferred = df[df['obs'] == False].shape[0] - 1 # -1 to account for dummy item
     total = observed + inferred
     return observed, inferred, total
+
+
+def get_names(analysis, data_type):
+    analysis_data = get_last_analysis_data(analysis, data_type)
+    json_data = analysis_data.json_data
+    df = pd.DataFrame(json_data)
+    id_names = {
+        GENOMICS: 'gene_id',
+        PROTEOMICS: 'protein_id',
+        METABOLOMICS: 'compound_id'
+    }
+    id_name = id_names[data_type]
+    observed = df[df['obs'] == True][id_name].tolist()
+    inferred = df[df['obs'] == False][id_name].tolist()
+    return sorted(observed), sorted(inferred)
 
 
 def get_reaction_pathway_counts(analysis):
