@@ -608,7 +608,7 @@ function Enrichrgram(inst_cgm) {
 
                 var trans = d3.select(inst_cgm.params.root + ' .row_cat_label_container')
                     .attr('transform').split('(')[1].split(')')[0];
-                x_offset = Number(trans.split(',')[0]) - 10;
+                var x_offset = Number(trans.split(',')[0]) - 10;
 
                 return 'translate(' + String(x_offset) + ', 0)';
 

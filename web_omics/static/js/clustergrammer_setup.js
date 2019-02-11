@@ -83,9 +83,9 @@ function renderHeatmap(elementId, dataType, clusterJson, linkerState) {
         linkerState.originalCgmNodes[dataType] = deepCopy(cgm.params.inst_nodes);
 
         // TODO: setup enrichr. Still broken!!
-        // if (dataType === 'genes') {
-        //     check_setup_enrichr(cgm);
-        // }
+        if (dataType === 'genes') {
+            check_setup_enrichr(cgm);
+        }
 
         // setup observer callback
         const queryResultNames = {

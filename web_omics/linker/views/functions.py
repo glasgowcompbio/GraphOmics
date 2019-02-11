@@ -294,14 +294,15 @@ def get_clusters(analysis_data, data_type):
     if data_type == GENOMICS:
         inference = WebOmicsInference(data_df, design_df, data_type)
         df = inference.standardize_df(inference.data_df)
+        json_data = to_clustergrammer(df, design_df, run_enrichr=None, enrichrgram=True)
     elif data_type == PROTEOMICS or data_type == METABOLOMICS:
         inference = WebOmicsInference(data_df, design_df, data_type, min_value=5000)
         df = inference.standardize_df(inference.data_df, log=True)
-    json_data = to_clustergrammer(df, design_df)
+        json_data = to_clustergrammer(df, design_df)
     return json_data
 
 
-def to_clustergrammer(data_df, design_df):
+def to_clustergrammer(data_df, design_df, run_enrichr=None, enrichrgram=None):
     json_data = None
     if not data_df.empty:
         net = Network()
@@ -326,7 +327,7 @@ def to_clustergrammer(data_df, design_df):
         net.cluster(dist_type='cosine', run_clustering=True,
                  dendro=True, views=['N_row_sum', 'N_row_var'],
                  linkage_type='average', sim_mat=False, filter_sim=0.1,
-                 calc_cat_pval=False, run_enrichr=None, enrichrgram=False)
+                 calc_cat_pval=False, run_enrichr=run_enrichr, enrichrgram=enrichrgram)
         json_data = net.export_net_json()
     return json_data
 
