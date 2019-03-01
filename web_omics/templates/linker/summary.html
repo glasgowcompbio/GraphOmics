@@ -85,12 +85,16 @@
                             <tr>
                                 <td>Gene data</td>
                                 <td>
-                                    <a href="{% url 'download_list' analysis_id=analysis_id data_type=0 observed=True %}" target="_blank">
-                                        {{ data.observed_genes }}
+                                    {{ data.observed_genes }}
+                                    <a href="{% url 'download_list' analysis_id=analysis_id data_type=0 observed=True id_or_pk='names' %}" target="_blank">
+                                        (names)
+                                    </a>
+                                    <a href="{% url 'download_list' analysis_id=analysis_id data_type=0 observed=True id_or_pk='id' %}" target="_blank">
+                                        (ids)
                                     </a>
                                 </td>
                                 <td>
-                                    <a href="{% url 'download_list' analysis_id=analysis_id data_type=0 observed=False %}" target="_blank">
+                                    <a href="{% url 'download_list' analysis_id=analysis_id data_type=0 observed=False id_or_pk='id' %}" target="_blank">
                                         {{ data.inferred_genes }}
                                     </a>
                                 </td>
@@ -106,12 +110,12 @@
                             <tr>
                                 <td>Protein data</td>
                                 <td>
-                                    <a href="{% url 'download_list' analysis_id=analysis_id data_type=2 observed=True %}" target="_blank">
+                                    <a href="{% url 'download_list' analysis_id=analysis_id data_type=2 observed=True id_or_pk='id' %}" target="_blank">
                                         {{ data.observed_proteins }}
                                     </a>
                                 </td>
                                 <td>
-                                    <a href="{% url 'download_list' analysis_id=analysis_id data_type=2 observed=False %}" target="_blank">
+                                    <a href="{% url 'download_list' analysis_id=analysis_id data_type=2 observed=False id_or_pk='id' %}" target="_blank">
                                         {{ data.inferred_proteins }}
                                     </a>
                                 </td>
@@ -127,12 +131,12 @@
                             <tr>
                                 <td>Compound data<br/>(mapped using their {{ data.compound_database }} identifiers)</td>
                                 <td>
-                                    <a href="{% url 'download_list' analysis_id=analysis_id data_type=3 observed=True %}" target="_blank">
+                                    <a href="{% url 'download_list' analysis_id=analysis_id data_type=3 observed=True id_or_pk='id' %}" target="_blank">
                                         {{ data.observed_compounds }}
                                     </a>
                                 </td>
                                 <td>
-                                    <a href="{% url 'download_list' analysis_id=analysis_id data_type=3 observed=False %}" target="_blank">
+                                    <a href="{% url 'download_list' analysis_id=analysis_id data_type=3 observed=False id_or_pk='id' %}" target="_blank">
                                         {{ data.inferred_compounds }}
                                     </a>
                                 </td>

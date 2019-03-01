@@ -52,10 +52,10 @@ def summary(request, analysis_id):
     return render(request, 'linker/summary.html', context)
 
 
-def download_list(request, analysis_id, data_type, observed):
+def download_list(request, analysis_id, data_type, observed, id_or_pk):
     observed = (observed == 'True')
     analysis = get_object_or_404(Analysis, pk=analysis_id)
-    observed_list, inferred_list = get_names(analysis, int(data_type))
+    observed_list, inferred_list = get_names(analysis, int(data_type), id_or_pk)
     if observed:
         content = '\n'.join(observed_list)
     else:
@@ -73,15 +73,22 @@ def get_counts(analysis, data_type):
     return observed, inferred, total
 
 
-def get_names(analysis, data_type):
+def get_names(analysis, data_type, id_or_pk):
     analysis_data = get_last_analysis_data(analysis, data_type)
     json_data = analysis_data.json_data
     df = pd.DataFrame(json_data)
-    id_names = {
-        GENOMICS: 'gene_id',
-        PROTEOMICS: 'protein_id',
-        METABOLOMICS: 'compound_id'
-    }
+    if id_or_pk == 'id':
+        id_names = {
+            GENOMICS: 'gene_id',
+            PROTEOMICS: 'protein_id',
+            METABOLOMICS: 'compound_id'
+        }
+    else:
+        id_names = {
+            GENOMICS: 'gene_pk',
+            PROTEOMICS: 'protein_pk',
+            METABOLOMICS: 'compound_pk'
+        }
     id_name = id_names[data_type]
     observed = df[df['obs'] == True][id_name].tolist()
     inferred = df[df['obs'] == False][id_name].tolist()

@@ -28,7 +28,7 @@ urlpatterns = [
     path('inference/hierarchical/<int:analysis_id>', views.inference_hierarchical, name='inference_hierarchical'),
 
     path('summary/<int:analysis_id>', views.summary, name='summary'),
-    path('summary/download_list/<int:analysis_id>/<str:data_type>/<str:observed>', views.download_list, name='download_list'),
+    path('summary/download_list/<int:analysis_id>/<str:data_type>/<str:observed>/<str:id_or_pk>', views.download_list, name='download_list'),
 
     path('settings/<int:analysis_id>', views.settings, name='settings'),
     path('settings/add_data/<int:analysis_id>', views.add_data, name='add_data'),
