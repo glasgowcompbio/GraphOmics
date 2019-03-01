@@ -95,26 +95,23 @@ function renderHeatmap(elementId, dataType, clusterJson, linkerState) {
         };
         const [tableName, idName] = queryResultNames[dataType];
         cgm.tableName = tableName;
-        cgm.observe = (data, eventType) => {
-            if (eventType == FIRDI_UPDATE_EVENT) {
-                let names = [];
-                if (data.lastQueryResults.hasOwnProperty(tableName)) {
-                    // populate names based on the last query results for this table
-                    const queryResult = data.lastQueryResults[tableName];
-                    names = queryResult.map(x => x[idName]);
-                } else { // if no last query result for this table, then use the selections for the table
-                    const selections = data.selections[tableName];
-                    names = selections.map(x => x.displayName);
-                }
-                const originalCgmNodes = data.originalCgmNodes[dataType];
-                filter_viz_using_names({'row': names}, cgm, originalCgmNodes);
-            }
-        };
 
         // save current linkerState instance to clustergrammer, and also
-        // add the cgm as a subscriber. This is used to update this cgm when the data browser changes
+        // set the callback to handle firdi update
         cgm.linkerState = linkerState;
-        cgm.linkerState.subscribe(cgm);
+        cgm.linkerState.on(FIRDI_UPDATE_EVENT, (data) => {
+            let names = [];
+            if (data.lastQueryResults.hasOwnProperty(tableName)) {
+                // populate names based on the last query results for this table
+                const queryResult = data.lastQueryResults[tableName];
+                names = queryResult.map(x => x[idName]);
+            } else { // if no last query result for this table, then use the selections for the table
+                const selections = data.selections[tableName];
+                names = selections.map(x => x.displayName);
+            }
+            const originalCgmNodes = data.originalCgmNodes[dataType];
+            filter_viz_using_names({'row': names}, cgm, originalCgmNodes);
+        })
 
     } else {
         $(elementId).text('No data is available.');
@@ -223,7 +220,8 @@ function dendroFilterCallback(cgm) {
     const linkerState = cgm.linkerState;
     linkerState.cgmLastClickedName = tableName;
     linkerState.cgmSelections = nodeNames;
-    linkerState.notifyAll(cgm, CLUSTERGRAMMER_UPDATE_EVENT);
+    linkerState.notifyClustergrammerUpdate();
+    console.log('Notifying clustergrammer update');
 }
 
 export default renderHeatmap;

@@ -15,6 +15,7 @@ import alasql from 'alasql';
 import { isTableVisible, deepCopy, getPkValue, getDisplayName, getDisplayNameCol, getRowObj, goToPage, blockUI,
     unblockUI, FIRDI_UPDATE_EVENT, CLUSTERGRAMMER_UPDATE_EVENT } from './common'
 import InfoPanesManager from './info_panes_manager';
+import Observable from './Observable'
 
 class DataTablesOptionsManager {
 
@@ -367,9 +368,11 @@ class ConstraintsManager {
 
 }
 
-class FiRDIState {
+class FiRDIState extends Observable {
 
     constructor(defaultConstraints, initConstraints, emptySelections, emptyCounts) {
+        super();
+
         // Firdi fields
         this.defaultConstraints = defaultConstraints;
         this.constraints = initConstraints;
@@ -380,30 +383,18 @@ class FiRDIState {
         this.selectedIndex = {};
 
         // observer pattern
-        this.observers = [];
         this.lastQueryResults = {}; // to store firdi updates
         this.originalCgmNodes = {}; // to restore original cgm nodes when we reset the view
         this.cgmLastClickedName = undefined; // to store the table name linked to a last-clicked clustergrammer
         this.cgmSelections = undefined; // to store the selections linked to a last-clicked clustergrammer
     }
 
-    subscribe(observer) {
-        this.observers.push(observer);
+    notifyFirdiUpdate() {
+        this.fire(FIRDI_UPDATE_EVENT, this);
     }
 
-    unsubscribe(observer) {
-        const index = this.observers.indexOf(observer);
-        if (index >= -1) {
-            this.observers.slice(index, 1);
-        }
-    }
-
-    notifyAll(source, eventType) {
-        for (let o of this.observers) {
-            if (o !== source) { // only update other observers
-                o.observe(this, eventType);
-            }
-        }
+    notifyClustergrammerUpdate() {
+        this.fire(CLUSTERGRAMMER_UPDATE_EVENT, this)
     }
 
 }
@@ -423,7 +414,14 @@ class FiRDI {
         this.dataTablesOptionsManager = new DataTablesOptionsManager(this.tablesInfo);
         this.sqlManager = new SqlManager(this.tablesInfo);
         this.state = this.getFirdiState();
-        this.state.subscribe(this);
+        this.state.on(CLUSTERGRAMMER_UPDATE_EVENT, (data) => {
+            console.log('firdi receives update from clustergrammer');
+            console.log(data);
+            const tableName = data.cgmLastClickedName;
+            const selectedDisplayNames = data.cgmSelections;
+            this.resetFiRDI();
+            this.multipleTrClickHandlerUpdate(tableName, selectedDisplayNames);
+        })
 
         this.constraintsManager = new ConstraintsManager(this.tablesInfo, this.sqlManager, this.state);
         this.infoPanelManager = new InfoPanesManager(viewNames, this.state);
@@ -629,17 +627,6 @@ class FiRDI {
         return temp;
     }
 
-    observe(data, eventType) {
-        if (eventType == CLUSTERGRAMMER_UPDATE_EVENT) {
-            console.log('firdi observe called: ' + eventType);
-            console.log(data);
-            const tableName = data.cgmLastClickedName;
-            const selectedDisplayNames = data.cgmSelections;
-            this.resetFiRDI();
-            this.multipleTrClickHandlerUpdate(tableName, selectedDisplayNames);
-        }
-    }
-
     updateTables() {
         console.log('queryResult');
         const queryResult = this.sqlManager.queryDatabase(this.tablesInfo, this.state.constraints,
@@ -650,7 +637,7 @@ class FiRDI {
             const tableName = tableFieldName['tableName'];
             this.updateSingleTable(tableFieldName, queryResult);
         }
-        this.state.notifyAll(this, FIRDI_UPDATE_EVENT);
+        this.state.notifyFirdiUpdate();
     }
 
     updateTablesForClickUpdate() {
@@ -676,7 +663,7 @@ class FiRDI {
         } else {
             this.resetTables();
         }
-        this.state.notifyAll(this, FIRDI_UPDATE_EVENT);
+        this.state.notifyFirdiUpdate();
     }
 
     updateSingleTable(tableFieldName, queryResult) {
