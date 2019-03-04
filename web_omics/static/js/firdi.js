@@ -681,6 +681,12 @@ class FiRDI {
         const tableSelections = this.state.selections[tableName];
 
         if (tableSelections.length > 0) {
+
+            // redraw all pages .. slow!!
+            // for (let i = 0; i < tableAPI.page.info().pages; i++) {
+            //     tableAPI.page(i).draw('page');
+            // }
+
             // Find page that contains the row of interest
             // Go to it
             // add selection to that row.
@@ -823,7 +829,8 @@ class FiRDI {
         const queryResult = this.sqlManager.queryDatabase(this.tablesInfo, this.state.constraints,
             this.state.whereType);
 
-        // FIXME: the first time we call addSelectionStyle, the jquery selected node for each row is empty. Why??
+        // FIXME: the first time we call addSelectionStyle, the jquery selected node for each row is empty until
+        //  the page is redrawn. Why??
         this.addSelectionStyle(tableName);
         this.addSelectionStyle(tableName);
 
