@@ -339,8 +339,6 @@ class InfoPanesManager {
           });
         });
 
-        console.log('d3 munged data', dataStore);
-
         // d3 margin convention. Make the width and height relative to page components
         var margin = {top: 20, bottom: 75, right: 20, left: 60},
             width = $('#gene-row-info').width() - margin.right - margin.left,

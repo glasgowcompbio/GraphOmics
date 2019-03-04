@@ -217,11 +217,11 @@ function dendroFilterCallback(cgm) {
     const nodeNames = deepCopy(this.network_data.row_nodes_names);
 
     // save into the global app state, and notify other observers that we've made a clustergrammer selection
+    console.log('Notifying clustergrammer update');
     const linkerState = cgm.linkerState;
     linkerState.cgmLastClickedName = tableName;
     linkerState.cgmSelections = nodeNames;
     linkerState.notifyClustergrammerUpdate();
-    console.log('Notifying clustergrammer update');
 }
 
 export default renderHeatmap;
