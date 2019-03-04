@@ -700,7 +700,7 @@ class FiRDI {
             }
             // redraw unique pages
             var uniquePages = Array.from(new Set(pages));
-            console.log('uniquePages', uniquePages);
+            console.trace('uniquePages', tableName, uniquePages);
             for (let i = 0; i < uniquePages.length; i++) {
                 const thePage = uniquePages[i];
                 tableAPI.page(thePage).draw('page');
@@ -823,17 +823,17 @@ class FiRDI {
         const queryResult = this.sqlManager.queryDatabase(this.tablesInfo, this.state.constraints,
             this.state.whereType);
 
+        // FIXME: the first time we call addSelectionStyle, the jquery selected node for each row is empty. Why??
+        this.addSelectionStyle(tableName);
+        this.addSelectionStyle(tableName);
+
         // update table content and selection style
         for (let i = 0; i < this.tableFieldNames.length; i++) { // update all the tables
             const tableFieldName = this.tableFieldNames[i];
             const tName = tableFieldName['tableName'];
-            if (tName === tableName) { // if table name is the one with multiple selections
-                // don't change table content, just change the selection style
-                this.addSelectionStyle(tableName);
-            } else {
-                // otherwise update table content and selection style
+            if (tName !== tableName) { // if table name is not the one with multiple selections
+                // update table content
                 this.updateSingleTable(tableFieldName, queryResult);
-                this.addSelectionStyle(tableName);
             }
         }
 
