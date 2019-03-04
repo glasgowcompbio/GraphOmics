@@ -685,16 +685,25 @@ class FiRDI {
             // Go to it
             // add selection to that row.
             const indexToPos = getIndexToPos(tableName);
+            const pages = [];
             for (let i = 0; i < tableSelections.length; i++) {
                 const selection = tableSelections[i];
                 const found = getRowObj(tableName, selection.idVal, indexToPos, selection.rowIndex);
-                if (found) {
-                    goToPage(found);
-                    const node = found.node;
-                    if (!node.hasClass('selected')) {
-                        node.addClass('selected');
-                    }
+                const node = found.node;
+                if (!node.hasClass('selected')) {
+                    node.addClass('selected');
                 }
+                const rowIndex = found.rowIndex;
+                const pageInfo = tableAPI.page.info();
+                const thePage = Math.floor(rowIndex / pageInfo['length']);
+                pages.push(thePage);
+            }
+            // redraw unique pages
+            var uniquePages = Array.from(new Set(pages));
+            console.log('uniquePages', uniquePages);
+            for (let i = 0; i < uniquePages.length; i++) {
+                const thePage = uniquePages[i];
+                tableAPI.page(thePage).draw('page');
             }
         }
     }
