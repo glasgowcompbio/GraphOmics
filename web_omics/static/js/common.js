@@ -44,11 +44,17 @@ const getDisplayNameCol = function(tableId) {
     return null;
 }
 
-const getRowObj = function(tableName, selectedValue) {
+const getRowObj = function(tableName, selectedValue, indexToPos, selectionRowIndex) {
     const tableAPI = $('#' + tableName).DataTable();
     const item = '#' + selectedValue;
     const row = tableAPI.row(item);
-    const rowIndex = tableAPI.rows()[0].indexOf(row.index());
+    let rowIndex = null;
+    if (typeof indexToPos !== 'undefined') {
+        rowIndex = indexToPos[selectionRowIndex];
+    } else {
+        rowIndex = tableAPI.rows()[0].indexOf(row.index());
+    }
+
     if (rowIndex != -1) {
         const node = $(row.node());
         const data = row.data();
@@ -62,6 +68,16 @@ const getRowObj = function(tableName, selectedValue) {
     }
     return null;
 };
+
+const getIndexToPos = function(tableName) {
+    const tableAPI = $('#' + tableName).DataTable();
+    const rowPos = tableAPI.rows()[0];
+    const result = rowPos.reduce((acc, cur, idx) => {
+        acc[cur] = idx;
+        return acc
+    }, {});
+    return result;
+}
 
 const goToPage = function(rowObj) {
     const tableName = rowObj.tableName;
@@ -105,6 +121,7 @@ export {
     getDisplayName,
     getDisplayNameCol,
     getRowObj,
+    getIndexToPos,
     goToPage,
     blockUI,
     unblockUI,

@@ -12,7 +12,7 @@ import 'datatables.net-select-dt/css/select.dataTables.min.css';
 
 import alasql from 'alasql';
 
-import { isTableVisible, deepCopy, getPkValue, getDisplayName, getDisplayNameCol, getRowObj, goToPage, blockUI,
+import { isTableVisible, deepCopy, getPkValue, getDisplayName, getDisplayNameCol, getRowObj, getIndexToPos, goToPage, blockUI,
     unblockUI, FIRDI_UPDATE_EVENT, CLUSTERGRAMMER_UPDATE_EVENT } from './common'
 import InfoPanesManager from './info_panes_manager';
 import Observable from './Observable'
@@ -684,9 +684,10 @@ class FiRDI {
             // Find page that contains the row of interest
             // Go to it
             // add selection to that row.
+            const indexToPos = getIndexToPos(tableName);
             for (let i = 0; i < tableSelections.length; i++) {
                 const selection = tableSelections[i];
-                const found = getRowObj(tableName, selection.idVal);
+                const found = getRowObj(tableName, selection.idVal, indexToPos, selection.rowIndex);
                 if (found) {
                     goToPage(found);
                     const node = found.node;
