@@ -5,6 +5,7 @@ import 'webpack-jquery-ui/css';
 import '../css/summary.css';
 import { setupCsrfForAjax, showAnnotateDialog, handleAnnotateSubmit } from './annotate';
 import renderHeatmap from './clustergrammer_setup';
+import SelectionManager from './selection_manager';
 
 async function loadData(viewUrl) {
     try {
@@ -32,7 +33,11 @@ $(document).ready(function () {
         renderHeatmap('#summary-vis-gene', 'genes', data, linker.state);
         renderHeatmap('#summary-vis-protein', 'proteins', data, linker.state);
         renderHeatmap('#summary-vis-compound', 'compounds', data, linker.state);
-    });
+    }).then(() => {
+        // keep track of selections
+        const selectionManager = new SelectionManager('saveSelectionButton', 'loadSelectionButton',
+            'numSelected', linker.state);
+    })
 
     // TODO: shouldn't put this in global scope
     window.annotate = showAnnotateDialog

@@ -29,6 +29,12 @@
                         <a class="nav-link" href="{% url 'settings' analysis_id=analysis_id %}">⚙️ Settings</a>
                     </li>
                 {% endif %}
+                <li class="nav-item ml-auto">
+                    <button type="button" class="btn btn-primary" id="saveSelectionButton">
+                        Save selection <span class="badge badge-light" id="numSelected">0</span>
+                    </button>
+                    <button type="button" class="btn btn-primary" id="loadSelectionButton">Load selection</button>
+                </li>
             </ul>
         </div>
 
