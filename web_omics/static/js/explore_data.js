@@ -3,8 +3,7 @@ import '../css/linker.css';
 import 'webpack-jquery-ui';
 import 'webpack-jquery-ui/css';
 import '../css/summary.css';
-import { showAnnotateDialog, handleAnnotateSubmit } from './Annotate';
-import { setupCsrfForAjax } from './common';
+import {setupCsrfForAjax} from './common';
 import clustergrammer_setup from './clustergrammer_setup';
 import GroupManager from './GroupManager';
 
@@ -23,6 +22,10 @@ $(document).ready(function () {
     window.baseUrl = viewNames['get_short_info']; // TODO: shouldn't put this in global scope
 
     (async () => {
+
+        // required for pop-up submits to work
+        setupCsrfForAjax()
+
         // init firdi
         const firdiData = await loadData(viewNames['get_firdi_data']);
         const linker = new Linker(firdiData.tableData, firdiData.tableFields, viewNames);
@@ -37,11 +40,6 @@ $(document).ready(function () {
         // init group manager
         const groupManager = new GroupManager('saveSelectionButton', 'loadSelectionButton',
             'numSelected', state);
-
-        // TODO: shouldn't put this in global scope
-        window.annotate = showAnnotateDialog
-        setupCsrfForAjax() // required for annotate submit to work
-        $('#annotationSubmit').on('click', handleAnnotateSubmit);
 
     })().catch(e => {
         console.error(e);

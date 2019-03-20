@@ -1,12 +1,6 @@
 import * as d3 from 'd3-latest';
 import { getRowObj, getPkValue, getDisplayName, goToPage } from './common';
-
-function getInfoTitle(displayName) {
-    let infoTitle = $('<h6/>', {
-        'text': displayName
-    });
-    return infoTitle;
-}
+import AnnotationManager from './AnnotationManager';
 
 class InfoPanesManager {
 
@@ -141,20 +135,33 @@ class InfoPanesManager {
         }
     }
 
+    getInfoTitle(displayName) {
+        let infoTitle = $('<h6/>', {
+            'text': displayName
+        });
+        return infoTitle;
+    }
+
     updateContent(rowObject, tableId, dataUrl, rowId) {
         const tableData = {
             'id': getPkValue(rowObject, tableId)
         };
         const displayName = getDisplayName(rowObject, tableId);
         let infoDiv = $('<div/>');
-        let infoTitle = getInfoTitle(displayName);
+        let infoTitle = this.getInfoTitle(displayName);
         infoDiv.append(infoTitle);
 
         let dataDiv = $('<div\>', {
             'html': '<p>Loading data...</p>'
         });
         $.getJSON(dataUrl, tableData, data => {
-            const annotationDiv = this.getAnnotationDiv(data, displayName, infoTitle);
+            const annotId = data['annotation_id'];
+            const annotUrl = data['annotation_url'];
+            const annotation = data['annotation'];
+            const annotationManager = new AnnotationManager(annotId, annotUrl, displayName, annotation);
+            const annotationLink = annotationManager.getAnnotationLink();
+            const annotationDiv = annotationManager.getAnnotationDiv();
+            infoTitle.append(annotationLink);
             infoDiv.append(annotationDiv);
 
             // loop over additional information
@@ -180,26 +187,6 @@ class InfoPanesManager {
         $(selector).empty();
         $(selector).append(infoDiv);
         $(selector).append(dataDiv);
-    }
-
-    getAnnotationDiv(data, displayName, infoTitle) {
-        const annotation = data['annotation'];
-        const annotationUrl = data['annotation_url'];
-        const annotationId = data['annotation_id'];
-        const annotationLink = '<button type="button" class="btn btn-outline-primary btn-sm" style="margin-left: 5px"' +
-            `onclick="annotate('${annotationId}', '${annotationUrl}', '${displayName}')">📝</button>`;
-        infoTitle.append(annotationLink);
-
-        let annotationHtml = '';
-        if (annotation.length > 0) {
-            annotationHtml = `<p><strong>Annotation</strong>: ${annotation}</p>`
-        }
-        const annotationDiv = $('<div\>', {
-            id: `annotation-${annotationId}`,
-            html: annotationHtml,
-            class: 'annotation'
-        });
-        return annotationDiv;
     }
 
     updateInfoDivAdditional(infos, infoDiv) {
