@@ -53,7 +53,7 @@ function filter_viz_using_names(names, cgm, originalCgmNodes) {
 
 };
 
-function renderHeatmap(elementId, dataType, clusterJson, linkerState) {
+function clustergrammer_setup(elementId, dataType, clusterJson, linkerState) {
     if (clusterJson.hasOwnProperty(dataType) && clusterJson[dataType]) {
 
         $(elementId).text('');
@@ -224,4 +224,4 @@ function dendroFilterCallback(cgm) {
     linkerState.notifyClustergrammerUpdate();
 }
 
-export default renderHeatmap;
+export default clustergrammer_setup;

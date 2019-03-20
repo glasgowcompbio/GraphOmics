@@ -1,12 +1,12 @@
-import Linker from './linker.js';
+import Linker from './Linker.js';
 import '../css/linker.css';
 import 'webpack-jquery-ui';
 import 'webpack-jquery-ui/css';
 import '../css/summary.css';
-import { showAnnotateDialog, handleAnnotateSubmit } from './annotate';
+import { showAnnotateDialog, handleAnnotateSubmit } from './Annotate';
 import { setupCsrfForAjax } from './common';
-import renderHeatmap from './clustergrammer_setup';
-import GroupManager from './group_manager';
+import clustergrammer_setup from './clustergrammer_setup';
+import GroupManager from './GroupManager';
 
 async function loadData(viewUrl) {
     try {
@@ -30,9 +30,9 @@ $(document).ready(function () {
 
         // init heatmap
         const heatmapData = await loadData(viewNames['get_heatmap_data']);
-        await renderHeatmap('#summary-vis-gene', 'genes', heatmapData, state);
-        await renderHeatmap('#summary-vis-protein', 'proteins', heatmapData, state);
-        await renderHeatmap('#summary-vis-compound', 'compounds', heatmapData, state);
+        await clustergrammer_setup('#summary-vis-gene', 'genes', heatmapData, state);
+        await clustergrammer_setup('#summary-vis-protein', 'proteins', heatmapData, state);
+        await clustergrammer_setup('#summary-vis-compound', 'compounds', heatmapData, state);
 
         // init group manager
         const groupManager = new GroupManager('saveSelectionButton', 'loadSelectionButton',

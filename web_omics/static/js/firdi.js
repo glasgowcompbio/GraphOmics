@@ -14,7 +14,7 @@ import alasql from 'alasql';
 
 import { isTableVisible, deepCopy, getPkValue, getDisplayName, getDisplayNameCol, getRowObj, getIndexToPos, goToPage, blockUI,
     unblockUI, FIRDI_UPDATE_EVENT, CLUSTERGRAMMER_UPDATE_EVENT } from './common'
-import InfoPanesManager from './info_panes_manager';
+import InfoPanesManager from './InfoPanesManager';
 import Observable from './Observable'
 
 class DataTablesOptionsManager {

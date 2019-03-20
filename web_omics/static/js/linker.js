@@ -1,4 +1,4 @@
-import FiRDI from './firdi';
+import FiRDI from './FiRDI';
 
 // https://stackoverflow.com/questions/1199352/smart-way-to-shorten-long-strings-with-javascript
 String.prototype.trunc = String.prototype.trunc ||
