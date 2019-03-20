@@ -1,6 +1,6 @@
 import {FIRDI_UPDATE_EVENT, CLUSTERGRAMMER_UPDATE_EVENT} from "./common";
 
-class SelectionManager {
+class GroupManager {
 
     constructor(saveSelectionButton, loadSelectionButton, numSelected, linkerState) {
         this.saveSelectionButton = $(`#${saveSelectionButton}`);
@@ -29,4 +29,4 @@ class SelectionManager {
 
 }
 
-export default SelectionManager;
+export default GroupManager;

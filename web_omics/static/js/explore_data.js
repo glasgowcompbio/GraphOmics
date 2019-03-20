@@ -3,9 +3,10 @@ import '../css/linker.css';
 import 'webpack-jquery-ui';
 import 'webpack-jquery-ui/css';
 import '../css/summary.css';
-import { setupCsrfForAjax, showAnnotateDialog, handleAnnotateSubmit } from './annotate';
+import { showAnnotateDialog, handleAnnotateSubmit } from './annotate';
+import { setupCsrfForAjax } from './common';
 import renderHeatmap from './clustergrammer_setup';
-import SelectionManager from './selection_manager';
+import GroupManager from './group_manager';
 
 async function loadData(viewUrl) {
     try {
@@ -18,30 +19,32 @@ async function loadData(viewUrl) {
 
 $(document).ready(function () {
 
-    let linker = undefined;
+    let state = null;
     window.baseUrl = viewNames['get_short_info']; // TODO: shouldn't put this in global scope
 
-    // load tables data
-    loadData(viewNames['get_firdi_data']).then(function(data) {
-        // populate tables data
-        linker = new Linker(data.tableData, data.tableFields, viewNames);
-    }).then(function() {
-        // load heatmap data
-        return loadData(viewNames['get_heatmap_data']);
-    }).then(function(data) {
-        // populate heatmap data
-        renderHeatmap('#summary-vis-gene', 'genes', data, linker.state);
-        renderHeatmap('#summary-vis-protein', 'proteins', data, linker.state);
-        renderHeatmap('#summary-vis-compound', 'compounds', data, linker.state);
-    }).then(() => {
-        // keep track of selections
-        const selectionManager = new SelectionManager('saveSelectionButton', 'loadSelectionButton',
-            'numSelected', linker.state);
-    })
+    (async () => {
+        // init firdi
+        const firdiData = await loadData(viewNames['get_firdi_data']);
+        const linker = new Linker(firdiData.tableData, firdiData.tableFields, viewNames);
+        const state = linker.state;
 
-    // TODO: shouldn't put this in global scope
-    window.annotate = showAnnotateDialog
-    setupCsrfForAjax() // required for annotate submit to work
-    $('#annotationSubmit').on('click', handleAnnotateSubmit);
+        // init heatmap
+        const heatmapData = await loadData(viewNames['get_heatmap_data']);
+        await renderHeatmap('#summary-vis-gene', 'genes', heatmapData, state);
+        await renderHeatmap('#summary-vis-protein', 'proteins', heatmapData, state);
+        await renderHeatmap('#summary-vis-compound', 'compounds', heatmapData, state);
+
+        // init group manager
+        const groupManager = new GroupManager('saveSelectionButton', 'loadSelectionButton',
+            'numSelected', state);
+
+        // TODO: shouldn't put this in global scope
+        window.annotate = showAnnotateDialog
+        setupCsrfForAjax() // required for annotate submit to work
+        $('#annotationSubmit').on('click', handleAnnotateSubmit);
+
+    })().catch(e => {
+        console.error(e);
+    });
 
 });
