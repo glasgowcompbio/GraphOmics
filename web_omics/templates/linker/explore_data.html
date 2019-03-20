@@ -30,7 +30,7 @@
                     </li>
                 {% endif %}
                 <li class="nav-item ml-auto">
-                    <button type="button" class="btn btn-primary" id="saveSelectionButton">
+                    <button type="button" class="btn btn-primary" id="saveGroupButton">
                         Save group <span class="badge badge-light" id="numSelected">0</span>
                     </button>
                 </li>
@@ -61,27 +61,26 @@
 
         <div id="annotationDialog" title="Update Annotation" style="display: none">
             <form id="annotationForm" action="">
-                <fieldset>
+                <div class="form-group">
                     <input type="hidden" id="annotationId"/>
                     <input type="hidden" id="displayName" name="displayName"/>
                     <label for="annotationValue">Annotation</label>
                     <textarea class="form-control" rows="5" id="annotationValue" name="annotationValue"></textarea>
-                </fieldset>
-                <br/>
+                </div>
                 <input type="button" id="annotationSubmit" name="submit" value="Save" class="btn btn-primary"/>
             </form>
         </div>
 
         <div id="saveGroupDialog" title="Save Group" style="display: none">
             <form id="saveGroupForm" action="">
-                <fieldset>
-                    <input type="hidden" id="groupId"/>
+                <div class="form-group row">
                     <label for="groupName">Group Name</label>
-                    <input type="hidden" id="groupName" name="groupName"/>
+                    <input type="text" class="form-control" id="groupName" name="groupName"/>
+                </div>
+                <div class="form-group row">
                     <label for="groupDesc">Group Description</label>
                     <textarea class="form-control" rows="5" id="groupDesc" name="groupDesc"></textarea>
-                </fieldset>
-                <br/>
+                </div>
                 <input type="button" id="groupSubmit" name="submit" value="Save" class="btn btn-primary"/>
             </form>
         </div>
