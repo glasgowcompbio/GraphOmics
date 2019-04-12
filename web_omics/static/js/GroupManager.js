@@ -1,4 +1,4 @@
-import {FIRDI_UPDATE_EVENT, CLUSTERGRAMMER_UPDATE_EVENT} from "./common";
+import {FIRDI_UPDATE_EVENT, CLUSTERGRAMMER_UPDATE_EVENT, unblockUI} from "./common";
 
 class GroupManager {
 
@@ -27,10 +27,13 @@ class GroupManager {
             modal: true,
             width: 460,
         });
+        const self = this;
         $('#groupSubmit').on('click', () => {
             const form = $('#saveGroupForm');
             const action = form.attr('action');
-            const data = form.serialize();
+            let formData = form.serializeArray();
+            formData.push({'name': 'linkerState', 'value': self.linkerState});
+            const data = JSON.stringify(formData);
             $.ajax({
                 type: 'POST',
                 url: action,
@@ -38,7 +41,9 @@ class GroupManager {
                 success: function () {
                     $('#saveGroupDialog').dialog('close');
                     $('#groupSubmit').off();
-                    alert('Group successfully saved.');
+                    window.setTimeout(function() {
+                        alert('Group successfully saved.');
+                    }, 1); // add a small delay before showing confirmation
                 }
             });
         });

@@ -14,6 +14,7 @@ urlpatterns = [
     path('get_heatmap_data/<int:analysis_id>', views.get_heatmap_data, name='get_heatmap_data'),
 
     path('explore_data/<int:analysis_id>/annotate/<int:data_type>/<str:database_id>', views.update_annotation, name='update_annotation'),
+    path('save_group/<int:analysis_id>', views.save_group, name='save_group'),
     path('get_ensembl_gene_info/<int:analysis_id>', views.get_ensembl_gene_info, name='get_ensembl_gene_info'),
     path('get_uniprot_protein_info/<int:analysis_id>', views.get_uniprot_protein_info, name='get_uniprot_protein_info'),
     path('get_kegg_metabolite_info/<int:analysis_id>', views.get_kegg_metabolite_info, name='get_kegg_metabolite_info'),

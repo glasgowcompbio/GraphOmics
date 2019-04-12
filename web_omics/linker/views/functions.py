@@ -346,7 +346,8 @@ def get_context(analysis):
         TABLE_IDS[PATHWAYS]: get_reverse_url('get_reactome_pathway_info', analysis),
         'get_firdi_data': get_reverse_url('get_firdi_data', analysis),
         'get_heatmap_data': get_reverse_url('get_heatmap_data', analysis),
-        'get_short_info': get_reverse_url('get_short_info', None)
+        'get_short_info': get_reverse_url('get_short_info', None),
+        'save_group': get_reverse_url('save_group', analysis)
     }
     context = {
         'analysis_id': analysis.pk,

@@ -1,4 +1,5 @@
 import collections
+import json
 
 import pandas as pd
 from django.core.exceptions import ObjectDoesNotExist
@@ -10,7 +11,7 @@ from django.utils import timezone
 from linker.constants import *
 from linker.metadata import get_single_ensembl_metadata_online, get_single_uniprot_metadata_online, \
     get_single_compound_metadata_online
-from linker.models import Analysis, AnalysisAnnotation
+from linker.models import Analysis, AnalysisAnnotation, AnalysisGroup
 from linker.reactome import get_reactome_description, get_reaction_entities, pathway_to_reactions
 from linker.views.functions import change_column_order, recur_dictify, get_context, \
     get_last_data
@@ -555,6 +556,31 @@ def update_annotation(request, analysis_id, database_id, data_type):
     data = {'success': True}
     return JsonResponse(data)
 
+def save_group(request, analysis_id):
+    analysis = Analysis.objects.get(id=analysis_id)
+
+    # request.POST is a QueryDict, see https://docs.djangoproject.com/en/2.2/ref/request-response/#querydict-objects
+    json_str = list(request.POST.keys())[0]
+    json_list = json.loads(json_str)
+
+    group_name = _get_value(json_list, 'groupName')
+    group_desc = _get_value(json_list, 'groupDesc')
+    linker_state = _get_value(json_list, 'linkerState')
+
+    group = AnalysisGroup.objects.create(
+        analysis=analysis,
+        display_name=group_name,
+        description=group_desc,
+        linker_state=linker_state,
+        timestamp=timezone.localtime()
+    )
+    group.save()
+
+    data = {'success': True}
+    return JsonResponse(data)
+
+def _get_value(json_list, key):
+    return [x['value'] for x in json_list if x['name'] == key][0]
 
 def get_grouped_measurements(analysis_id, database_id, data_type, peak_id=None):
     analysis = Analysis.objects.get(id=analysis_id)

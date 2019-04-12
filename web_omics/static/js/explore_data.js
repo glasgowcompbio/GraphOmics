@@ -38,7 +38,7 @@ $(document).ready(function () {
         await clustergrammer_setup('#summary-vis-compound', 'compounds', heatmapData, state);
 
         // init group manager
-        const saveUrl = '';
+        const saveUrl = viewNames['save_group'];
         const groupManager = new GroupManager('saveGroupButton', 'numSelected', state, saveUrl);
 
     })().catch(e => {

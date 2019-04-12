@@ -385,8 +385,24 @@ class FiRDIState extends Observable {
         // observer pattern
         this.lastQueryResults = {}; // to store firdi updates
         this.originalCgmNodes = {}; // to restore original cgm nodes when we reset the view
-        this.cgmLastClickedName = undefined; // to store the table name linked to a last-clicked clustergrammer
-        this.cgmSelections = undefined; // to store the selections linked to a last-clicked clustergrammer
+        this.cgmLastClickedName = null; // to store the table name linked to a last-clicked clustergrammer
+        this.cgmSelections = null; // to store the selections linked to a last-clicked clustergrammer
+    }
+
+    restore(newState) {
+        this.defaultConstraints = newState.defaultConstraints;
+        this.constraints = newState.constraints;
+        this.selections = newState.selections;
+        this.numSelected = newState.numSelected;
+        this.totalSelected = newState.totalSelected;
+        this.whereType = newState.whereType;
+        this.selectedIndex = newState.selectedIndex;
+        this.lastQueryResults = newState.lastQueryResults;
+        this.originalCgmNodes = newState.originalCgmNodes;
+        this.cgmLastClickedName = newState.cgmLastClickedName;
+        this.cgmSelections = newState.cgmSelections;
+        this.notifyFirdiUpdate();
+        this.notifyClustergrammerUpdate();
     }
 
     notifyFirdiUpdate() {
