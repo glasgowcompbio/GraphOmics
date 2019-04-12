@@ -116,9 +116,15 @@ DJANGO_TEMPLATE_DEBUG='yes'
 
 Install the virtual environment using `pipenv` and go into its shell:
 ```bash
-$ pipenv install --dev
+$ pipenv install
 $ pipenv shell
 ```
+
+Note: rpy2 is difficult to install on Windows, see https://stackoverflow.com/questions/49915714/installing-rpy2-on-windows.
+As a workaround:
+1. Edit Pipfile and remove the line that contains rpy2
+2. Run `pipenv install`
+3. Manually install rpy2 with `$ pipenv install whl/rpy2-2.9.5-cp36-cp36m-win_amd64.whl`.
 
 ### 6. Install front-end dependencies
 
