@@ -13,7 +13,7 @@ import 'datatables.net-select-dt/css/select.dataTables.min.css';
 import alasql from 'alasql';
 
 import { isTableVisible, deepCopy, getPkValue, getDisplayName, getDisplayNameCol, getRowObj, getIndexToPos, goToPage, blockUI,
-    unblockUI, FIRDI_UPDATE_EVENT, CLUSTERGRAMMER_UPDATE_EVENT } from './common'
+    unblockUI, FIRDI_UPDATE_EVENT, CLUSTERGRAMMER_UPDATE_EVENT, GROUP_MANAGER_UPDATE_EVENT } from './common'
 import InfoPanesManager from './InfoPanesManager';
 import Observable from './Observable'
 
@@ -401,8 +401,6 @@ class FiRDIState extends Observable {
         this.originalCgmNodes = newState.originalCgmNodes;
         this.cgmLastClickedName = newState.cgmLastClickedName;
         this.cgmSelections = newState.cgmSelections;
-        this.notifyFirdiUpdate();
-        this.notifyClustergrammerUpdate();
     }
 
     notifyFirdiUpdate() {

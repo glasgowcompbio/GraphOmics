@@ -29,6 +29,17 @@ def explore_data(request, analysis_id):
     return render(request, 'linker/explore_data.html', context)
 
 
+def list_groups(request, analysis_id):
+    analysis = Analysis.objects.get(id=analysis_id)
+    analysis_groups = AnalysisGroup.objects.filter(analysis=analysis).order_by('-timestamp')
+    data = { 'list' : [] }
+    for g in analysis_groups:
+        label = g.display_name
+        value = g.id
+        data['list'].append({ 'label' : label, 'value' : value })
+    return JsonResponse(data)
+
+
 def clustergrammer_demo(request):
     context = {}
     return render(request, 'linker/clustergrammer_demo.html', context)
@@ -577,6 +588,14 @@ def save_group(request, analysis_id):
     group.save()
 
     data = {'success': True}
+    return JsonResponse(data)
+
+def load_group(request, analysis_id):
+    analysis = Analysis.objects.get(id=analysis_id)
+    group_id = int(request.GET['groupId'])
+    group = AnalysisGroup.objects.get(id=group_id)
+    linker_state = group.linker_state
+    data = {'linkerState': linker_state}
     return JsonResponse(data)
 
 def _get_value(json_list, key):

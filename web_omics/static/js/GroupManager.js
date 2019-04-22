@@ -1,21 +1,56 @@
-import {FIRDI_UPDATE_EVENT, CLUSTERGRAMMER_UPDATE_EVENT, unblockUI} from "./common";
+import {FIRDI_UPDATE_EVENT, CLUSTERGRAMMER_UPDATE_EVENT, loadData, blockUI, unblockUI} from "./common";
+import Awesomplete from 'awesomplete-es6';
 
 class GroupManager {
 
-    constructor(saveButtonId, numSelectedId, linkerState, saveUrl) {
-        // register observables
+    constructor(saveButtonId, loadButtonId, numSelectedId, selectBoxId,
+                linkerState, saveUrl, loadUrl, listUrl) {
+
+        // set an initial linker state to be updated later
         this.linkerState = linkerState;
         this.linkerState.on(FIRDI_UPDATE_EVENT, (data) => {
-            this.handleFirdiUpdate(data);
+            this.handleFirdiUpdate(data); // update selected item counter from Firdi
         });
         this.linkerState.on(CLUSTERGRAMMER_UPDATE_EVENT, (data) => {
-            this.handleClustergrammerUpdate(data);
+            this.handleClustergrammerUpdate(data);  // update selected item counter from Clustergrammer
         })
-        // register click handler
+
+        this.saveUrl = saveUrl;
+        this.loadUrl = loadUrl;
+        this.listUrl = listUrl;
+
         this.numSelected = $(`#${numSelectedId}`);
+        this.selectBoxId = selectBoxId;
+        this.updateList();
+
         this.saveButton = $(`#${saveButtonId}`);
         this.saveButton.on('click', () => { this.showSaveDialog(); })
-        this.saveUrl = saveUrl;
+
+        this.loadButton = $(`#${loadButtonId}`);
+        this.loadButton.on('click', () => { this.loadLinkerState(); })
+
+    }
+
+    updateList() {
+        loadData(this.listUrl).then(data => {
+            const elem = document.getElementById(this.selectBoxId);
+            const myList = data.list;
+            const selectBox = new Awesomplete(elem, {
+                list: myList,
+                minChars: 0,
+            });
+            $(elem).on('focus', () => { // https://github.com/LeaVerou/awesomplete/issues/16754
+                selectBox.evaluate();
+            });
+        })
+    }
+
+    loadLinkerState() {
+        const groupId = document.getElementById(this.selectBoxId).value;
+        loadData(this.loadUrl, { 'groupId' : groupId }).then( data => {
+            const newState = data.linkerState;
+            this.linkerState.restore(newState);
+        })
     }
 
     showSaveDialog() {

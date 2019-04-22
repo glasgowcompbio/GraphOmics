@@ -3,18 +3,9 @@ import '../css/linker.css';
 import 'webpack-jquery-ui';
 import 'webpack-jquery-ui/css';
 import '../css/summary.css';
-import {setupCsrfForAjax} from './common';
+import {loadData, setupCsrfForAjax} from './common';
 import clustergrammer_setup from './clustergrammer_setup';
 import GroupManager from './GroupManager';
-
-async function loadData(viewUrl) {
-    try {
-        const result = await $.getJSON(viewUrl);
-        return result;
-    } catch (e) {
-        console.log(e);
-    }
-}
 
 $(document).ready(function () {
 
@@ -39,7 +30,10 @@ $(document).ready(function () {
 
         // init group manager
         const saveUrl = viewNames['save_group'];
-        const groupManager = new GroupManager('saveGroupButton', 'numSelected', state, saveUrl);
+        const loadUrl = viewNames['load_group'];
+        const listUrl = viewNames['list_groups'];
+        const groupManager = new GroupManager('saveGroupButton', 'loadGroupButton', 'numSelected', 'group',
+            state, saveUrl, loadUrl, listUrl);
 
     })().catch(e => {
         console.error(e);

@@ -1,5 +1,14 @@
 import 'block-ui';
 
+async function loadData(viewUrl, params) {
+    try {
+        const result = await $.getJSON(viewUrl, params);
+        return result;
+    } catch (e) {
+        console.log(e);
+    }
+}
+
 const isTableVisible = tableInfo => tableInfo["options"]["visible"];
 
 // https://stackoverflow.com/questions/122102/what-is-the-most-efficient-way-to-deep-clone-an-object-in-javascript/5344074#5344074
@@ -149,6 +158,7 @@ const FIRDI_UPDATE_EVENT = 0;
 const CLUSTERGRAMMER_UPDATE_EVENT = 1;
 
 export {
+    loadData,
     isTableVisible,
     deepCopy,
     getPkValue,
