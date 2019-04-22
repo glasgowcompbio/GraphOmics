@@ -221,6 +221,17 @@ function dendroFilterCallback(cgm) {
     const linkerState = cgm.linkerState;
     linkerState.cgmLastClickedName = tableName;
     linkerState.cgmSelections = nodeNames;
+    // set selections for all tables to empty except for the current tableName
+    for (let tname in linkerState.selections) {
+        if (linkerState.selections.hasOwnProperty(tname)) {
+            if (tname === tableName) {
+                // convert node name to constraint key
+                linkerState.selections[tname] = nodeNames.map(d => linkerState.displayNameToConstraintKey[tname][d]);
+            } else {
+                linkerState.selections[tname] = [];
+            }
+        }
+    }
     linkerState.notifyClustergrammerUpdate();
 }
 

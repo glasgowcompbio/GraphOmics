@@ -15,19 +15,28 @@ const isTableVisible = tableInfo => tableInfo["options"]["visible"];
 const deepCopy = obj => JSON.parse(JSON.stringify(obj));
 
 const getPkValue = function(rowObject, tableId) {
+    const pkCol = getPkCol(tableId);
+    if (pkCol) {
+        return rowObject[pkCol];
+    } else {
+        return null;
+    }
+};
+
+const getPkCol = function(tableId) {
     if (tableId === 'genes_table') {
-        return rowObject['gene_pk'];
+        return 'gene_pk';
     } else if (tableId === 'proteins_table') {
-        return rowObject['protein_pk'];
+        return 'protein_pk';
     } else if (tableId === 'compounds_table') {
-        return rowObject['compound_pk'];
+        return 'compound_pk';
     } else if (tableId === 'reactions_table') {
-        return rowObject['reaction_pk'];
+        return 'reaction_pk';
     } else if (tableId === 'pathways_table') {
-        return rowObject['pathway_pk'];
+        return 'pathway_pk';
     }
     return null;
-};
+}
 
 const getDisplayName = function(rowObject, tableId) {
     const displayNameCol = getDisplayNameCol(tableId);
@@ -162,6 +171,7 @@ export {
     isTableVisible,
     deepCopy,
     getPkValue,
+    getPkCol,
     getDisplayName,
     getDisplayNameCol,
     getRowObj,

@@ -12,7 +12,7 @@ import 'datatables.net-select-dt/css/select.dataTables.min.css';
 
 import alasql from 'alasql';
 
-import { isTableVisible, deepCopy, getPkValue, getDisplayName, getDisplayNameCol, getRowObj, getIndexToPos, goToPage, blockUI,
+import { isTableVisible, deepCopy, getPkValue, getPkCol, getDisplayName, getDisplayNameCol, getRowObj, getIndexToPos, goToPage, blockUI,
     unblockUI, FIRDI_UPDATE_EVENT, CLUSTERGRAMMER_UPDATE_EVENT, GROUP_MANAGER_UPDATE_EVENT } from './common'
 import InfoPanesManager from './InfoPanesManager';
 import Observable from './Observable'
@@ -370,11 +370,12 @@ class ConstraintsManager {
 
 class FiRDIState extends Observable {
 
-    constructor(defaultConstraints, initConstraints, emptySelections, emptyCounts) {
+    constructor(defaultConstraints, displayNameToConstraintKey, initConstraints, emptySelections, emptyCounts) {
         super();
 
         // Firdi fields
         this.defaultConstraints = defaultConstraints;
+        this.displayNameToConstraintKey = displayNameToConstraintKey;
         this.constraints = initConstraints;
         this.selections = emptySelections;
         this.numSelected = emptyCounts;
@@ -391,6 +392,7 @@ class FiRDIState extends Observable {
 
     restore(newState) {
         this.defaultConstraints = newState.defaultConstraints;
+        this.displayNameToConstraintKey = newState.displayNameToConstraintKey;
         this.constraints = newState.constraints;
         this.selections = newState.selections;
         this.numSelected = newState.numSelected;
@@ -400,7 +402,6 @@ class FiRDIState extends Observable {
         this.lastQueryResults = newState.lastQueryResults;
         this.originalCgmNodes = newState.originalCgmNodes;
         this.cgmLastClickedName = newState.cgmLastClickedName;
-        this.cgmSelections = newState.cgmSelections;
     }
 
     notifyFirdiUpdate() {
@@ -432,9 +433,9 @@ class FiRDI {
             console.log('firdi receives update from clustergrammer');
             console.log(data);
             const tableName = data.cgmLastClickedName;
-            const selectedDisplayNames = data.cgmSelections;
+            const selectedPkValues = data.selections[tableName];
             this.resetFiRDI();
-            this.multipleTrClickHandlerUpdate(tableName, selectedDisplayNames);
+            this.multipleTrClickHandlerUpdate(tableName, selectedPkValues);
         })
 
         this.constraintsManager = new ConstraintsManager(this.tablesInfo, this.sqlManager, this.state);
@@ -451,10 +452,12 @@ class FiRDI {
 
     getFirdiState() {
         const defaultConstraints = this.getDefaultConstraints();
+        const displayNameToConstraintKey = this.getDisplayNameToConstraintKey()
         const initConstraints = deepCopy(defaultConstraints);
         const emptySelections = this.makeEmptyConstraint();
         const emptyCounts = this.makeEmptyCount();
-        const state = new FiRDIState(defaultConstraints, initConstraints, emptySelections, emptyCounts);
+        const state = new FiRDIState(defaultConstraints, displayNameToConstraintKey, initConstraints,
+            emptySelections, emptyCounts);
         return state;
     }
 
@@ -479,6 +482,30 @@ class FiRDI {
             .filter((k, idx, arr) => arr.indexOf(k) === idx);
 
         return keys;
+    }
+
+    getDisplayNameToConstraintKey() {
+        return this.sqlManager.getConstraintTablesConstraintKeyName(this.tablesInfo)
+            .reduce((constraints, tableInfo) => {
+                constraints[tableInfo['tableName']] = this.getDisplayNameToPk(
+                    this.tablesInfo, tableInfo['tableName'], tableInfo['constraintKeyName']);
+                return constraints;
+            }, {});
+    }
+
+    getDisplayNameToPk(tablesInfo, tableName, k) {
+        // Gets the values of the key used in the table relationship for the SQL IN clause
+        const data = tablesInfo
+            .filter(isTableVisible)
+            .filter(t => t['tableName'] === tableName)
+            .map(t => t['tableData'])[0];
+
+        const displayNameToPk = {}
+        data.map(d => {
+            const displayName = getDisplayName(d, tableName);
+            displayNameToPk[displayName] = d[k];
+        })
+        return displayNameToPk;
     }
 
     makeEmptyConstraint() {
@@ -819,20 +846,20 @@ class FiRDI {
         }
     }
 
-    multipleTrClickHandlerUpdate(tableName, selectedDisplayNames) {
+    multipleTrClickHandlerUpdate(tableName, selectedPkValues) {
         const tableAPI = $('#' + tableName).DataTable();
 
-        // find rows based on selectedDisplayNames (e.g. 'Adenine')
-        const displayNameCol = getDisplayNameCol(tableName);
+        // find rows based on selectedPkValues
+        const pkCol = getPkCol(tableName);
         const rows = tableAPI.rows((idx, data, node) => {
-            const displayName = data[displayNameCol];
-            return selectedDisplayNames.includes(displayName) ? true : false;
+            const pk = data[pkCol];
+            return selectedPkValues.includes(pk) ? true : false;
         });
         const allRowData = rows.data();
         const allRowIndices = rows.indexes();
 
         // add rows as multiple selections
-        for (let i = 0; i < selectedDisplayNames.length; i++) {
+        for (let i = 0; i < selectedPkValues.length; i++) {
             const rowData = allRowData[i];
             const rowIndex = allRowIndices[i];
             this.constraintsManager.addConstraint(tableName, rowData, rowIndex);
