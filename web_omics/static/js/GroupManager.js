@@ -27,10 +27,12 @@ class GroupManager {
 
         this.saveButton = $(`#${saveButtonId}`);
         this.saveButton.on('click', () => { this.showSaveDialog(); })
+        this.checkSaveButtonStatus(this.linkerState.totalSelected);
 
         this.loadButton = $(`#${loadButtonId}`);
         this.loadButton.on('click', () => { this.loadLinkerState(); })
-
+        const elem = document.getElementById(this.selectBoxId);
+        this.checkLoadButtonStatus(elem);
     }
 
     updateList() {
@@ -51,9 +53,13 @@ class GroupManager {
                 elem.value = '';
                 selectBox.evaluate();
             });
+            $(elem).on('blur', () => {
+                this.checkLoadButtonStatus(elem);
+            });
             $(elem).on("awesomplete-selectcomplete", (e) => {
                 const originalEvent = e.originalEvent;
                 this.selectedSuggestion = originalEvent.selectedSuggestion;
+                this.checkLoadButtonStatus(elem);
             });
             this.awesomeplete = selectBox;
         })
@@ -104,12 +110,30 @@ class GroupManager {
         console.log('SelectionManager receives update from Firdi');
         console.log(data);
         this.numSelected.text(data.totalSelected);
+        this.checkSaveButtonStatus(data.totalSelected);
     }
 
     handleClustergrammerUpdate(data) {
         console.log('SelectionManager receives update from Clustergrammer');
         console.log(data);
         this.numSelected.text(data.totalSelected);
+        this.checkSaveButtonStatus(data.totalSelected);
+    }
+
+    checkSaveButtonStatus(totalSelected) {
+        if (totalSelected == 0) {
+            this.saveButton.prop('disabled', true);
+        } else {
+            this.saveButton.prop('disabled', false);
+        }
+    }
+
+    checkLoadButtonStatus(elem) {
+        if (elem.value === '') {
+            this.loadButton.prop('disabled', true);
+        } else {
+            this.loadButton.prop('disabled', false);
+        }
     }
 
 }
