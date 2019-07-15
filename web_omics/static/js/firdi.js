@@ -438,12 +438,21 @@ class FiRDI {
             console.log(data);
             const tableName = data.cgmLastClickedName;
             const selectedPkValues = data.selections[tableName];
-            this.resetFiRDI();
+            this.resetFiRDI(true);
             this.multipleTrClickHandlerUpdate(tableName, selectedPkValues);
         })
         this.state.on(SELECTION_MANAGER_UPDATE_EVENT, (data) => {
             console.log('firdi receives update from selection manager');
             console.log(data);
+            this.resetFiRDI(false);
+            for (let i = 0; i < this.tableFieldNames.length; i++) { // update all the tables
+                const tableFieldName = this.tableFieldNames[i];
+                const tableName = tableFieldName['tableName'];
+                const selectedPkValues = data.selections[tableName];
+                if (selectedPkValues.length > 0) {
+                    this.updateFiRDIForMultipleSelect(tableName);
+                }
+            }
         })
 
         this.constraintsManager = new ConstraintsManager(this.tablesInfo, this.sqlManager, this.state);
@@ -585,10 +594,11 @@ class FiRDI {
             blockUI();
             const selectedValue = this.value;
             window.setTimeout(function() {
-                currObj.resetFiRDI();
+                currObj.resetFiRDI(true);
                 let filterColumnName = selectedValue.length > 0 ? selectedValue : null;
                 currObj.state.whereType = filterColumnName;
                 currObj.updateTables();
+                currObj.state.notifyFirdiUpdate();
                 unblockUI();
             }, 1); // we need a small delay to allow blockUI to be rendered correctly
         };
@@ -625,18 +635,11 @@ class FiRDI {
         });
     }
 
-    resetFiRDI() {
+    resetFiRDI(resetState) {
         // restore originalTablesInfo
         this.tablesInfo = JSON.parse(JSON.stringify(this.originalTablesInfo));
         this.sqlManager.clearAlasqlTables(this.tablesInfo);
         this.sqlManager.addNewData(this.tablesInfo);
-        this.state.defaultConstraints = this.getDefaultConstraints();
-        this.state.constraints = deepCopy(this.state.defaultConstraints);
-        this.state.selections = this.makeEmptyConstraint();
-        this.state.numSelected = this.makeEmptyCount();
-        this.state.totalSelected = 0;
-        this.state.whereType = null;
-
         this.tablesInfo.forEach(t => {
             const tableName = t['tableName'];
             const tableAPI = $(this.dataTablesIds[tableName]).DataTable();
@@ -644,6 +647,16 @@ class FiRDI {
             tableAPI.rows.add(t['tableData']);
             tableAPI.draw();
         });
+        // reset state
+        if (resetState) {
+            this.state.defaultConstraints = this.getDefaultConstraints();
+            this.state.constraints = deepCopy(this.state.defaultConstraints);
+            this.state.selections = this.makeEmptyConstraint();
+            this.state.numSelected = this.makeEmptyCount();
+            this.state.totalSelected = 0;
+            this.state.whereType = null;
+        }
+        // reset info panels
         this.infoPanelManager.clearAllInfoPanels();
     }
 
@@ -686,7 +699,6 @@ class FiRDI {
             const tableName = tableFieldName['tableName'];
             this.updateSingleTable(tableFieldName, queryResult);
         }
-        this.state.notifyFirdiUpdate();
     }
 
     updateTablesForClickUpdate() {
@@ -855,9 +867,9 @@ class FiRDI {
     }
 
     multipleTrClickHandlerUpdate(tableName, selectedPkValues) {
+        // we need to repopulate the constraints based on selectedPkValues
+        // first find rows in the datatable based on selectedPkValues
         const tableAPI = $('#' + tableName).DataTable();
-
-        // find rows based on selectedPkValues
         const pkCol = getPkCol(tableName);
         const rows = tableAPI.rows((idx, data, node) => {
             const pk = data[pkCol];
@@ -867,12 +879,18 @@ class FiRDI {
         const allRowIndices = rows.indexes();
 
         // add rows as multiple selections
+        // here we assume that state has been reset (resetFiRDI was called)
         for (let i = 0; i < selectedPkValues.length; i++) {
             const rowData = allRowData[i];
             const rowIndex = allRowIndices[i];
             this.constraintsManager.addConstraint(tableName, rowData, rowIndex);
         }
 
+        // refresh UI based on multiple selections
+        this.updateFiRDIForMultipleSelect(tableName);
+    }
+
+    updateFiRDIForMultipleSelect(tableName) {
         // query db based on multiple selections
         console.log('queryResult');
         const queryResult = this.sqlManager.queryDatabase(this.tablesInfo, this.state.constraints,
