@@ -1,5 +1,5 @@
 import uuid
-import pylab as plt
+# import pylab as plt
 
 import numpy as np
 import pandas as pd
@@ -41,16 +41,16 @@ class WebOmicsInference(object):
         # - replace any other zeros with mean of group
         self._impute_data(min_value)
 
-    def heatmap(self, N=None, standardize=True, log=False):
-        if standardize:
-            data_df = self.standardize_df(self.data_df, log=log)
-        else:
-            data_df = self.data_df
-        if N is not None:
-            plt.matshow(data_df[0:N])
-        else:
-            plt.matshow(data_df)
-        plt.colorbar()
+    # def heatmap(self, N=None, standardize=True, log=False):
+    #     if standardize:
+    #         data_df = self.standardize_df(self.data_df, log=log)
+    #     else:
+    #         data_df = self.data_df
+    #     if N is not None:
+    #         plt.matshow(data_df[0:N])
+    #     else:
+    #         plt.matshow(data_df)
+    #     plt.colorbar()
 
     def standardize_df(self, data_df, log=False):
         if data_df.empty:
@@ -146,14 +146,14 @@ class WebOmicsInference(object):
         pca = PCA(n_components=n_components)
         X = pca.fit_transform(df)
 
-        if plot:
-            fig, ax = plt.subplots()
-            ax.scatter(X[:, 0], X[:, 1])
-            for i, txt in enumerate(df.index):
-                ax.annotate(txt, (X[i, 0], X[i, 1]))
-            plt.tight_layout()
-            fn = '{uuid}.png'.format(uuid=uuid.uuid4())
-            plt.save(fn)
+        # if plot:
+        #     fig, ax = plt.subplots()
+        #     ax.scatter(X[:, 0], X[:, 1])
+        #     for i, txt in enumerate(df.index):
+        #         ax.annotate(txt, (X[i, 0], X[i, 1]))
+        #     plt.tight_layout()
+        #     fn = '{uuid}.png'.format(uuid=uuid.uuid4())
+        #     plt.save(fn)
 
         cumsum = np.cumsum(pca.explained_variance_ratio_)
         return X, cumsum
