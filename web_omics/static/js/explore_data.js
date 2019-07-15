@@ -1,4 +1,4 @@
-import Linker from './Linker.js';
+import Linker from './linker.js';
 import '../css/linker.css';
 import 'webpack-jquery-ui';
 import 'webpack-jquery-ui/css';
