@@ -2,7 +2,7 @@ import Clustergrammer from './clustergrammer/main';
 import filter_network_using_new_nodes from './clustergrammer/network/filter_network_using_new_nodes';
 import update_viz_with_network from './clustergrammer/update/update_viz_with_network';
 
-import {deepCopy, FIRDI_UPDATE_EVENT, CLUSTERGRAMMER_UPDATE_EVENT} from './common'
+import {deepCopy, FIRDI_UPDATE_EVENT, CLUSTERGRAMMER_UPDATE_EVENT, SELECTION_MANAGER_UPDATE_EVENT} from './common'
 import check_setup_enrichr from './enrichrgram';
 
 const seenData = {};
@@ -111,6 +111,10 @@ function clustergrammer_setup(elementId, dataType, clusterJson, linkerState) {
             }
             const originalCgmNodes = data.originalCgmNodes[dataType];
             filter_viz_using_names({'row': names}, cgm, originalCgmNodes);
+        })
+        cgm.linkerState.on(SELECTION_MANAGER_UPDATE_EVENT, (data) => {
+            console.log('clustergrammer receives update from selection manager');
+            console.log(data);
         })
 
     } else {

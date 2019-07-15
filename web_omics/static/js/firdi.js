@@ -13,7 +13,7 @@ import 'datatables.net-select-dt/css/select.dataTables.min.css';
 import alasql from 'alasql';
 
 import { isTableVisible, deepCopy, getPkValue, getPkCol, getDisplayName, getDisplayNameCol, getRowObj, getIndexToPos, goToPage, blockUI,
-    unblockUI, FIRDI_UPDATE_EVENT, CLUSTERGRAMMER_UPDATE_EVENT, GROUP_MANAGER_UPDATE_EVENT } from './common'
+    unblockUI, FIRDI_UPDATE_EVENT, CLUSTERGRAMMER_UPDATE_EVENT, SELECTION_MANAGER_UPDATE_EVENT } from './common'
 import InfoPanesManager from './InfoPanesManager';
 import Observable from './Observable'
 
@@ -412,6 +412,10 @@ class FiRDIState extends Observable {
         this.fire(CLUSTERGRAMMER_UPDATE_EVENT, this)
     }
 
+    notifySelectionManagerUpdate() {
+        this.fire(SELECTION_MANAGER_UPDATE_EVENT, this);
+    }
+
 }
 
 class FiRDI {
@@ -436,6 +440,10 @@ class FiRDI {
             const selectedPkValues = data.selections[tableName];
             this.resetFiRDI();
             this.multipleTrClickHandlerUpdate(tableName, selectedPkValues);
+        })
+        this.state.on(SELECTION_MANAGER_UPDATE_EVENT, (data) => {
+            console.log('firdi receives update from selection manager');
+            console.log(data);
         })
 
         this.constraintsManager = new ConstraintsManager(this.tablesInfo, this.sqlManager, this.state);

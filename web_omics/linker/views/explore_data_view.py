@@ -567,16 +567,12 @@ def update_annotation(request, analysis_id, database_id, data_type):
     data = {'success': True}
     return JsonResponse(data)
 
+
 def save_group(request, analysis_id):
     analysis = Analysis.objects.get(id=analysis_id)
-
-    # request.POST is a QueryDict, see https://docs.djangoproject.com/en/2.2/ref/request-response/#querydict-objects
-    json_str = list(request.POST.keys())[0]
-    json_list = json.loads(json_str)
-
-    group_name = _get_value(json_list, 'groupName')
-    group_desc = _get_value(json_list, 'groupDesc')
-    linker_state = _get_value(json_list, 'linkerState')
+    group_name = request.POST.get('groupName')
+    group_desc = request.POST.get('groupDesc')
+    linker_state = request.POST.get('linkerState')
 
     group = AnalysisGroup.objects.create(
         analysis=analysis,
@@ -590,6 +586,7 @@ def save_group(request, analysis_id):
     data = {'success': True}
     return JsonResponse(data)
 
+
 def load_group(request, analysis_id):
     analysis = Analysis.objects.get(id=analysis_id)
     group_id = int(request.GET['groupId'])
@@ -598,8 +595,6 @@ def load_group(request, analysis_id):
     data = {'linkerState': linker_state}
     return JsonResponse(data)
 
-def _get_value(json_list, key):
-    return [x['value'] for x in json_list if x['name'] == key][0]
 
 def get_grouped_measurements(analysis_id, database_id, data_type, peak_id=None):
     analysis = Analysis.objects.get(id=analysis_id)

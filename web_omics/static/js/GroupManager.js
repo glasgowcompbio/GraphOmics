@@ -18,6 +18,8 @@ class GroupManager {
         this.saveUrl = saveUrl;
         this.loadUrl = loadUrl;
         this.listUrl = listUrl;
+        this.awesomeplete = undefined;
+        this.selectedSuggestion = undefined;
 
         this.numSelected = $(`#${numSelectedId}`);
         this.selectBoxId = selectBoxId;
@@ -33,23 +35,37 @@ class GroupManager {
 
     updateList() {
         loadData(this.listUrl).then(data => {
+            if (this.awesomeplete) {
+                this.awesomeplete.destroy();
+            }
             const elem = document.getElementById(this.selectBoxId);
             const myList = data.list;
             const selectBox = new Awesomplete(elem, {
                 list: myList,
                 minChars: 0,
+                replace: function(suggestion) {
+                    this.input.value = suggestion.label; // https://github.com/LeaVerou/awesomplete/issues/17104
+                }
             });
             $(elem).on('focus', () => { // https://github.com/LeaVerou/awesomplete/issues/16754
+                elem.value = '';
                 selectBox.evaluate();
             });
+            $(elem).on("awesomplete-selectcomplete", (e) => {
+                const originalEvent = e.originalEvent;
+                this.selectedSuggestion = originalEvent.selectedSuggestion;
+            });
+            this.awesomeplete = selectBox;
         })
     }
 
     loadLinkerState() {
-        const groupId = document.getElementById(this.selectBoxId).value;
+        const groupId = this.selectedSuggestion.value;
         loadData(this.loadUrl, { 'groupId' : groupId }).then( data => {
-            const newState = data.linkerState;
+            const newState = JSON.parse(data.linkerState);
             this.linkerState.restore(newState);
+            this.linkerState.notifySelectionManagerUpdate();
+            this.numSelected.text(newState.totalSelected);
         })
     }
 
@@ -67,18 +83,18 @@ class GroupManager {
             const form = $('#saveGroupForm');
             const action = form.attr('action');
             let formData = form.serializeArray();
-            formData.push({'name': 'linkerState', 'value': self.linkerState});
-            const data = JSON.stringify(formData);
+            formData.push({'name': 'linkerState', 'value': JSON.stringify(self.linkerState)});
             $.ajax({
                 type: 'POST',
                 url: action,
-                data: data,
+                data: formData,
                 success: function () {
                     $('#saveGroupDialog').dialog('close');
                     $('#groupSubmit').off();
                     window.setTimeout(function() {
                         alert('Group successfully saved.');
                     }, 1); // add a small delay before showing confirmation
+                    self.updateList();
                 }
             });
         });
