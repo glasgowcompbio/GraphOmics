@@ -29,6 +29,7 @@ jsonpickle = "*"
 tzlocal = "*"
 django-webpack-loader = "*"
 clustergrammer = "*"
+goatools = "*"
 
 [dev-packages]
 
