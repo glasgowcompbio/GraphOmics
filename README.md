@@ -124,7 +124,7 @@ Note: rpy2 is difficult to install on Windows, see https://stackoverflow.com/que
 As a workaround:
 1. Edit Pipfile and remove the line that contains rpy2
 2. Run `pipenv install`
-3. Manually install rpy2 with `$ pipenv install whl/rpy2-2.9.5-cp36-cp36m-win_amd64.whl`.
+3. Manually install rpy2 with `$ pipenv install whl/rpy2-2.9.5-cp37-cp37m-win_amd64.whl`.
 
 ### 6. Install front-end dependencies
 
