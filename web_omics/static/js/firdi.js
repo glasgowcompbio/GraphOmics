@@ -390,18 +390,12 @@ class FiRDIState extends Observable {
         this.cgmSelections = null; // to store the selections linked to a last-clicked clustergrammer
     }
 
-    restore(newState) {
-        this.defaultConstraints = newState.defaultConstraints;
-        this.displayNameToConstraintKey = newState.displayNameToConstraintKey;
+    restoreSelection(newState) {
         this.constraints = newState.constraints;
         this.selections = newState.selections;
         this.numSelected = newState.numSelected;
         this.totalSelected = newState.totalSelected;
         this.whereType = newState.whereType;
-        this.selectedIndex = newState.selectedIndex;
-        this.lastQueryResults = newState.lastQueryResults;
-        this.originalCgmNodes = newState.originalCgmNodes;
-        this.cgmLastClickedName = newState.cgmLastClickedName;
     }
 
     notifyFirdiUpdate() {
@@ -779,7 +773,7 @@ class FiRDI {
 
     drawPages(tableAPI, tableName, pages) {
         var uniquePages = Array.from(new Set(pages));
-        console.trace('uniquePages', tableName, uniquePages);
+        // console.trace('uniquePages', tableName, uniquePages);
         for (let i = 0; i < uniquePages.length; i++) {
             const thePage = uniquePages[i];
             tableAPI.page(thePage).draw('page');

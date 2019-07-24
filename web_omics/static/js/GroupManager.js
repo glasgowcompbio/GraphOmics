@@ -69,7 +69,7 @@ class GroupManager {
         const groupId = this.selectedSuggestion.value;
         loadData(this.loadUrl, { 'groupId' : groupId }).then( data => {
             const newState = JSON.parse(data.linkerState);
-            this.linkerState.restore(newState);
+            this.linkerState.restoreSelection(newState);
             this.linkerState.notifySelectionManagerUpdate();
             this.numSelected.text(newState.totalSelected);
         })
@@ -86,10 +86,20 @@ class GroupManager {
         });
         const self = this;
         $('#groupSubmit').on('click', () => {
+            // copy current state
+            const stateCopy = {};
+            stateCopy.constraints = self.linkerState.constraints;
+            stateCopy.selections = self.linkerState.selections;
+            stateCopy.numSelected = self.linkerState.numSelected;
+            stateCopy.totalSelected = self.linkerState.totalSelected;
+            stateCopy.whereType = self.linkerState.whereType;
+            const stateJson = JSON.stringify(stateCopy);
+
+            // create form data and POST it
             const form = $('#saveGroupForm');
             const action = form.attr('action');
             let formData = form.serializeArray();
-            formData.push({'name': 'linkerState', 'value': JSON.stringify(self.linkerState)});
+            formData.push({'name': 'linkerState', 'value': stateJson});
             $.ajax({
                 type: 'POST',
                 url: action,
