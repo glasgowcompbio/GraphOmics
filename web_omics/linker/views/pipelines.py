@@ -68,8 +68,9 @@ class WebOmicsInference(object):
         pandas2ri.activate()
         deseq = importr('DESeq2')
         design = Formula("~ group")
-        count_data = self.data_df
         col_data = self.design_df
+        count_data = self.data_df.astype(int)
+        count_data = count_data[col_data.index] # make sure columns in count_data is ordered the same way as the index of col_data
         dds = deseq.DESeqDataSetFromMatrix(countData=count_data, colData=col_data, design=design)
         sv = robjects.StrVector(col_data[GROUP_COL].values)
         condition = robjects.FactorVector(sv)
