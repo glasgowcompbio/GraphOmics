@@ -22,18 +22,18 @@ $(document).ready(function () {
         const linker = new Linker(firdiData.tableData, firdiData.tableFields, viewNames);
         const state = linker.state;
 
-        // init heatmap
-        const heatmapData = await loadData(viewNames['get_heatmap_data']);
-        await clustergrammer_setup('#summary-vis-gene', 'genes', heatmapData, state);
-        await clustergrammer_setup('#summary-vis-protein', 'proteins', heatmapData, state);
-        await clustergrammer_setup('#summary-vis-compound', 'compounds', heatmapData, state);
-
         // init group manager
         const saveUrl = viewNames['save_group'];
         const loadUrl = viewNames['load_group'];
         const listUrl = viewNames['list_groups'];
         const groupManager = new GroupManager('saveGroupButton', 'loadGroupButton', 'numSelected', 'group',
             state, saveUrl, loadUrl, listUrl);
+
+        // init heatmap
+        const heatmapData = await loadData(viewNames['get_heatmap_data']);
+        await clustergrammer_setup('#summary-vis-gene', 'genes', heatmapData, state);
+        await clustergrammer_setup('#summary-vis-protein', 'proteins', heatmapData, state);
+        await clustergrammer_setup('#summary-vis-compound', 'compounds', heatmapData, state);
 
     })().catch(e => {
         console.error(e);
