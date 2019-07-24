@@ -445,14 +445,7 @@ class FiRDI {
             console.log('firdi receives update from selection manager');
             console.log(data);
             this.resetFiRDI(false);
-            for (let i = 0; i < this.tableFieldNames.length; i++) { // update all the tables
-                const tableFieldName = this.tableFieldNames[i];
-                const tableName = tableFieldName['tableName'];
-                const selectedPkValues = data.selections[tableName];
-                if (selectedPkValues.length > 0) {
-                    this.updateFiRDIForMultipleSelect(tableName);
-                }
-            }
+            this.updateFiRDIForLoadSelection();
         })
 
         this.constraintsManager = new ConstraintsManager(this.tablesInfo, this.sqlManager, this.state);
@@ -757,13 +750,15 @@ class FiRDI {
                 const selection = tableSelections[i];
                 const found = getRowObj(tableName, selection.idVal, indexToPos, selection.rowIndex);
                 const node = found.node;
-                if (!node.hasClass('selected')) {
-                    node.addClass('selected');
+                if (node.length > 0) {
+                    if (!node.hasClass('selected')) {
+                        node.addClass('selected');
+                    }
+                    const rowIndex = found.rowIndex;
+                    const pageInfo = tableAPI.page.info();
+                    const thePage = Math.floor(rowIndex / pageInfo['length']);
+                    pages.push(thePage);
                 }
-                const rowIndex = found.rowIndex;
-                const pageInfo = tableAPI.page.info();
-                const thePage = Math.floor(rowIndex / pageInfo['length']);
-                pages.push(thePage);
             }
             // redraw unique pages
             var uniquePages = Array.from(new Set(pages));
@@ -917,6 +912,36 @@ class FiRDI {
         const selectedIndex = 0;
         const updatePage = true;
         this.infoPanelManager.updateEntityInfo(tableName, selections, selectedIndex, updatePage);
+    }
+
+    updateFiRDIForLoadSelection() {
+        // query db based on multiple selections
+        console.log('queryResult');
+        const queryResult = this.sqlManager.queryDatabase(this.tablesInfo, this.state.constraints,
+            this.state.whereType);
+
+        // update table content and selection style
+        for (let i = 0; i < this.tableFieldNames.length; i++) { // update all the tables
+            const tableFieldName = this.tableFieldNames[i];
+            const tableName = tableFieldName['tableName'];
+
+            const selectedPkValues = this.state.selections[tableName];
+            if (selectedPkValues.length > 0) {
+                // add selection styles
+                this.addSelectionStyle(tableName);
+                this.addSelectionStyle(tableName);
+
+                // update bottom panel
+                this.state.selectedIndex[tableName] = 0;
+                const selections = this.state.selections[tableName];
+                const selectedIndex = 0;
+                const updatePage = true;
+                this.infoPanelManager.updateEntityInfo(tableName, selections, selectedIndex, updatePage);
+            } else { // if no selection, then just update the table values based on query result
+                this.updateSingleTable(tableFieldName, queryResult);
+            }
+        }
+
     }
 
 }
