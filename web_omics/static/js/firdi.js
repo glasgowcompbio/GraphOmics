@@ -744,29 +744,45 @@ class FiRDI {
             // Find page that contains the row of interest
             // Go to it
             // add selection to that row.
-            const indexToPos = getIndexToPos(tableName);
             const pages = [];
             for (let i = 0; i < tableSelections.length; i++) {
                 const selection = tableSelections[i];
-                const found = getRowObj(tableName, selection.idVal, indexToPos, selection.rowIndex);
+                // const found = getRowObj(tableName, selection.idVal, indexToPos, selection.rowIndex);
+                const found = getRowObj(tableName, selection.idVal);
+                const rowIndex = found.rowIndex;
+                const pageInfo = tableAPI.page.info();
+                const thePage = Math.floor(rowIndex / pageInfo['length']);
+                pages.push(thePage);
+            }
+
+            // draw the page once because of defer_render
+            // https://datatables.net/examples/ajax/defer_render.html
+            this.drawPages(tableAPI, tableName, pages);
+
+            // add selection styles
+            for (let i = 0; i < tableSelections.length; i++) {
+                const selection = tableSelections[i];
+                // const found = getRowObj(tableName, selection.idVal, indexToPos, selection.rowIndex);
+                const found = getRowObj(tableName, selection.idVal);
                 const node = found.node;
                 if (node.length > 0) {
                     if (!node.hasClass('selected')) {
                         node.addClass('selected');
                     }
-                    const rowIndex = found.rowIndex;
-                    const pageInfo = tableAPI.page.info();
-                    const thePage = Math.floor(rowIndex / pageInfo['length']);
-                    pages.push(thePage);
                 }
             }
-            // redraw unique pages
-            var uniquePages = Array.from(new Set(pages));
-            console.trace('uniquePages', tableName, uniquePages);
-            for (let i = 0; i < uniquePages.length; i++) {
-                const thePage = uniquePages[i];
-                tableAPI.page(thePage).draw('page');
-            }
+
+            // draw pages again to show the selection styles
+            this.drawPages(tableAPI, tableName, pages);
+        }
+    }
+
+    drawPages(tableAPI, tableName, pages) {
+        var uniquePages = Array.from(new Set(pages));
+        console.trace('uniquePages', tableName, uniquePages);
+        for (let i = 0; i < uniquePages.length; i++) {
+            const thePage = uniquePages[i];
+            tableAPI.page(thePage).draw('page');
         }
     }
 
@@ -891,9 +907,7 @@ class FiRDI {
         const queryResult = this.sqlManager.queryDatabase(this.tablesInfo, this.state.constraints,
             this.state.whereType);
 
-        // FIXME: the first time we call addSelectionStyle, the jquery selected node for each row is empty until
-        //  the page is redrawn. Why??
-        this.addSelectionStyle(tableName);
+        // add selected class to the rows in selection
         this.addSelectionStyle(tableName);
 
         // update table content and selection style
@@ -927,8 +941,7 @@ class FiRDI {
 
             const selectedPkValues = this.state.selections[tableName];
             if (selectedPkValues.length > 0) {
-                // add selection styles
-                this.addSelectionStyle(tableName);
+                // add selected class to the rows in selection
                 this.addSelectionStyle(tableName);
 
                 // update bottom panel

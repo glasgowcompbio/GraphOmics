@@ -62,16 +62,11 @@ const getDisplayNameCol = function(tableId) {
     return null;
 }
 
-const getRowObj = function(tableName, selectedValue, indexToPos, selectionRowIndex) {
+const getRowObj = function(tableName, selectedValue) {
     const tableAPI = $('#' + tableName).DataTable();
     const item = '#' + selectedValue;
     const row = tableAPI.row(item);
-    let rowIndex = null;
-    if (typeof indexToPos !== 'undefined') {
-        rowIndex = indexToPos[selectionRowIndex];
-    } else {
-        rowIndex = tableAPI.rows()[0].indexOf(row.index());
-    }
+    const rowIndex = tableAPI.rows()[0].indexOf(row.index());
 
     if (rowIndex != -1) {
         const node = $(row.node());
