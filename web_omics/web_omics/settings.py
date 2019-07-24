@@ -135,6 +135,9 @@ class Common(Configuration):
     AUTH_USER_MODEL = 'users.User'
     LOGIN_URL = reverse_lazy('login')
 
+    # to let save group function work
+    DATA_UPLOAD_MAX_MEMORY_SIZE = 5242880
+
 
 class Development(Common):
     """
