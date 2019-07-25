@@ -12,24 +12,7 @@
 
     <div class="container-fluid mt-2">
 
-        <div>
-            <ul class="nav nav-tabs">
-                <li class="nav-item">
-                    <a class="nav-link" href="{% url 'explore_data' analysis_id=analysis_id %}">🔍 Explore Data</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link active" href="{% url 'summary' analysis_id=analysis_id %}">📘 Summary</a>
-                </li>
-                {% if user.is_authenticated %}
-                    <li class="nav-item">
-                        <a class="nav-link" href="{% url 'inference' analysis_id=analysis_id %}">📊 Inference</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="{% url 'settings' analysis_id=analysis_id %}">⚙️ Settings</a>
-                    </li>
-                {% endif %}
-            </ul>
-        </div>
+        {% include 'linker/navbar.html' %}
 
         <div class="m-1 mb-3">
             <div class="card">
