@@ -1,8 +1,59 @@
 <div class="tab-pane fade" id="pills-factor" role="tabpanel" aria-labelledby="pills-factor-tab">
     <div>
-        <div class="card">
-            <div class="card-body">
-                <h5>Group Analysis</h5>
+        <h3>Group 123</h3>
+        <p class="lead">Proximally enriched compounds.</p>
+        <ul>
+            <li>Observed genes: 123</li>
+            <li>Inferred genes: 19</li>
+            <li>Observed proteins: 123</li>
+            <li>Inferred proteins: 0</li>
+            <li>Observed compounds: 001</li>
+            <li>Inferred compounds: 911</li>
+            <li>Reactions: 109</li>
+            <li>Pathways: 10</li>
+        </ul>
+        <hr class="my-4">
+        <div class="card-deck">
+            <div class="card border-dark mb-3" style="max-width: 18rem;">
+                <div class="card-header">Gene Ontology Analysis</div>
+                <div class="card-body text-dark">
+                    <h5 class="card-title">Goatools</h5>
+                    <p class="card-text">
+                        Perform a gene ontology enrichment analysis using <a
+                            href="https://github.com/tanghaibao/goatools">Goatools</a>.
+                    </p>
+                    <a href="#" class="btn btn-primary btn-sm">Submit</a>
+                </div>
+            </div>
+            <div class="card border-dark mb-3" style="max-width: 18rem;">
+                <div class="card-header">Overrepresentation/expression Analysis</div>
+                <div class="card-body text-dark">
+                    <h5 class="card-title">Reactome Analysis Service</h5>
+                    <p class="card-text">
+                        Perform an overrepresentation or expression analysis using <a
+                            href="https://reactome.org/dev/analysis"> Reactome Analysis Service</a>.
+                        If the data contains expression values then the analysis service will be executed, otherwise the
+                        overrepresentation analysis will be performed.
+                    </p>
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input" type="radio" name="inlineRadioOptions" id="inlineRadio1"
+                               value="option1">
+                        <label class="form-check-label" for="inlineRadio1">Genes</label>
+                    </div>
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input" type="radio" name="inlineRadioOptions" id="inlineRadio2"
+                               value="option2">
+                        <label class="form-check-label" for="inlineRadio2">Proteins</label>
+                    </div>
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input" type="radio" name="inlineRadioOptions" id="inlineRadio3"
+                               value="option3">
+                        <label class="form-check-label" for="inlineRadio3">Compounds</label>
+                    </div>
+                    <div class="mt-2">
+                        <a href="#" class="btn btn-primary btn-sm">Submit</a>
+                    </div>
+                </div>
             </div>
         </div>
     </div>

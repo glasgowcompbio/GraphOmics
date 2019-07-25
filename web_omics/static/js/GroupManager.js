@@ -20,6 +20,7 @@ class GroupManager {
         this.listUrl = listUrl;
         this.awesomeplete = undefined;
         this.selectedSuggestion = undefined;
+        this.groupId = undefined;
 
         this.numSelected = $(`#${numSelectedId}`);
         this.selectBoxId = selectBoxId;
@@ -33,6 +34,7 @@ class GroupManager {
         this.loadButton.on('click', () => { this.loadLinkerState(); })
         const elem = document.getElementById(this.selectBoxId);
         this.checkLoadButtonStatus(elem);
+
     }
 
     updateList() {
@@ -66,12 +68,16 @@ class GroupManager {
     }
 
     loadLinkerState() {
+        blockUI();
         const groupId = this.selectedSuggestion.value;
         loadData(this.loadUrl, { 'groupId' : groupId }).then( data => {
             const newState = JSON.parse(data.linkerState);
             this.linkerState.restoreSelection(newState);
             this.linkerState.notifySelectionManagerUpdate();
             this.numSelected.text(newState.totalSelected);
+            this.groupId = groupId;
+            $('#pills-factor-tab').removeClass('d-none');
+            unblockUI();
         })
     }
 

@@ -3,7 +3,7 @@ import '../css/linker.css';
 import 'webpack-jquery-ui';
 import 'webpack-jquery-ui/css';
 import '../css/summary.css';
-import {loadData, setupCsrfForAjax} from './common';
+import {loadData, setupCsrfForAjax, blockUI, unblockUI} from './common';
 import clustergrammer_setup from './clustergrammer_setup';
 import GroupManager from './GroupManager';
 
@@ -13,6 +13,8 @@ $(document).ready(function () {
     window.baseUrl = viewNames['get_short_info']; // TODO: shouldn't put this in global scope
 
     (async () => {
+
+        blockUI();
 
         // required for pop-up submits to work
         setupCsrfForAjax()
@@ -28,6 +30,8 @@ $(document).ready(function () {
         const listUrl = viewNames['list_groups'];
         const groupManager = new GroupManager('saveGroupButton', 'loadGroupButton', 'numSelected', 'group',
             state, saveUrl, loadUrl, listUrl);
+
+        unblockUI();
 
         // init heatmap
         const heatmapData = await loadData(viewNames['get_heatmap_data']);
