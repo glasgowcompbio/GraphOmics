@@ -67,6 +67,10 @@ class GroupManager {
         })
     }
 
+    showGroupTab() {
+        $('#pills-factor-tab').removeClass('d-none');
+    }
+
     loadLinkerState() {
         blockUI();
         const groupId = this.selectedSuggestion.value;
@@ -76,7 +80,7 @@ class GroupManager {
             this.linkerState.notifySelectionManagerUpdate();
             this.numSelected.text(newState.totalSelected);
             this.groupId = groupId;
-            $('#pills-factor-tab').removeClass('d-none');
+            this.showGroupTab();
             unblockUI();
         })
     }
@@ -141,6 +145,7 @@ class GroupManager {
             this.saveButton.prop('disabled', true);
         } else {
             this.saveButton.prop('disabled', false);
+            this.showGroupTab();
         }
     }
 
