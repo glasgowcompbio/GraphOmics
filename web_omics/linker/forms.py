@@ -113,17 +113,17 @@ class AddPathwayForm(forms.Form):
 
 
 class BaseInferenceForm(forms.Form):
-    data_type = forms.ChoiceField(required=True, choices=AddNewDataChoices, widget=Select2Widget())
-    inference_type = forms.ChoiceField(required=True, choices=InferenceTypeChoices, widget=Select2Widget())
+    data_type = forms.ChoiceField(required=True, choices=AddNewDataChoices, widget=Select2Widget(attrs={'style': 'width: 200px'}))
+    inference_type = forms.ChoiceField(required=True, choices=InferenceTypeChoices, widget=Select2Widget(attrs={'style': 'width: 200px'}))
 
 
 class T_test_Form(forms.Form):
-    data_type = forms.ChoiceField(required=True, choices=AddNewDataChoices, widget=Select2Widget())
-    inference_type = forms.ChoiceField(required=True, choices=InferenceTypeChoices, widget=Select2Widget())
-    case = forms.ChoiceField(required=True, widget=Select2Widget())
-    control = forms.ChoiceField(required=True, widget=Select2Widget())
+    data_type = forms.ChoiceField(required=True, choices=AddNewDataChoices, widget=Select2Widget(attrs={'style': 'width: 200px'}))
+    inference_type = forms.ChoiceField(required=True, choices=InferenceTypeChoices, widget=Select2Widget(attrs={'style': 'width: 200px'}))
+    case = forms.ChoiceField(required=True, widget=Select2Widget(attrs={'style': 'width: 200px'}))
+    control = forms.ChoiceField(required=True, widget=Select2Widget(attrs={'style': 'width: 200px'}))
 
 
 class HierarchicalClusteringForm(forms.Form):
-    data_type = forms.ChoiceField(required=True, choices=AddNewDataChoices, widget=Select2Widget())
-    inference_type = forms.ChoiceField(required=True, choices=InferenceTypeChoices, widget=Select2Widget())
+    data_type = forms.ChoiceField(required=True, choices=AddNewDataChoices, widget=Select2Widget(attrs={'style': 'width: 200px'}))
+    inference_type = forms.ChoiceField(required=True, choices=InferenceTypeChoices, widget=Select2Widget(attrs={'style': 'width: 200px'}))

@@ -57,12 +57,8 @@ MAPPING = {
 T_TEST, CORRELATION, PCA, PLSDA, HIERARCHICAL, KMEANS = range(0, 6)
 InferenceTypeChoices = (
     (None, NA),
-    (T_TEST, 't-test'),
-    # (HIERARCHICAL, 'Hierarchical Clustering'),
-    # (CORRELATION, 'Correlation Analysis'),
-    # (PCA, 'Principal Component Analysis'),
-    # (PLSDA, 'Partial Least Square - Disciminant Analysis'),
-    # (KMEANS, 'K-Means')
+    (T_TEST, 'DESeq2 / t-test'),
+    (PCA, 'Principal Component Analysis'),
 )
 
 T_TEST_THRESHOLD = 0.05
