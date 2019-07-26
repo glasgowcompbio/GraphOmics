@@ -63,7 +63,7 @@
     "datatables.net-scroller-dt": "^1.4.4",
     "datatables.net-select": "^1.2.5",
     "datatables.net-select-dt": "^1.2.5",
-    "jquery": "^3.3.1",
+    "jquery": "^3.4.0",
     "mathjs": "^5.4.0",
     "object-assign": "^4.1.1",
     "popper.js": "^1.14.4",
