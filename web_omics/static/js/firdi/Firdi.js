@@ -22,15 +22,15 @@ import {
 import DataTablesOptionsManager from './DataTablesOptionsManager';
 import ConstraintsManager from './ConstraintsManager';
 import {getPkCol, getPkValue, getRowObj, isTableVisible} from "./Utils";
+import SqlManager from "./SqlManager";
+import InfoPanesManager from "./InfoPanesManager";
 
 
 class Firdi {
 
-    constructor(sqlManager, infoPanelManager, tablesInfo, tableFields, state) {
-        this.tablesInfo = tablesInfo;
-        this.originalTablesInfo = deepCopy(tablesInfo);
-        this.sqlManager = sqlManager;
-        this.infoPanelManager = infoPanelManager;
+    constructor(state, viewNames) {
+        this.sqlManager = new SqlManager(state);
+        this.infoPanelManager = new InfoPanesManager(state, viewNames);
 
         this.state = state;
         this.state.on(CLUSTERGRAMMER_UPDATE_EVENT, (data) => {
@@ -48,26 +48,18 @@ class Firdi {
             this.updateFiRDIForLoadSelection();
         })
 
-        const dataTablesOptionsManager = new DataTablesOptionsManager(tablesInfo, tableFields);
-        this.constraintsManager = new ConstraintsManager(this.tablesInfo, this.sqlManager, this.state);
-        this.tableFieldNames = this.getFieldNames();
-        this.dataTablesIds = this.getDataTableIds(tablesInfo);
+        const dataTablesOptionsManager = new DataTablesOptionsManager(this.state);
+        this.constraintsManager = new ConstraintsManager(this.sqlManager, this.state);
 
         this.initTableClicks();
         this.initSignificantFilters();
         this.initSearchBox();
     }
 
-    getDataTableIds(tablesInfo) {
-        return tablesInfo.filter(isTableVisible).reduce((apis, t) => {
-            apis[t['tableName']] = "#" + t['tableName'];
-            return apis
-        }, {});
-    }
-
     initTableClicks() {
-        const dataTablesIdsKeys = Object.keys(this.dataTablesIds);
-        dataTablesIdsKeys.forEach(id => $(this.dataTablesIds[id]).DataTable().on('user-select', this.trClickHandler.bind(this)));
+        const dataTablesIds = this.state.getDataTablesIds();
+        const dataTablesIdsKeys = Object.keys(dataTablesIds);
+        dataTablesIdsKeys.forEach(id => $(dataTablesIds[id]).DataTable().on('user-select', this.trClickHandler.bind(this)));
     }
 
     initSignificantFilters() {
@@ -95,32 +87,28 @@ class Firdi {
     }
 
     resetFiRDI(resetState) {
-        // restore originalTablesInfo
-        this.tablesInfo = JSON.parse(JSON.stringify(this.originalTablesInfo));
-        this.sqlManager.clearAlasqlTables(this.tablesInfo);
-        this.sqlManager.addNewData(this.tablesInfo);
-        this.tablesInfo.forEach(t => {
+        // restore original tables info
+        // TODO: not sure why we need to create a copy of state.tablesInfo for the UI to work
+        const tablesInfoCopy = JSON.parse(JSON.stringify(this.state.tablesInfo));
+        this.sqlManager.clearAlasqlTables(tablesInfoCopy);
+        this.sqlManager.addNewData(tablesInfoCopy);
+
+        const dataTablesIds = this.state.getDataTablesIds();
+        tablesInfoCopy.forEach(t => {
             const tableName = t['tableName'];
-            const tableAPI = $(this.dataTablesIds[tableName]).DataTable();
+            const tableAPI = $(dataTablesIds[tableName]).DataTable();
             tableAPI.clear();
             tableAPI.rows.add(t['tableData']);
             tableAPI.draw();
         });
+
+        // restore state if necessary
         if (resetState) {
             this.state.reset();
         }
+
         // reset info panels
         this.infoPanelManager.clearAllInfoPanels();
-    }
-
-    getFieldNames() {
-        // Gets the field names for each visible table
-        return this.tablesInfo
-            .filter(isTableVisible)
-            .map(tableInfo => ({
-                'tableName': tableInfo['tableName'],
-                'fieldNames': Object.keys(tableInfo['tableData'][0])
-            }));
     }
 
     prefixQuery(tableFieldNames, dataSource) {
@@ -144,11 +132,12 @@ class Firdi {
 
     updateTables() {
         console.log('queryResult');
-        const queryResult = this.sqlManager.queryDatabase(this.tablesInfo, this.state.constraints,
+        const queryResult = this.sqlManager.queryDatabase(this.state.tablesInfo, this.state.constraints,
             this.state.whereType);
 
-        for (let i = 0; i < this.tableFieldNames.length; i++) { // update all the tables
-            const tableFieldName = this.tableFieldNames[i];
+        const fieldNames = this.state.getFieldNames()
+        for (let i = 0; i < fieldNames.length; i++) { // update all the tables
+            const tableFieldName = fieldNames[i];
             const tableName = tableFieldName['tableName'];
             this.updateSingleTable(tableFieldName, queryResult);
         }
@@ -158,11 +147,12 @@ class Firdi {
         if (this.state.totalSelected > 0) {
 
             console.log('queryResult');
-            const queryResult = this.sqlManager.queryDatabase(this.tablesInfo, this.state.constraints,
+            const queryResult = this.sqlManager.queryDatabase(this.state.tablesInfo, this.state.constraints,
                 this.state.whereType);
 
-            for (let i = 0; i < this.tableFieldNames.length; i++) { // update all the tables
-                const tableFieldName = this.tableFieldNames[i];
+            const fieldNames = this.state.getFieldNames();
+            for (let i = 0; i < fieldNames.length; i++) { // update all the tables
+                const tableFieldName = fieldNames[i];
                 const tableName = tableFieldName['tableName'];
                 if (this.state.numSelected[tableName] > 0) { // if table already has some selection
                     // don't change table content, just change the selection style
@@ -183,15 +173,17 @@ class Firdi {
     updateSingleTable(tableFieldName, queryResult) {
         const tableName = tableFieldName['tableName'];
         const data = this.prefixQuery(tableFieldName, queryResult);
-        $(this.dataTablesIds[tableName]).DataTable().clear();
-        $(this.dataTablesIds[tableName]).DataTable().rows.add(data);
-        $(this.dataTablesIds[tableName]).DataTable().draw();
+        const dataTablesIds = this.state.getDataTablesIds();
+        $(dataTablesIds[tableName]).DataTable().clear();
+        $(dataTablesIds[tableName]).DataTable().rows.add(data);
+        $(dataTablesIds[tableName]).DataTable().draw();
         // store the last query results for updates in other views later
         this.state.lastQueryResults[tableName] = data;
     }
 
     addSelectionStyle(tableName) {
-        const tableAPI = $(this.dataTablesIds[tableName]).DataTable();
+        const dataTablesIds = this.state.getDataTablesIds();
+        const tableAPI = $(dataTablesIds[tableName]).DataTable();
         const tableSelections = this.state.selections[tableName];
 
         if (tableSelections.length > 0) {
@@ -265,15 +257,16 @@ class Firdi {
 
     resetTables() {
         console.log('resetTable');
-        const queryResult = this.sqlManager.queryDatabase(this.tablesInfo, this.state.constraints,
+        const queryResult = this.sqlManager.queryDatabase(this.state.tablesInfo, this.state.constraints,
             this.state.whereType);
-        this.tableFieldNames.forEach(tableFieldNames => this.resetTable(tableFieldNames, queryResult));
+        const fieldNames = this.state.getFieldNames();
+        fieldNames.forEach(tableFieldNames => this.resetTable(tableFieldNames, queryResult));
     }
 
     trClickHandler(e, dt, type, cell, originalEvent) {
         e.preventDefault();
         blockUI();
-        const obj = this;
+        const self = this;
         window.setTimeout(function () {
 
             // clear search result
@@ -282,21 +275,22 @@ class Firdi {
 
             // find the selected row
             const tableName = e.currentTarget.id;
-            const tableAPI = $(obj.dataTablesIds[tableName]).DataTable();
+            const dataTablesIds = self.state.getDataTablesIds();
+            const tableAPI = $(dataTablesIds[tableName]).DataTable();
             const targetTr = $(originalEvent.target).closest('tr');
             const row = tableAPI.row(targetTr);
             const rowData = row.data();
             const rowIndex = tableAPI.rows()[0].indexOf(row.index());
             const anyRowSelected = tableAPI.rows('.selected').any();
 
-            obj.trClickHandlerUpdate(tableName, targetTr, rowData, rowIndex, anyRowSelected);
+            self.trClickHandlerUpdate(tableName, targetTr, rowData, rowIndex, anyRowSelected);
             unblockUI();
             // update the related info panel for this table, if any
-            if (obj.state.numSelected[tableName] > 0) {
+            if (self.state.numSelected[tableName] > 0) {
 
                 // assume that entries in the array is always in sorted order by their row index
                 // (the sorting is done upon insertion in addConstraint)
-                const selections = obj.state.selections[tableName];
+                const selections = self.state.selections[tableName];
 
                 // find the pk value that has been clicked and its index in selections
                 const selectedValue = getPkValue(rowData, tableName);
@@ -308,13 +302,13 @@ class Firdi {
                     selectedIndex = 0;
                     updatePage = false;
                 }
-                obj.infoPanelManager.updateEntityInfo(tableName, selections, selectedIndex, updatePage);
+                self.infoPanelManager.updateEntityInfo(tableName, selections, selectedIndex, updatePage);
 
                 // store for use in buttons etc later
-                obj.state.selectedIndex[tableName] = selectedIndex;
+                self.state.selectedIndex[tableName] = selectedIndex;
 
             } else {
-                obj.infoPanelManager.clearInfoPanel(tableName);
+                self.infoPanelManager.clearInfoPanel(tableName);
             }
         }, 1); // we need a small delay to allow blockUI to be rendered correctly
     }
@@ -364,15 +358,16 @@ class Firdi {
     updateFiRDIForMultipleSelect(tableName) {
         // query db based on multiple selections
         console.log('queryResult');
-        const queryResult = this.sqlManager.queryDatabase(this.tablesInfo, this.state.constraints,
+        const queryResult = this.sqlManager.queryDatabase(this.state.tablesInfo, this.state.constraints,
             this.state.whereType);
 
         // add selected class to the rows in selection
         this.addSelectionStyle(tableName);
 
         // update table content and selection style
-        for (let i = 0; i < this.tableFieldNames.length; i++) { // update all the tables
-            const tableFieldName = this.tableFieldNames[i];
+        const fieldNames = this.state.getFieldNames();
+        for (let i = 0; i < fieldNames.length; i++) { // update all the tables
+            const tableFieldName = fieldNames[i];
             const tName = tableFieldName['tableName'];
             if (tName !== tableName) { // if table name is not the one with multiple selections
                 // update table content
@@ -391,12 +386,13 @@ class Firdi {
     updateFiRDIForLoadSelection() {
         // query db based on multiple selections
         console.log('queryResult');
-        const queryResult = this.sqlManager.queryDatabase(this.tablesInfo, this.state.constraints,
+        const queryResult = this.sqlManager.queryDatabase(this.state.tablesInfo, this.state.constraints,
             this.state.whereType);
 
         // update table content and selection style
-        for (let i = 0; i < this.tableFieldNames.length; i++) { // update all the tables
-            const tableFieldName = this.tableFieldNames[i];
+        const fieldNames = this.state.getFieldNames();
+        for (let i = 0; i < fieldNames.length; i++) { // update all the tables
+            const tableFieldName = fieldNames[i];
             const tableName = tableFieldName['tableName'];
 
             const selectedPkValues = this.state.selections[tableName];

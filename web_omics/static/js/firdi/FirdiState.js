@@ -1,14 +1,14 @@
 import Observable from "./Observable";
 import {CLUSTERGRAMMER_UPDATE_EVENT, deepCopy, FIRDI_UPDATE_EVENT, SELECTION_MANAGER_UPDATE_EVENT} from "../common";
-import {getDisplayName, isTableVisible} from "./Utils";
+import {getDisplayName, isTableVisible, getConstraintTablesConstraintKeyName} from "./Utils";
 
 class FirdiState extends Observable {
 
-    constructor(sqlManager, tablesInfo) {
+    constructor(tablesInfo, tableFields) {
         super();
 
-        this.sqlManager = sqlManager;
         this.tablesInfo = tablesInfo;
+        this.tableFields = tableFields;
 
         // initialisation
         this.defaultConstraints = this.getDefaultConstraints();
@@ -32,7 +32,7 @@ class FirdiState extends Observable {
     }
 
     getDefaultConstraints() {
-        return this.sqlManager.getConstraintTablesConstraintKeyName(this.tablesInfo)
+        return getConstraintTablesConstraintKeyName(this.tablesInfo)
             .reduce((constraints, tableInfo) => {
                 constraints[tableInfo['tableName']] = this.getKeys(
                     this.tablesInfo, tableInfo['tableName'], tableInfo['constraintKeyName']);
@@ -55,7 +55,7 @@ class FirdiState extends Observable {
     }
 
     getDisplayNameToConstraintKey() {
-        return this.sqlManager.getConstraintTablesConstraintKeyName(this.tablesInfo)
+        return getConstraintTablesConstraintKeyName(this.tablesInfo)
             .reduce((constraints, tableInfo) => {
                 constraints[tableInfo['tableName']] = this.getDisplayNameToPk(
                     this.tablesInfo, tableInfo['tableName'], tableInfo['constraintKeyName']);
@@ -79,7 +79,7 @@ class FirdiState extends Observable {
     }
 
     makeEmptyConstraint() {
-        return this.sqlManager.getConstraintTablesConstraintKeyName(this.tablesInfo)
+        return getConstraintTablesConstraintKeyName(this.tablesInfo)
             .reduce((constraints, tableInfo) => {
                 constraints[tableInfo['tableName']] = [];
                 return constraints;
@@ -87,11 +87,28 @@ class FirdiState extends Observable {
     }
 
     makeEmptyCount() {
-        return this.sqlManager.getConstraintTablesConstraintKeyName(this.tablesInfo)
+        return getConstraintTablesConstraintKeyName(this.tablesInfo)
             .reduce((constraints, tableInfo) => {
                 constraints[tableInfo['tableName']] = 0;
                 return constraints;
             }, {});
+    }
+
+    getDataTablesIds() {
+        return this.tablesInfo.filter(isTableVisible).reduce((apis, t) => {
+            apis[t['tableName']] = "#" + t['tableName'];
+            return apis
+        }, {});
+    }
+
+    getFieldNames() {
+        // Gets the field names for each visible table
+        return this.tablesInfo
+            .filter(isTableVisible)
+            .map(tableInfo => ({
+                'tableName': tableInfo['tableName'],
+                'fieldNames': Object.keys(tableInfo['tableData'][0])
+            }));
     }
 
     restoreSelection(newState) {

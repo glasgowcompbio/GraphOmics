@@ -87,6 +87,12 @@ const goToPage = function (rowObj) {
     tableAPI.page(thePage).draw('page');
 }
 
+const getConstraintTablesConstraintKeyName = function(tablesInfo) {
+    return tablesInfo
+        .filter(isTableVisible)
+        .map(t => ({'tableName': t['tableName'], 'constraintKeyName': t['options']['pk']}));
+}
+
 export {
     isTableVisible,
     goToPage,
@@ -95,5 +101,6 @@ export {
     getDisplayName,
     getDisplayNameCol,
     getPkValue,
-    getPkCol
+    getPkCol,
+    getConstraintTablesConstraintKeyName
 }

@@ -1,13 +1,14 @@
 import alasql from "alasql";
-import {isTableVisible} from "./Utils";
+import {isTableVisible, getConstraintTablesConstraintKeyName} from "./Utils";
 
 class SqlManager {
 
-    constructor(tablesInfo) {
+    constructor(state) {
+        const tablesInfo = state.tablesInfo;
         this.initialiseAlasqlTables(tablesInfo);
         this.firstTable = this.getFirstTable(tablesInfo);
         this.tableRelationships = this.getTableRelationships(tablesInfo);
-        this.constraintTableConstraintKeyNames = this.getConstraintTablesConstraintKeyName(tablesInfo);
+        this.constraintTableConstraintKeyNames = getConstraintTablesConstraintKeyName(tablesInfo);
     }
 
     initialiseAlasqlTables(tablesInfo) {
@@ -35,12 +36,6 @@ class SqlManager {
 
     addNewData(tablesInfo) {
         tablesInfo.forEach(t => alasql.tables[t['tableName']].data = t['tableData']);
-    }
-
-    getConstraintTablesConstraintKeyName(tablesInfo) {
-        return tablesInfo
-            .filter(isTableVisible)
-            .map(t => ({'tableName': t['tableName'], 'constraintKeyName': t['options']['pk']}));
     }
 
     getFieldNames(tablesInfo) {

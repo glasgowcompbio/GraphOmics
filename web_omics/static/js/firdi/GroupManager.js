@@ -3,7 +3,7 @@ import Awesomplete from 'awesomplete-es6';
 
 class GroupManager {
 
-    constructor(viewNames, state) {
+    constructor(state, viewNames) {
 
         // set an initial linker state to be updated later
         this.state = state;

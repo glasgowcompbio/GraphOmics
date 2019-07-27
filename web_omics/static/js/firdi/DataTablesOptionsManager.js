@@ -3,7 +3,10 @@ import {isTableVisible} from "./Utils";
 
 class DataTablesOptionsManager {
 
-    constructor(tablesInfo, tableFields) {
+    constructor(state) {
+        const tablesInfo = state.tablesInfo;
+        const tableFields = state.tableFields;
+
         // Some minimum DataTables settings are required
         // set defaults across all tables
         const minDataTablesSettings = this.getMinTablesSettings();

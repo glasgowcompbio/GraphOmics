@@ -4,9 +4,9 @@ import {getDisplayName, getPkValue, getRowObj, goToPage} from "./Utils";
 
 class InfoPanesManager {
 
-    constructor(viewNames, state) {
-        this.viewNames = viewNames;
+    constructor(state, viewNames) {
         this.state = state;
+        this.viewNames = viewNames;
 
         // hide all buttons initially
         const buttonIds = [

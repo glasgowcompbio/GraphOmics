@@ -24,21 +24,17 @@ $(document).ready(function () {
         // required for pop-up submits to work
         setupCsrfForAjax()
 
-        // load data
+        // load data and create a shared state
         const firdiData = await loadData(viewNames['get_firdi_data']);
         const tablesInfo = getTablesInfo(firdiData.tableData);
-
-        // init shared state
-        const sqlManager = new SqlManager(tablesInfo);
-        const state = new FirdiState(sqlManager, tablesInfo);
+        const tableFields = firdiData.tableFields;
+        const state = new FirdiState(tablesInfo, tableFields);
 
         // init firdi
-        const tableFields = firdiData.tableFields;
-        const infoPanelManager = new InfoPanesManager(viewNames, state);
-        const firdi = new Firdi(sqlManager, infoPanelManager, tablesInfo, tableFields, state);
+        const firdi = new Firdi(state, viewNames);
 
         // init group manager
-        const groupManager = new GroupManager(viewNames, state);
+        const groupManager = new GroupManager(state, viewNames);
 
         unblockUI();
 

@@ -1,17 +1,16 @@
-import {getDisplayName} from "./Utils";
+import {getDisplayName, getConstraintTablesConstraintKeyName} from "./Utils";
 
 class ConstraintsManager {
-    constructor(tablesInfo, sqlManager, state) {
-        this.tablesInfo = tablesInfo;
+    constructor(sqlManager, state) {
+        this.state = state;
         this.tableKeys = sqlManager.getTableKeys();
         this.sqlManager = sqlManager;
         this.tableIdToIdColumnMap = this.getTableKeysAsSingleObject();
-        this.state = state;
     }
 
     getTableKeysAsSingleObject() {
         // Get the table name and key used in the WHERE clause in the form tableName: key
-        return this.sqlManager.getConstraintTablesConstraintKeyName(this.tablesInfo)
+        return getConstraintTablesConstraintKeyName(this.state.tablesInfo)
             .map(t => ({[t['tableName']]: t['constraintKeyName']}))
             .reduce((o, v) => Object.assign(o, v), {});
     }
