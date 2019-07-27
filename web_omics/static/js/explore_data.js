@@ -4,12 +4,13 @@ import 'webpack-jquery-ui/css';
 import '../css/summary.css';
 import {blockUI, loadData, setupCsrfForAjax, unblockUI} from './common';
 import clustergrammer_setup from './clustergrammer_setup';
-import GroupManager from './GroupManager';
-import ObservableTodoStore from "./store";
-import SqlManager from "./SqlManager";
-import FiRDIState from "./FirdiState";
-import InfoPanesManager from "./InfoPanesManager";
-import FiRDI from "./firdi";
+
+import FirdiState from "./firdi/FirdiState";
+import Firdi from "./firdi/Firdi";
+import SqlManager from "./firdi/SqlManager";
+import InfoPanesManager from "./firdi/InfoPanesManager";
+import GroupManager from './firdi/GroupManager';
+import ObservableTodoStore from "./firdi/ObservableTodoStore";
 
 $(document).ready(function () {
 
@@ -29,12 +30,12 @@ $(document).ready(function () {
 
         // init shared state
         const sqlManager = new SqlManager(tablesInfo);
-        const state = new FiRDIState(sqlManager, tablesInfo);
+        const state = new FirdiState(sqlManager, tablesInfo);
 
         // init firdi
         const tableFields = firdiData.tableFields;
         const infoPanelManager = new InfoPanesManager(viewNames, state);
-        const firdi = new FiRDI(sqlManager, infoPanelManager, tablesInfo, tableFields, state);
+        const firdi = new Firdi(sqlManager, infoPanelManager, tablesInfo, tableFields, state);
 
         // init group manager
         const groupManager = new GroupManager(viewNames, state);

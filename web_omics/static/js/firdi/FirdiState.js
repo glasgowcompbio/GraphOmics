@@ -1,14 +1,8 @@
 import Observable from "./Observable";
-import {
-    CLUSTERGRAMMER_UPDATE_EVENT,
-    deepCopy,
-    FIRDI_UPDATE_EVENT,
-    getDisplayName,
-    isTableVisible,
-    SELECTION_MANAGER_UPDATE_EVENT
-} from "./common";
+import {CLUSTERGRAMMER_UPDATE_EVENT, deepCopy, FIRDI_UPDATE_EVENT, SELECTION_MANAGER_UPDATE_EVENT} from "../common";
+import {getDisplayName, isTableVisible} from "./Utils";
 
-class FiRDIState extends Observable {
+class FirdiState extends Observable {
 
     constructor(sqlManager, tablesInfo) {
         super();
@@ -122,4 +116,4 @@ class FiRDIState extends Observable {
 
 }
 
-export default FiRDIState;
+export default FirdiState;

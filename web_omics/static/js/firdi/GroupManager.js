@@ -1,4 +1,4 @@
-import {FIRDI_UPDATE_EVENT, CLUSTERGRAMMER_UPDATE_EVENT, loadData, blockUI, unblockUI} from "./common";
+import {blockUI, CLUSTERGRAMMER_UPDATE_EVENT, FIRDI_UPDATE_EVENT, loadData, unblockUI} from "../common";
 import Awesomplete from 'awesomplete-es6';
 
 class GroupManager {

@@ -16,18 +16,15 @@ import {
     blockUI,
     CLUSTERGRAMMER_UPDATE_EVENT,
     deepCopy,
-    getPkCol,
-    getPkValue,
-    getRowObj,
-    isTableVisible,
     SELECTION_MANAGER_UPDATE_EVENT,
     unblockUI
-} from './common';
+} from '../common';
 import DataTablesOptionsManager from './DataTablesOptionsManager';
 import ConstraintsManager from './ConstraintsManager';
+import {getPkCol, getPkValue, getRowObj, isTableVisible} from "./Utils";
 
 
-class FiRDI {
+class Firdi {
 
     constructor(sqlManager, infoPanelManager, tablesInfo, tableFields, state) {
         this.tablesInfo = tablesInfo;
@@ -428,4 +425,4 @@ class FiRDI {
 
 }
 
-export default FiRDI;
+export default Firdi;

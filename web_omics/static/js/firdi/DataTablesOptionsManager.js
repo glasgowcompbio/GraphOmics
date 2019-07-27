@@ -1,5 +1,5 @@
-import {isTableVisible} from "./common";
 import alasql from "alasql";
+import {isTableVisible} from "./Utils";
 
 class DataTablesOptionsManager {
 

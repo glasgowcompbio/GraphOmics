@@ -1,4 +1,4 @@
-import {getDisplayName} from "./common";
+import {getDisplayName} from "./Utils";
 
 class ConstraintsManager {
     constructor(tablesInfo, sqlManager, state) {

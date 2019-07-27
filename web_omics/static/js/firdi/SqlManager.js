@@ -1,5 +1,5 @@
 import alasql from "alasql";
-import {isTableVisible} from "./common";
+import {isTableVisible} from "./Utils";
 
 class SqlManager {
 
