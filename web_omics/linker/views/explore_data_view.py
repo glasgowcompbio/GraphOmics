@@ -572,7 +572,7 @@ def save_group(request, analysis_id):
     analysis = Analysis.objects.get(id=analysis_id)
     group_name = request.POST.get('groupName')
     group_desc = request.POST.get('groupDesc')
-    linker_state = request.POST.get('linkerState')
+    linker_state = request.POST.get('state')
 
     group = AnalysisGroup.objects.create(
         analysis=analysis,
@@ -592,7 +592,7 @@ def load_group(request, analysis_id):
     group_id = int(request.GET['groupId'])
     group = AnalysisGroup.objects.get(id=group_id)
     linker_state = group.linker_state
-    data = {'linkerState': linker_state}
+    data = {'state': linker_state}
     return JsonResponse(data)
 
 

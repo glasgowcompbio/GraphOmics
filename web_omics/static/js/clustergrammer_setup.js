@@ -96,7 +96,7 @@ function clustergrammer_setup(elementId, dataType, clusterJson, linkerState) {
         const [tableName, idName] = queryResultNames[dataType];
         cgm.tableName = tableName;
 
-        // save current linkerState instance to clustergrammer, and also
+        // save current state instance to clustergrammer, and also
         // set the callback to handle firdi update
         cgm.linkerState = linkerState;
         cgm.linkerState.on(FIRDI_UPDATE_EVENT, (data) => {
@@ -222,7 +222,7 @@ function dendroFilterCallback(cgm) {
 
     // save into the global app state, and notify other observers that we've made a clustergrammer selection
     console.log('Notifying clustergrammer update');
-    const linkerState = cgm.linkerState;
+    const linkerState = cgm.state;
     linkerState.cgmLastClickedName = tableName;
     linkerState.cgmSelections = nodeNames;
     // set selections for all tables to empty except for the current tableName

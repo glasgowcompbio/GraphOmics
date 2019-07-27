@@ -3,36 +3,39 @@ import Awesomplete from 'awesomplete-es6';
 
 class GroupManager {
 
-    constructor(saveButtonId, loadButtonId, numSelectedId, selectBoxId,
-                linkerState, saveUrl, loadUrl, listUrl) {
+    constructor(viewNames, state) {
 
         // set an initial linker state to be updated later
-        this.linkerState = linkerState;
-        this.linkerState.on(FIRDI_UPDATE_EVENT, (data) => {
+        this.state = state;
+        this.state.on(FIRDI_UPDATE_EVENT, (data) => {
             this.handleFirdiUpdate(data); // update selected item counter from Firdi
         });
-        this.linkerState.on(CLUSTERGRAMMER_UPDATE_EVENT, (data) => {
+        this.state.on(CLUSTERGRAMMER_UPDATE_EVENT, (data) => {
             this.handleClustergrammerUpdate(data);  // update selected item counter from Clustergrammer
         })
 
-        this.saveUrl = saveUrl;
-        this.loadUrl = loadUrl;
-        this.listUrl = listUrl;
         this.awesomeplete = undefined;
         this.selectedSuggestion = undefined;
         this.groupId = undefined;
 
+        const numSelectedId = 'numSelected';
         this.numSelected = $(`#${numSelectedId}`);
-        this.selectBoxId = selectBoxId;
-        this.updateList();
 
+        const saveButtonId = 'saveGroupButton';
+        this.saveUrl = viewNames['save_group'];
         this.saveButton = $(`#${saveButtonId}`);
         this.saveButton.on('click', () => { this.showSaveDialog(); })
-        this.checkSaveButtonStatus(this.linkerState.totalSelected);
 
+        const loadButtonId = 'loadGroupButton';
+        this.loadUrl = viewNames['load_group'];
         this.loadButton = $(`#${loadButtonId}`);
         this.loadButton.on('click', () => { this.loadLinkerState(); })
+
+        this.selectBoxId = 'group';
         const elem = document.getElementById(this.selectBoxId);
+        this.listUrl = viewNames['list_groups'];
+        this.updateList();
+        this.checkSaveButtonStatus(this.state.totalSelected);
         this.checkLoadButtonStatus(elem);
 
     }
@@ -75,9 +78,9 @@ class GroupManager {
         blockUI();
         const groupId = this.selectedSuggestion.value;
         loadData(this.loadUrl, { 'groupId' : groupId }).then( data => {
-            const newState = JSON.parse(data.linkerState);
-            this.linkerState.restoreSelection(newState);
-            this.linkerState.notifySelectionManagerUpdate();
+            const newState = JSON.parse(data.state);
+            this.state.restoreSelection(newState);
+            this.state.notifySelectionManagerUpdate();
             this.numSelected.text(newState.totalSelected);
             this.groupId = groupId;
             this.showGroupTab();
@@ -98,18 +101,18 @@ class GroupManager {
         $('#groupSubmit').on('click', () => {
             // copy current state
             const stateCopy = {};
-            stateCopy.constraints = self.linkerState.constraints;
-            stateCopy.selections = self.linkerState.selections;
-            stateCopy.numSelected = self.linkerState.numSelected;
-            stateCopy.totalSelected = self.linkerState.totalSelected;
-            stateCopy.whereType = self.linkerState.whereType;
+            stateCopy.constraints = self.state.constraints;
+            stateCopy.selections = self.state.selections;
+            stateCopy.numSelected = self.state.numSelected;
+            stateCopy.totalSelected = self.state.totalSelected;
+            stateCopy.whereType = self.state.whereType;
             const stateJson = JSON.stringify(stateCopy);
 
             // create form data and POST it
             const form = $('#saveGroupForm');
             const action = form.attr('action');
             let formData = form.serializeArray();
-            formData.push({'name': 'linkerState', 'value': stateJson});
+            formData.push({'name': 'state', 'value': stateJson});
             $.ajax({
                 type: 'POST',
                 url: action,
