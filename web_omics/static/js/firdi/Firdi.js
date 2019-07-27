@@ -19,7 +19,7 @@ import {
     SELECTION_MANAGER_UPDATE_EVENT,
     unblockUI
 } from '../common';
-import DataTablesOptionsManager from './DataTablesOptionsManager';
+import DataTablesManager from './DataTablesManager';
 import ConstraintsManager from './ConstraintsManager';
 import {getPkCol, getPkValue, getRowObj, isTableVisible} from "./Utils";
 import SqlManager from "./SqlManager";
@@ -29,9 +29,6 @@ import InfoPanesManager from "./InfoPanesManager";
 class Firdi {
 
     constructor(state, viewNames) {
-        this.sqlManager = new SqlManager(state);
-        this.infoPanelManager = new InfoPanesManager(state, viewNames);
-
         this.state = state;
         this.state.on(CLUSTERGRAMMER_UPDATE_EVENT, (data) => {
             console.log('firdi receives update from clustergrammer');
@@ -48,8 +45,10 @@ class Firdi {
             this.updateFiRDIForLoadSelection();
         })
 
-        const dataTablesOptionsManager = new DataTablesOptionsManager(this.state);
+        this.sqlManager = new SqlManager(this.state);
+        this.dataTablesManager = new DataTablesManager(this.state);
         this.constraintsManager = new ConstraintsManager(this.sqlManager, this.state);
+        this.infoPanelManager = new InfoPanesManager(this.state, viewNames);
 
         this.initTableClicks();
         this.initSignificantFilters();

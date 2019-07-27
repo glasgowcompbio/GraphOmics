@@ -1,7 +1,7 @@
 import alasql from "alasql";
 import {isTableVisible} from "./Utils";
 
-class DataTablesOptionsManager {
+class DataTablesManager {
 
     constructor(state) {
         const tablesInfo = state.tablesInfo;
@@ -297,4 +297,4 @@ class DataTablesOptionsManager {
 
 }
 
-export default DataTablesOptionsManager;
+export default DataTablesManager;
