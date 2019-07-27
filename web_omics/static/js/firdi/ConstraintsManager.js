@@ -1,10 +1,8 @@
 import {getDisplayName, getConstraintTablesConstraintKeyName} from "./Utils";
 
 class ConstraintsManager {
-    constructor(sqlManager, state) {
+    constructor(state) {
         this.state = state;
-        this.tableKeys = sqlManager.getTableKeys();
-        this.sqlManager = sqlManager;
         this.tableIdToIdColumnMap = this.getTableKeysAsSingleObject();
     }
 

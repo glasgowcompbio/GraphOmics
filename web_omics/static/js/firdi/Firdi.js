@@ -47,7 +47,7 @@ class Firdi {
 
         this.sqlManager = new SqlManager(this.state);
         this.dataTablesManager = new DataTablesManager(this.state);
-        this.constraintsManager = new ConstraintsManager(this.sqlManager, this.state);
+        this.constraintsManager = new ConstraintsManager(this.state);
         this.infoPanelManager = new InfoPanesManager(this.state, viewNames);
 
         this.initTableClicks();
