@@ -1,37 +1,112 @@
-import Observable from "./Observable";
+import Observable from './Observable';
 import {CLUSTERGRAMMER_UPDATE_EVENT, deepCopy, FIRDI_UPDATE_EVENT, SELECTION_MANAGER_UPDATE_EVENT} from "../common";
-import {getDisplayName, isTableVisible, getConstraintTablesConstraintKeyName} from "./Utils";
+import {getConstraintTablesConstraintKeyName, getDisplayName, isTableVisible} from "./Utils";
 
 class FirdiState extends Observable {
+
+    // public fields
+    constraints = undefined;
+    selections = undefined;
+    numSelected = undefined;
+    totalSelected = 0;
+    whereType = null;
+    selectedIndex = {};
+    lastQueryResults = {}  // to store last table results in firdi
+
+    // Cgm fields
+    originalCgmNodes = {}; // to restore original cgm nodes when we reset the view in clustergrammer
+    cgmLastClickedName = null; // to store the table name for the last-clicked clustergrammer
+    cgmSelections = null; // to store the selections for the last-clicked clustergrammer
+
+    // private fields
+    #defaultConstraints = undefined;
+    #tablesInfo = undefined;
+    #tableFields = undefined;
+    #displayNameToConstraintKey = undefined;
 
     constructor(tablesInfo, tableFields) {
         super();
 
-        this.tablesInfo = tablesInfo;
-        this.tableFields = tableFields;
-
-        // initialisation
-        this.defaultConstraints = this.getDefaultConstraints();
-        this.constraints = deepCopy(this.defaultConstraints);
-        this.displayNameToConstraintKey = this.getDisplayNameToConstraintKey();
-        const emptySelections = this.makeEmptyConstraint();
-        const emptyCounts = this.makeEmptyCount();
+        this.#tablesInfo = tablesInfo;
+        this.#tableFields = tableFields;
+        this.#defaultConstraints = this.createDefaultConstraints();
+        this.#displayNameToConstraintKey = this.getDisplayNameToConstraintKey();
 
         // Firdi fields
-        this.selections = emptySelections;
-        this.numSelected = emptyCounts;
-        this.totalSelected = 0;
-        this.whereType = null;
-        this.selectedIndex = {};
-        this.lastQueryResults = {}; // to store last table results in firdi
+        this.constraints = deepCopy(this.defaultConstraints);
+        this.selections = this.makeEmptyConstraint();
+        this.numSelected = this.makeEmptyCount();
 
-        // Cgm fields
-        this.originalCgmNodes = {}; // to restore original cgm nodes when we reset the view in clustergrammer
-        this.cgmLastClickedName = null; // to store the table name for the last-clicked clustergrammer
-        this.cgmSelections = null; // to store the selections for the last-clicked clustergrammer
     }
 
-    getDefaultConstraints() {
+    // getters
+
+    get defaultConstraints() {
+        return this.#defaultConstraints;
+    }
+
+    get tablesInfo() {
+        return this.#tablesInfo;
+    }
+
+    get tableFields() {
+        return this.#tableFields;
+    }
+
+    get displayNameToConstraintKey() {
+        return this.#displayNameToConstraintKey;
+    }
+
+    // public methods
+
+    getDataTablesIds() {
+        return this.tablesInfo.filter(isTableVisible).reduce((apis, t) => {
+            apis[t['tableName']] = "#" + t['tableName'];
+            return apis
+        }, {});
+    }
+
+    getFieldNames() {
+        // Gets the field names for each visible table
+        return this.tablesInfo
+            .filter(isTableVisible)
+            .map(tableInfo => ({
+                'tableName': tableInfo['tableName'],
+                'fieldNames': Object.keys(tableInfo['tableData'][0])
+            }));
+    }
+
+    restoreSelection(newState) {
+        this.constraints = newState.constraints;
+        this.selections = newState.selections;
+        this.numSelected = newState.numSelected;
+        this.totalSelected = newState.totalSelected;
+        this.whereType = newState.whereType;
+    }
+
+    reset() {
+        this.constraints = deepCopy(this.defaultConstraints);
+        this.selections = this.makeEmptyConstraint();
+        this.numSelected = this.makeEmptyCount();
+        this.totalSelected = 0;
+        this.whereType = null;
+    }
+
+    notifyFirdiUpdate() {
+        this.fire(FIRDI_UPDATE_EVENT, this);
+    }
+
+    notifyClustergrammerUpdate() {
+        this.fire(CLUSTERGRAMMER_UPDATE_EVENT, this)
+    }
+
+    notifySelectionManagerUpdate() {
+        this.fire(SELECTION_MANAGER_UPDATE_EVENT, this);
+    }
+
+    // TODO: should be made private methods
+
+    createDefaultConstraints() {
         return getConstraintTablesConstraintKeyName(this.tablesInfo)
             .reduce((constraints, tableInfo) => {
                 constraints[tableInfo['tableName']] = this.getKeys(
@@ -92,51 +167,6 @@ class FirdiState extends Observable {
                 constraints[tableInfo['tableName']] = 0;
                 return constraints;
             }, {});
-    }
-
-    getDataTablesIds() {
-        return this.tablesInfo.filter(isTableVisible).reduce((apis, t) => {
-            apis[t['tableName']] = "#" + t['tableName'];
-            return apis
-        }, {});
-    }
-
-    getFieldNames() {
-        // Gets the field names for each visible table
-        return this.tablesInfo
-            .filter(isTableVisible)
-            .map(tableInfo => ({
-                'tableName': tableInfo['tableName'],
-                'fieldNames': Object.keys(tableInfo['tableData'][0])
-            }));
-    }
-
-    restoreSelection(newState) {
-        this.constraints = newState.constraints;
-        this.selections = newState.selections;
-        this.numSelected = newState.numSelected;
-        this.totalSelected = newState.totalSelected;
-        this.whereType = newState.whereType;
-    }
-
-    reset() {
-        this.constraints = deepCopy(this.defaultConstraints);
-        this.selections = this.makeEmptyConstraint();
-        this.numSelected = this.makeEmptyCount();
-        this.totalSelected = 0;
-        this.whereType = null;
-    }
-
-    notifyFirdiUpdate() {
-        this.fire(FIRDI_UPDATE_EVENT, this);
-    }
-
-    notifyClustergrammerUpdate() {
-        this.fire(CLUSTERGRAMMER_UPDATE_EVENT, this)
-    }
-
-    notifySelectionManagerUpdate() {
-        this.fire(SELECTION_MANAGER_UPDATE_EVENT, this);
     }
 
 }

@@ -245,8 +245,9 @@ class Firdi {
 
     resetTable(tableFieldNames, queryResult) {
         const tableName = tableFieldNames['tableName'];
+        const dataTablesIds = this.state.getDataTablesIds();
         const data = this.prefixQuery(tableFieldNames, queryResult);
-        const tableAPI = $(this.dataTablesIds[tableName]).DataTable();
+        const tableAPI = $(dataTablesIds[tableName]).DataTable();
         tableAPI.clear();
         tableAPI.rows.add(data);
         tableAPI.draw();
