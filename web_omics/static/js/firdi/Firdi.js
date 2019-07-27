@@ -37,7 +37,7 @@ class Firdi {
             console.log('firdi receives update from clustergrammer');
             console.log(data);
             const tableName = data.cgmLastClickedName;
-            const selectedPkValues = data.selections[tableName];
+            const selectedPkValues = data.cgmSelections;
             this.resetFiRDI(true);
             this.multipleTrClickHandlerUpdate(tableName, selectedPkValues);
         })
@@ -106,14 +106,8 @@ class Firdi {
             tableAPI.rows.add(t['tableData']);
             tableAPI.draw();
         });
-        // reset state
         if (resetState) {
-            this.state.defaultConstraints = this.getDefaultConstraints();
-            this.state.constraints = deepCopy(this.state.defaultConstraints);
-            this.state.selections = this.makeEmptyConstraint();
-            this.state.numSelected = this.makeEmptyCount();
-            this.state.totalSelected = 0;
-            this.state.whereType = null;
+            this.state.reset();
         }
         // reset info panels
         this.infoPanelManager.clearAllInfoPanels();

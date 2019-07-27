@@ -23,12 +23,12 @@ class FirdiState extends Observable {
         this.totalSelected = 0;
         this.whereType = null;
         this.selectedIndex = {};
+        this.lastQueryResults = {}; // to store last table results in firdi
 
-        // observer pattern
-        this.lastQueryResults = {}; // to store firdi updates
-        this.originalCgmNodes = {}; // to restore original cgm nodes when we reset the view
-        this.cgmLastClickedName = null; // to store the table name linked to a last-clicked clustergrammer
-        this.cgmSelections = null; // to store the selections linked to a last-clicked clustergrammer
+        // Cgm fields
+        this.originalCgmNodes = {}; // to restore original cgm nodes when we reset the view in clustergrammer
+        this.cgmLastClickedName = null; // to store the table name for the last-clicked clustergrammer
+        this.cgmSelections = null; // to store the selections for the last-clicked clustergrammer
     }
 
     getDefaultConstraints() {
@@ -100,6 +100,14 @@ class FirdiState extends Observable {
         this.numSelected = newState.numSelected;
         this.totalSelected = newState.totalSelected;
         this.whereType = newState.whereType;
+    }
+
+    reset() {
+        this.constraints = deepCopy(this.defaultConstraints);
+        this.selections = this.makeEmptyConstraint();
+        this.numSelected = this.makeEmptyCount();
+        this.totalSelected = 0;
+        this.whereType = null;
     }
 
     notifyFirdiUpdate() {

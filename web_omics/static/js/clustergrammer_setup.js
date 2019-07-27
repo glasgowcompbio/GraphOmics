@@ -53,7 +53,7 @@ function filter_viz_using_names(names, cgm, originalCgmNodes) {
 
 };
 
-function clustergrammer_setup(elementId, dataType, clusterJson, linkerState) {
+function clustergrammer_setup(elementId, dataType, clusterJson, state) {
     if (clusterJson.hasOwnProperty(dataType) && clusterJson[dataType]) {
 
         $(elementId).text('');
@@ -80,7 +80,7 @@ function clustergrammer_setup(elementId, dataType, clusterJson, linkerState) {
         const cgm = Clustergrammer(args);
 
         // save the original, complete set of nodes
-        linkerState.originalCgmNodes[dataType] = deepCopy(cgm.params.inst_nodes);
+        state.originalCgmNodes[dataType] = deepCopy(cgm.params.inst_nodes);
 
         // TODO: setup enrichr. Still broken!!
         if (dataType === 'genes') {
@@ -98,8 +98,8 @@ function clustergrammer_setup(elementId, dataType, clusterJson, linkerState) {
 
         // save current state instance to clustergrammer, and also
         // set the callback to handle firdi update
-        cgm.linkerState = linkerState;
-        cgm.linkerState.on(FIRDI_UPDATE_EVENT, (data) => {
+        cgm.state = state;
+        cgm.state.on(FIRDI_UPDATE_EVENT, (data) => {
             let names = [];
             if (data.lastQueryResults.hasOwnProperty(tableName)) {
                 // populate names based on the last query results for this table
@@ -112,7 +112,7 @@ function clustergrammer_setup(elementId, dataType, clusterJson, linkerState) {
             const originalCgmNodes = data.originalCgmNodes[dataType];
             filter_viz_using_names({'row': names}, cgm, originalCgmNodes);
         })
-        cgm.linkerState.on(SELECTION_MANAGER_UPDATE_EVENT, (data) => {
+        cgm.state.on(SELECTION_MANAGER_UPDATE_EVENT, (data) => {
             console.log('clustergrammer receives update from selection manager');
             console.log(data);
         })
@@ -222,21 +222,14 @@ function dendroFilterCallback(cgm) {
 
     // save into the global app state, and notify other observers that we've made a clustergrammer selection
     console.log('Notifying clustergrammer update');
-    const linkerState = cgm.state;
-    linkerState.cgmLastClickedName = tableName;
-    linkerState.cgmSelections = nodeNames;
-    // set selections for all tables to empty except for the current tableName
-    for (let tname in linkerState.selections) {
-        if (linkerState.selections.hasOwnProperty(tname)) {
-            if (tname === tableName) {
-                // convert node name to constraint key
-                linkerState.selections[tname] = nodeNames.map(d => linkerState.displayNameToConstraintKey[tname][d]);
-            } else {
-                linkerState.selections[tname] = [];
-            }
-        }
-    }
-    linkerState.notifyClustergrammerUpdate();
+    const state = cgm.state;
+    state.cgmLastClickedName = tableName;
+
+    // convert node name to constraint key
+    state.cgmSelections = nodeNames.map(d => state.displayNameToConstraintKey[tableName][d]);
+
+    // notify other observers
+    state.notifyClustergrammerUpdate();
 }
 
 export default clustergrammer_setup;
