@@ -84,14 +84,17 @@ class Firdi {
     }
 
     resetFiRDI(resetState) {
-        // restore original tables info
-        // TODO: not sure why we need to create a copy of state.tablesInfo for the UI to work
-        const tablesInfoCopy = JSON.parse(JSON.stringify(this.state.tablesInfo));
-        this.sqlManager.clearAlasqlTables(tablesInfoCopy);
-        this.sqlManager.addNewData(tablesInfoCopy);
+        // it doesn't seem necesary to clear all SQL tables in alasql when resetting, since they will
+        // never change. We only need to clear the data tables data as well as the info panels.
 
+        // TODO: not sure why we need to copy here
+        // const tablesInfoCopy = JSON.parse(JSON.stringify(this.state.tablesInfo));
+        // this.sqlManager.clearAlasqlTables(tablesInfoCopy);
+        // this.sqlManager.addNewData(tablesInfoCopy);
+
+        // clear data tables
         const dataTablesIds = this.state.dataTablesIds;
-        tablesInfoCopy.forEach(t => {
+        this.state.tablesInfo.forEach(t => {
             const tableName = t['tableName'];
             const tableAPI = $(dataTablesIds[tableName]).DataTable();
             tableAPI.clear();
@@ -99,7 +102,7 @@ class Firdi {
             tableAPI.draw();
         });
 
-        // restore state if necessary
+        // reset state if necessary
         if (resetState) {
             this.state.reset();
         }
