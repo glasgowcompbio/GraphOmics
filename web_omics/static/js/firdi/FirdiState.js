@@ -1,16 +1,19 @@
 import Observable from './Observable';
 import {CLUSTERGRAMMER_UPDATE_EVENT, deepCopy, FIRDI_UPDATE_EVENT, SELECTION_MANAGER_UPDATE_EVENT} from "../common";
 import {getConstraintTablesConstraintKeyName, getDisplayName, isTableVisible} from "./Utils";
+import {observable, computed, autorun, action} from 'mobx';
+
 
 class FirdiState extends Observable {
 
     // public fields
-    constraints = undefined;
-    selections = undefined;
-    numSelected = undefined;
-    totalSelected = 0;
-    whereType = null;
-    selectedIndex = {};
+    @observable tablesInfo = undefined;
+    @observable tableFields = undefined;
+    @observable selections = undefined;
+    @observable whereType = null;
+    @observable selectedIndex = {};
+
+    // computed properties
     lastQueryResults = {}  // to store last table results in firdi
 
     // Cgm fields
@@ -18,54 +21,32 @@ class FirdiState extends Observable {
     cgmLastClickedName = null; // to store the table name for the last-clicked clustergrammer
     cgmSelections = null; // to store the selections for the last-clicked clustergrammer
 
-    // private fields
-    #defaultConstraints = undefined;
-    #tablesInfo = undefined;
-    #tableFields = undefined;
-    #displayNameToConstraintKey = undefined;
-    #tableIdToIdColumnMap = undefined;
-
     constructor(tablesInfo, tableFields) {
         super();
-
-        // initialise private fields
-        this.#tablesInfo = tablesInfo;
-        this.#tableFields = tableFields;
-        this.#defaultConstraints = this.createDefaultConstraints();
-        this.#displayNameToConstraintKey = this.getDisplayNameToConstraintKey();
-        this.#tableIdToIdColumnMap = this.getTableKeysAsSingleObject();
-
-        // Firdi fields
-        this.constraints = deepCopy(this.#defaultConstraints);
-        this.selections = this.makeEmptyConstraint();
-        this.numSelected = this.makeEmptyCount();
-
+        this.tablesInfo = tablesInfo;
+        this.tableFields = tableFields;
+        this.selections = this.emptySelections();
     }
 
-    // getters
+    // computed properties
 
-    get tablesInfo() {
-        return this.#tablesInfo;
+    @computed get defaultConstraints() {
+        return getConstraintTablesConstraintKeyName(this.tablesInfo)
+            .reduce((constraints, tableInfo) => {
+                constraints[tableInfo['tableName']] = this.getKeys(
+                    this.tablesInfo, tableInfo['tableName'], tableInfo['constraintKeyName']);
+                return constraints;
+            }, {});
     }
 
-    get tableFields() {
-        return this.#tableFields;
-    }
-
-    get displayNameToConstraintKey() {
-        return this.#displayNameToConstraintKey;
-    }
-
-    // public methods
-
-    getDataTablesIds() {
+    @computed get dataTablesIds() {
         return this.tablesInfo.filter(isTableVisible).reduce((apis, t) => {
             apis[t['tableName']] = "#" + t['tableName'];
             return apis
         }, {});
     }
 
-    getFieldNames() {
+    @computed get fieldNames() {
         // Gets the field names for each visible table
         return this.tablesInfo
             .filter(isTableVisible)
@@ -75,9 +56,40 @@ class FirdiState extends Observable {
             }));
     }
 
+    @computed get displayNameToConstraintKey() {
+        return getConstraintTablesConstraintKeyName(this.tablesInfo)
+            .reduce((constraints, tableInfo) => {
+                constraints[tableInfo['tableName']] = this.getDisplayNameToPk(
+                    this.tablesInfo, tableInfo['tableName'], tableInfo['constraintKeyName']);
+                return constraints;
+            }, {});
+    }
+
+    @computed get tableIdToIdColumnMap() {
+        // Get the table name and key used in the WHERE clause in the form tableName: key
+        return getConstraintTablesConstraintKeyName(this.tablesInfo)
+            .map(t => ({[t['tableName']]: t['constraintKeyName']}))
+            .reduce((o, v) => Object.assign(o, v), {});
+    }
+
+    @computed get numSelected() {
+        return this.countNumSelected();
+    }
+
+    @computed get totalSelected() {
+        const values = Object.values(this.numSelected);
+        const total = values.reduce((a, b) => a + b, 0);
+        return total;
+    }
+
+    @computed get constraints() {
+        return this.makeConstraints();
+    }
+
+    // actions
+
+    @action.bound
     addConstraint(tableName, rowData, rowIndex) {
-        this.numSelected[tableName]++;
-        this.totalSelected++;
         const idVal = this.getId(tableName, rowData);
         const displayName = getDisplayName(rowData, tableName);
         this.selections[tableName].push({
@@ -85,32 +97,30 @@ class FirdiState extends Observable {
             rowIndex: rowIndex,
             displayName: displayName
         });
+
         // ensure that entries are sorted by rowIndex asc
-        this.selections[tableName].sort((a, b) => a.rowIndex - b.rowIndex);
-        this.constraints[tableName] = this.selectionToConstraint(tableName);
+        // this.selections[tableName].sort((a, b) => a.rowIndex - b.rowIndex);
+
+        // same as above, but using a special syntax for mobx
+        const observableArray = this.selections[tableName];
+        observableArray.replace(observableArray.slice().sort((a, b) => a.rowIndex - b.rowIndex));
     }
 
+    @action.bound
     removeConstraint(tableName, rowData) {
-        this.numSelected[tableName]--;
-        this.totalSelected--;
         const idVal = this.getId(tableName, rowData);
         this.selections[tableName] = this.selections[tableName].filter(x => x.idVal !== idVal);
-        this.constraints[tableName] = this.selectionToConstraint(tableName);
     }
 
+    @action.bound
     restoreSelection(newState) {
-        this.constraints = newState.constraints;
         this.selections = newState.selections;
-        this.numSelected = newState.numSelected;
-        this.totalSelected = newState.totalSelected;
         this.whereType = newState.whereType;
     }
 
+    @action.bound
     reset() {
-        this.constraints = deepCopy(this.defaultConstraints);
         this.selections = this.makeEmptyConstraint();
-        this.numSelected = this.makeEmptyCount();
-        this.totalSelected = 0;
         this.whereType = null;
     }
 
@@ -128,23 +138,6 @@ class FirdiState extends Observable {
 
     // TODO: should be made private methods
 
-    selectionToConstraint(tableName) {
-        if (this.numSelected[tableName] == 0) {
-            return this.defaultConstraints[tableName];
-        } else {
-            return this.selections[tableName].map(x => x.idVal);
-        }
-    }
-
-    createDefaultConstraints() {
-        return getConstraintTablesConstraintKeyName(this.tablesInfo)
-            .reduce((constraints, tableInfo) => {
-                constraints[tableInfo['tableName']] = this.getKeys(
-                    this.tablesInfo, tableInfo['tableName'], tableInfo['constraintKeyName']);
-                return constraints;
-            }, {});
-    }
-
     getKeys(tablesInfo, tableName, k) {
         // Gets the values of the key used in the table relationship for the SQL IN clause
         const data = tablesInfo
@@ -157,15 +150,6 @@ class FirdiState extends Observable {
             .filter((k, idx, arr) => arr.indexOf(k) === idx);
 
         return keys;
-    }
-
-    getDisplayNameToConstraintKey() {
-        return getConstraintTablesConstraintKeyName(this.tablesInfo)
-            .reduce((constraints, tableInfo) => {
-                constraints[tableInfo['tableName']] = this.getDisplayNameToPk(
-                    this.tablesInfo, tableInfo['tableName'], tableInfo['constraintKeyName']);
-                return constraints;
-            }, {});
     }
 
     getDisplayNameToPk(tablesInfo, tableName, k) {
@@ -183,32 +167,44 @@ class FirdiState extends Observable {
         return displayNameToPk;
     }
 
-    makeEmptyConstraint() {
-        return getConstraintTablesConstraintKeyName(this.tablesInfo)
-            .reduce((constraints, tableInfo) => {
-                constraints[tableInfo['tableName']] = [];
-                return constraints;
-            }, {});
-    }
-
-    makeEmptyCount() {
-        return getConstraintTablesConstraintKeyName(this.tablesInfo)
-            .reduce((constraints, tableInfo) => {
-                constraints[tableInfo['tableName']] = 0;
-                return constraints;
-            }, {});
-    }
-
-    getTableKeysAsSingleObject() {
-        // Get the table name and key used in the WHERE clause in the form tableName: key
-        return getConstraintTablesConstraintKeyName(this.tablesInfo)
-            .map(t => ({[t['tableName']]: t['constraintKeyName']}))
-            .reduce((o, v) => Object.assign(o, v), {});
-    }
-
     getId(tableName, rowObject) {
-        const idColumn = this.#tableIdToIdColumnMap[tableName];
+        const idColumn = this.tableIdToIdColumnMap[tableName];
         return rowObject[idColumn];
+    }
+
+    countNumSelected() {
+        return getConstraintTablesConstraintKeyName(this.tablesInfo)
+            .reduce((results, tableInfo) => {
+                const tname = tableInfo['tableName'];
+                results[tname] = this.selections[tname].length;
+                return results;
+            }, {});
+    }
+
+    emptySelections() {
+        return getConstraintTablesConstraintKeyName(this.tablesInfo)
+            .reduce((results, tableInfo) => {
+                const tname = tableInfo['tableName'];
+                results[tname] = [];
+                return results;
+            }, {});
+    }
+
+    makeConstraints() {
+        return getConstraintTablesConstraintKeyName(this.tablesInfo)
+            .reduce((results, tableInfo) => {
+                const tname = tableInfo['tableName'];
+                results[tname] = this.selectionToConstraint(tname);
+                return results;
+            }, {});
+    }
+
+    selectionToConstraint(tableName) {
+        if (this.numSelected[tableName] == 0) {
+            return this.defaultConstraints[tableName];
+        } else {
+            return this.selections[tableName].map(x => x.idVal);
+        }
     }
 
 }
