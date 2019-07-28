@@ -20,7 +20,6 @@ import {
     unblockUI
 } from '../common';
 import DataTablesManager from './DataTablesManager';
-import ConstraintsManager from './ConstraintsManager';
 import {getPkCol, getPkValue, getRowObj, isTableVisible} from "./Utils";
 import SqlManager from "./SqlManager";
 import InfoPanesManager from "./InfoPanesManager";
@@ -47,7 +46,6 @@ class Firdi {
 
         this.sqlManager = new SqlManager(this.state);
         this.dataTablesManager = new DataTablesManager(this.state);
-        this.constraintsManager = new ConstraintsManager(this.state);
         this.infoPanelManager = new InfoPanesManager(this.state, viewNames);
 
         this.initTableClicks();
@@ -318,15 +316,15 @@ class Firdi {
         if (anyRowSelected) {
             // if the current row is already selected then unselect it
             if (targetTr.hasClass('selected')) {
-                this.constraintsManager.removeConstraint(tableName, rowData);
+                this.state.removeConstraint(tableName, rowData);
                 this.removeSelectionStyle(targetTr);
                 this.updateTablesForClickUpdate();
             } else { // otherwise select the current row
-                this.constraintsManager.addConstraint(tableName, rowData, rowIndex);
+                this.state.addConstraint(tableName, rowData, rowIndex);
                 this.updateTablesForClickUpdate();
             }
         } else { // otherwise just select this row
-            this.constraintsManager.addConstraint(tableName, rowData, rowIndex);
+            this.state.addConstraint(tableName, rowData, rowIndex);
             this.updateTablesForClickUpdate();
         }
     }
@@ -348,7 +346,7 @@ class Firdi {
         for (let i = 0; i < selectedPkValues.length; i++) {
             const rowData = allRowData[i];
             const rowIndex = allRowIndices[i];
-            this.constraintsManager.addConstraint(tableName, rowData, rowIndex);
+            this.state.addConstraint(tableName, rowData, rowIndex);
         }
 
         // refresh UI based on multiple selections

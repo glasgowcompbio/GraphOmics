@@ -23,27 +23,26 @@ class FirdiState extends Observable {
     #tablesInfo = undefined;
     #tableFields = undefined;
     #displayNameToConstraintKey = undefined;
+    #tableIdToIdColumnMap = undefined;
 
     constructor(tablesInfo, tableFields) {
         super();
 
+        // initialise private fields
         this.#tablesInfo = tablesInfo;
         this.#tableFields = tableFields;
         this.#defaultConstraints = this.createDefaultConstraints();
         this.#displayNameToConstraintKey = this.getDisplayNameToConstraintKey();
+        this.#tableIdToIdColumnMap = this.getTableKeysAsSingleObject();
 
         // Firdi fields
-        this.constraints = deepCopy(this.defaultConstraints);
+        this.constraints = deepCopy(this.#defaultConstraints);
         this.selections = this.makeEmptyConstraint();
         this.numSelected = this.makeEmptyCount();
 
     }
 
     // getters
-
-    get defaultConstraints() {
-        return this.#defaultConstraints;
-    }
 
     get tablesInfo() {
         return this.#tablesInfo;
@@ -76,6 +75,29 @@ class FirdiState extends Observable {
             }));
     }
 
+    addConstraint(tableName, rowData, rowIndex) {
+        this.numSelected[tableName]++;
+        this.totalSelected++;
+        const idVal = this.getId(tableName, rowData);
+        const displayName = getDisplayName(rowData, tableName);
+        this.selections[tableName].push({
+            idVal: idVal,
+            rowIndex: rowIndex,
+            displayName: displayName
+        });
+        // ensure that entries are sorted by rowIndex asc
+        this.selections[tableName].sort((a, b) => a.rowIndex - b.rowIndex);
+        this.constraints[tableName] = this.selectionToConstraint(tableName);
+    }
+
+    removeConstraint(tableName, rowData) {
+        this.numSelected[tableName]--;
+        this.totalSelected--;
+        const idVal = this.getId(tableName, rowData);
+        this.selections[tableName] = this.selections[tableName].filter(x => x.idVal !== idVal);
+        this.constraints[tableName] = this.selectionToConstraint(tableName);
+    }
+
     restoreSelection(newState) {
         this.constraints = newState.constraints;
         this.selections = newState.selections;
@@ -105,6 +127,14 @@ class FirdiState extends Observable {
     }
 
     // TODO: should be made private methods
+
+    selectionToConstraint(tableName) {
+        if (this.numSelected[tableName] == 0) {
+            return this.defaultConstraints[tableName];
+        } else {
+            return this.selections[tableName].map(x => x.idVal);
+        }
+    }
 
     createDefaultConstraints() {
         return getConstraintTablesConstraintKeyName(this.tablesInfo)
@@ -167,6 +197,18 @@ class FirdiState extends Observable {
                 constraints[tableInfo['tableName']] = 0;
                 return constraints;
             }, {});
+    }
+
+    getTableKeysAsSingleObject() {
+        // Get the table name and key used in the WHERE clause in the form tableName: key
+        return getConstraintTablesConstraintKeyName(this.tablesInfo)
+            .map(t => ({[t['tableName']]: t['constraintKeyName']}))
+            .reduce((o, v) => Object.assign(o, v), {});
+    }
+
+    getId(tableName, rowObject) {
+        const idColumn = this.#tableIdToIdColumnMap[tableName];
+        return rowObject[idColumn];
     }
 
 }
