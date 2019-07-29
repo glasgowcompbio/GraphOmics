@@ -2,6 +2,9 @@ import Observable from './Observable';
 import {CLUSTERGRAMMER_UPDATE_EVENT, deepCopy, FIRDI_UPDATE_EVENT, SELECTION_MANAGER_UPDATE_EVENT} from "../common";
 import {getConstraintTablesConstraintKeyName, getDisplayName, isTableVisible} from "./Utils";
 import {observable, computed, autorun, action} from 'mobx';
+import {computedFn} from 'mobx-utils';
+import SqlManager from "./SqlManager";
+import alasql from "alasql";
 
 
 class FirdiState extends Observable {
@@ -13,9 +16,6 @@ class FirdiState extends Observable {
     @observable whereType = null;
     @observable selectedIndex = {};
 
-    // computed properties
-    lastQueryResults = {}  // to store last table results in firdi
-
     // Cgm fields
     originalCgmNodes = {}; // to restore original cgm nodes when we reset the view in clustergrammer
     cgmLastClickedName = null; // to store the table name for the last-clicked clustergrammer
@@ -26,6 +26,7 @@ class FirdiState extends Observable {
         this.tablesInfo = tablesInfo;
         this.tableFields = tableFields;
         this.selections = this.emptySelections();
+        this.sqlManager = new SqlManager(this.tablesInfo);
     }
 
     // computed properties
@@ -86,6 +87,19 @@ class FirdiState extends Observable {
         return this.makeConstraints();
     }
 
+    @computed get queryResult() {
+        // console.trace('queryResult');
+        const queryResult = this.sqlManager.queryDatabase(this.tablesInfo, this.constraints,
+            this.whereType);
+        return queryResult;
+    }
+
+    // TODO: should be a computed property, but can't make queryResult cached properly
+    getLastQueryResults(tableFieldName, queryResult) {
+        const data = this.sqlManager.prefixQuery(tableFieldName, queryResult);
+        return data;
+    };
+
     // actions
 
     @action.bound
@@ -120,7 +134,7 @@ class FirdiState extends Observable {
 
     @action.bound
     reset() {
-        this.selections = this.makeEmptyConstraint();
+        this.selections = this.emptySelections();
         this.whereType = null;
     }
 

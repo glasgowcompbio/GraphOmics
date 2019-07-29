@@ -3,8 +3,7 @@ import {isTableVisible, getConstraintTablesConstraintKeyName} from "./Utils";
 
 class SqlManager {
 
-    constructor(state) {
-        const tablesInfo = state.tablesInfo;
+    constructor(tablesInfo) {
         this.initialiseAlasqlTables(tablesInfo);
         this.firstTable = this.getFirstTable(tablesInfo);
         this.tableRelationships = this.getTableRelationships(tablesInfo);
@@ -216,6 +215,25 @@ class SqlManager {
         const compiledSQLQuery = alasql.compile(sqlQuery);
 
         return compiledSQLQuery(selectedConstraints);
+    }
+
+    prefixQuery(tableFieldNames, dataSource) {
+        const tableName = tableFieldNames['tableName'];
+        const prefix = tableName + '_';
+        const fieldNames = tableFieldNames['fieldNames'].map(x => prefix + x);
+
+        const sqlStatement = "SELECT DISTINCT " + fieldNames.join(", ") + " FROM ?";
+        const temp = alasql(sqlStatement, [dataSource]);
+
+        temp.map(x => { // for each row in the sql results
+            Object.keys(x).map(key => { // rename the properties to remove the table name in front
+                const newkey = key.replace(prefix, '');
+                x[newkey] = x[key];
+                delete (x[key]);
+            });
+        });
+
+        return temp;
     }
 
 }

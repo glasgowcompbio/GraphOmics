@@ -21,7 +21,6 @@ import {
 } from '../common';
 import DataTablesManager from './DataTablesManager';
 import {getPkCol, getPkValue, getRowObj, isTableVisible} from "./Utils";
-import SqlManager from "./SqlManager";
 import InfoPanesManager from "./InfoPanesManager";
 
 
@@ -44,7 +43,6 @@ class Firdi {
             this.updateFiRDIForLoadSelection();
         })
 
-        this.sqlManager = new SqlManager(this.state);
         this.dataTablesManager = new DataTablesManager(this.state);
         this.infoPanelManager = new InfoPanesManager(this.state, viewNames);
 
@@ -111,46 +109,19 @@ class Firdi {
         this.infoPanelManager.clearAllInfoPanels();
     }
 
-    prefixQuery(tableFieldNames, dataSource) {
-        const tableName = tableFieldNames['tableName'];
-        const prefix = tableName + '_';
-        const fieldNames = tableFieldNames['fieldNames'].map(x => prefix + x);
-
-        const sqlStatement = "SELECT DISTINCT " + fieldNames.join(", ") + " FROM ?";
-        const temp = alasql(sqlStatement, [dataSource]);
-
-        temp.map(x => { // for each row in the sql results
-            Object.keys(x).map(key => { // rename the properties to remove the table name in front
-                const newkey = key.replace(prefix, '');
-                x[newkey] = x[key];
-                delete (x[key]);
-            });
-        });
-
-        return temp;
-    }
-
     updateTables() {
-        console.log('queryResult');
-        const queryResult = this.sqlManager.queryDatabase(this.state.tablesInfo, this.state.constraints,
-            this.state.whereType);
-
         const fieldNames = this.state.fieldNames;
+        const queryResult = this.state.queryResult;
         for (let i = 0; i < fieldNames.length; i++) { // update all the tables
             const tableFieldName = fieldNames[i];
-            const tableName = tableFieldName['tableName'];
             this.updateSingleTable(tableFieldName, queryResult);
         }
     }
 
     updateTablesForClickUpdate() {
         if (this.state.totalSelected > 0) {
-
-            console.log('queryResult');
-            const queryResult = this.sqlManager.queryDatabase(this.state.tablesInfo, this.state.constraints,
-                this.state.whereType);
-
             const fieldNames = this.state.fieldNames;
+            const queryResult = this.state.queryResult;
             for (let i = 0; i < fieldNames.length; i++) { // update all the tables
                 const tableFieldName = fieldNames[i];
                 const tableName = tableFieldName['tableName'];
@@ -171,14 +142,12 @@ class Firdi {
     }
 
     updateSingleTable(tableFieldName, queryResult) {
-        const tableName = tableFieldName['tableName'];
-        const data = this.prefixQuery(tableFieldName, queryResult);
+        const data = this.state.getLastQueryResults(tableFieldName, queryResult);
         const dataTablesIds = this.state.dataTablesIds;
+        const tableName = tableFieldName['tableName'];
         $(dataTablesIds[tableName]).DataTable().clear();
         $(dataTablesIds[tableName]).DataTable().rows.add(data);
         $(dataTablesIds[tableName]).DataTable().draw();
-        // store the last query results for updates in other views later
-        this.state.lastQueryResults[tableName] = data;
     }
 
     addSelectionStyle(tableName) {
@@ -247,20 +216,18 @@ class Firdi {
     resetTable(tableFieldNames, queryResult) {
         const tableName = tableFieldNames['tableName'];
         const dataTablesIds = this.state.dataTablesIds;
-        const data = this.prefixQuery(tableFieldNames, queryResult);
+        const data = this.state.getLastQueryResults(tableName, queryResult);
         const tableAPI = $(dataTablesIds[tableName]).DataTable();
         tableAPI.clear();
         tableAPI.rows.add(data);
         tableAPI.draw();
         tableAPI.page(0).draw('page');
-        this.state.lastQueryResults[tableName] = data;
     }
 
     resetTables() {
         console.log('resetTable');
-        const queryResult = this.sqlManager.queryDatabase(this.state.tablesInfo, this.state.constraints,
-            this.state.whereType);
         const fieldNames = this.state.fieldNames;
+        const queryResult = this.state.queryResult;
         fieldNames.forEach(tableFieldNames => this.resetTable(tableFieldNames, queryResult));
     }
 
@@ -357,16 +324,12 @@ class Firdi {
     }
 
     updateFiRDIForMultipleSelect(tableName) {
-        // query db based on multiple selections
-        console.log('queryResult');
-        const queryResult = this.sqlManager.queryDatabase(this.state.tablesInfo, this.state.constraints,
-            this.state.whereType);
-
         // add selected class to the rows in selection
         this.addSelectionStyle(tableName);
 
         // update table content and selection style
         const fieldNames = this.state.fieldNames;
+        const queryResult = this.state.queryResult;
         for (let i = 0; i < fieldNames.length; i++) { // update all the tables
             const tableFieldName = fieldNames[i];
             const tName = tableFieldName['tableName'];
@@ -385,14 +348,10 @@ class Firdi {
     }
 
     updateFiRDIForLoadSelection() {
-        // query db based on multiple selections
-        console.log('queryResult');
-        const queryResult = this.sqlManager.queryDatabase(this.state.tablesInfo, this.state.constraints,
-            this.state.whereType);
-
         // update table content and selection style
         // at this point, tables have been reset and we see the default initial values
         const fieldNames = this.state.fieldNames;
+        const queryResult = this.state.queryResult;
         for (let i = 0; i < fieldNames.length; i++) { // update all the tables
             const tableFieldName = fieldNames[i];
             const tableName = tableFieldName['tableName'];

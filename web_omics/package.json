@@ -68,6 +68,7 @@
     "jquery": "^3.4.0",
     "mathjs": "^5.4.0",
     "mobx": "^5.13.0",
+    "mobx-utils": "^5.4.1",
     "object-assign": "^4.1.1",
     "popper.js": "^1.14.4",
     "react": "^16.5.2",

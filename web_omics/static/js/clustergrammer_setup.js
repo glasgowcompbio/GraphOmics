@@ -101,14 +101,21 @@ function clustergrammer_setup(elementId, dataType, clusterJson, state) {
         cgm.state = state;
         cgm.state.on(FIRDI_UPDATE_EVENT, (data) => {
             let names = [];
-            if (data.lastQueryResults.hasOwnProperty(tableName)) {
-                // populate names based on the last query results for this table
-                const queryResult = data.lastQueryResults[tableName];
-                names = queryResult.map(x => x[idName]);
-            } else { // if no last query result for this table, then use the selections for the table
-                const selections = data.selections[tableName];
-                names = selections.map(x => x.displayName);
-            }
+
+            // TODO: this is now broken
+            // if (data.lastQueryResults.hasOwnProperty(tableName)) {
+            //     // populate names based on the last query results for this table
+            //     const queryResult = data.lastQueryResults[tableName];
+            //     names = queryResult.map(x => x[idName]);
+            // } else { // if no last query result for this table, then use the selections for the table
+            //     const selections = data.selections[tableName];
+            //     names = selections.map(x => x.displayName);
+            // }
+
+            // TODO: following code won't update clustergrammer when no selection has been made
+            const selections = data.selections[tableName];
+            names = selections.map(x => x.displayName);
+
             const originalCgmNodes = data.originalCgmNodes[dataType];
             filter_viz_using_names({'row': names}, cgm, originalCgmNodes);
         })
