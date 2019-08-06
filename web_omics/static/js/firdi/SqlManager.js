@@ -14,12 +14,12 @@ class SqlManager {
         tablesInfo.forEach(function (t) {
             // Create table
             let sql = "CREATE TABLE " + t['tableName'];
-            console.log(sql);
+            // console.log(sql);
             alasql(sql);
             // Create index
             if (t['options']['pk'] !== undefined) {
                 sql = "CREATE UNIQUE INDEX tmp ON " + t['tableName'] + "(" + t['options']['pk'] + ")";
-                console.log(sql);
+                // console.log(sql);
                 alasql(sql);
             }
             // Add data
@@ -211,7 +211,7 @@ class SqlManager {
 
         // debugger;
         const sqlQuery = this.makeSQLquery(tablesInfo, skipConstraints, whereType);
-        console.log(sqlQuery);
+        // console.log(sqlQuery);
         const compiledSQLQuery = alasql.compile(sqlQuery);
 
         return compiledSQLQuery(selectedConstraints);

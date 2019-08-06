@@ -2,7 +2,7 @@ import Clustergrammer from './clustergrammer/main';
 import filter_network_using_new_nodes from './clustergrammer/network/filter_network_using_new_nodes';
 import update_viz_with_network from './clustergrammer/update/update_viz_with_network';
 
-import {deepCopy, FIRDI_UPDATE_EVENT, CLUSTERGRAMMER_UPDATE_EVENT, FIRDI_LOADED_EVENT} from './common'
+import {deepCopy, SELECTION_UPDATE_EVENT, HEATMAP_CLICKED_EVENT, GROUP_LOADED_EVENT} from './common'
 import check_setup_enrichr from './enrichrgram';
 
 const seenData = {};
@@ -100,28 +100,24 @@ function clustergrammer_setup(elementId, dataType, clusterJson, rootStore) {
         // save current state instance to clustergrammer, and also
         // set the callback to handle firdi update
         cgm.store = store;
-        cgm.store.on(FIRDI_UPDATE_EVENT, (data) => {
+        store.rootStore.firdiStore.on(SELECTION_UPDATE_EVENT, (data) => {
+            console.log('Firdi --> Clustergrammer');
             let names = [];
 
-            // TODO: this is now broken
-            // if (data.lastQueryResults.hasOwnProperty(tableName)) {
-            //     // populate names based on the last query results for this table
-            //     const queryResult = data.lastQueryResults[tableName];
-            //     names = queryResult.map(x => x[idName]);
-            // } else { // if no last query result for this table, then use the selections for the table
-            //     const selections = data.selections[tableName];
-            //     names = selections.map(x => x.displayName);
-            // }
-
-            // TODO: following code won't update clustergrammer when no selection has been made
-            const selections = data.selections[tableName];
-            names = selections.map(x => x.displayName);
+            if (data.queryResult.hasOwnProperty(tableName)) {
+                // populate names based on the last query results for this table
+                const queryResult = data.queryResult[tableName];
+                names = queryResult.map(x => x[idName]);
+            } else { // if no last query result for this table, then use the selections for the table
+                const selections = data.selections[tableName];
+                names = selections.map(x => x.displayName);
+            }
 
             const originalCgmNodes = data.originalCgmNodes[dataType];
             filter_viz_using_names({'row': names}, cgm, originalCgmNodes);
         })
-        cgm.store.on(FIRDI_LOADED_EVENT, (data) => {
-            console.log('clustergrammer receives update from selection manager');
+        store.rootStore.firdiStore.on(GROUP_LOADED_EVENT, (data) => {
+            console.log('GroupManager --> Clustergrammer');
             console.log(data);
         })
 
@@ -194,12 +190,12 @@ function getRequest(rootTip, displayName, dataType) {
 function tileTipCallback(tile_data) {
     var row_name = tile_data.row_name;
     var col_name = tile_data.col_name;
-    console.log(`tile_tip_callback ${row_name} ${col_name}`);
+    // console.log(`tile_tip_callback ${row_name} ${col_name}`);
 }
 
 function colTipCallback(col_data) {
     var col_name = col_data.name;
-    console.log(`col_tip_callback ${col_name}`);
+    // console.log(`col_tip_callback ${col_name}`);
 }
 
 function dendroCallback(instSelection) {
@@ -217,19 +213,19 @@ function dendroCallback(instSelection) {
 }
 
 function matrixUpdateCallback(cgm) {
-    console.log('matrix_update_callback');
+    // console.log('matrix_update_callback');
 }
 
 // Note: clustergrammer/dendrogram/run_dendro_filter.js has been modified to call this method
 function dendroFilterCallback(cgm) {
-    console.log('dendro_filter_callback');
+    // console.log('dendro_filter_callback');
 
     // get the selections in the clustergrammer for each table type
     const tableName = cgm.tableName;
     const nodeNames = deepCopy(this.network_data.row_nodes_names);
 
     // save into the global app state, and notify other observers that we've made a clustergrammer selection
-    console.log('Notifying clustergrammer update');
+    // console.log('Notifying clustergrammer update');
     const cgmStore = cgm.store;
     cgmStore.cgmLastClickedName = tableName;
 
@@ -238,7 +234,7 @@ function dendroFilterCallback(cgm) {
     cgmStore.cgmSelections = nodeNames.map(d => firdiStore.displayNameToConstraintKey[tableName][d]);
 
     // notify other observers
-    cgmStore.notifyUpdate();
+    // cgmStore.notifyUpdate();
 }
 
 export default clustergrammer_setup;

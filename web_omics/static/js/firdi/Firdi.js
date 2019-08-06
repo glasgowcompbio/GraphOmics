@@ -14,10 +14,10 @@ import alasql from 'alasql';
 
 import {
     blockUI,
-    CLUSTERGRAMMER_UPDATE_EVENT,
+    HEATMAP_CLICKED_EVENT,
     deepCopy,
-    FIRDI_LOADED_EVENT,
-    unblockUI
+    GROUP_LOADED_EVENT,
+    unblockUI, SELECTION_UPDATE_EVENT
 } from '../common';
 import DataTablesManager from './DataTablesManager';
 import {getPkCol, getPkValue, getRowObj, isTableVisible} from "./Utils";
@@ -29,19 +29,21 @@ class Firdi {
     constructor(rootStore, viewNames) {
         this.rootStore = rootStore;
         this.state = rootStore.firdiStore;
-        this.rootStore.cgmStore.on(CLUSTERGRAMMER_UPDATE_EVENT, (data) => {
-            console.log('firdi receives update from clustergrammer');
-            console.log(data);
+        this.rootStore.cgmStore.on(HEATMAP_CLICKED_EVENT, (data) => {
+            console.log('Clustergrammer --> Firdi');
             const tableName = data.cgmLastClickedName;
             const selectedPkValues = data.cgmSelections;
             this.resetFiRDI(true);
             this.multipleTrClickHandlerUpdate(tableName, selectedPkValues);
         })
-        this.rootStore.firdiStore.on(FIRDI_LOADED_EVENT, (data) => {
-            console.log('firdi receives update from selection manager');
-            console.log(data);
+        this.rootStore.firdiStore.on(GROUP_LOADED_EVENT, (data) => {
+            console.log('GroupManager --> Firdi');
             this.resetFiRDI(false);
             this.updateFiRDIForLoadSelection();
+        })
+        this.rootStore.firdiStore.on(SELECTION_UPDATE_EVENT, (data) => {
+            console.log('Firdi --> Firdi');
+            this.updateTablesForClickUpdate();
         })
 
         this.dataTablesManager = new DataTablesManager(this.state);
@@ -68,7 +70,7 @@ class Firdi {
                 let filterColumnName = selectedValue.length > 0 ? selectedValue : null;
                 currObj.state.whereType = filterColumnName;
                 currObj.updateTables();
-                currObj.state.notifyUpdate();
+                // currObj.state.notifyUpdate();
                 unblockUI();
             }, 1); // we need a small delay to allow blockUI to be rendered correctly
         };
@@ -139,7 +141,7 @@ class Firdi {
         } else {
             this.resetTables();
         }
-        this.state.notifyUpdate();
+        // this.state.notifyUpdate();
     }
 
     updateSingleTable(tableFieldName, queryResult) {
@@ -224,7 +226,6 @@ class Firdi {
     }
 
     resetTables() {
-        console.log('resetTable');
         const fieldNames = this.state.fieldNames;
         const queryResult = this.state.queryResult;
         for (let i = 0; i < fieldNames.length; i++) { // update all the tables
@@ -291,14 +292,14 @@ class Firdi {
             if (targetTr.hasClass('selected')) {
                 this.state.removeConstraint(tableName, rowData);
                 this.removeSelectionStyle(targetTr);
-                this.updateTablesForClickUpdate();
+                // this.updateTablesForClickUpdate();
             } else { // otherwise select the current row
                 this.state.addConstraint(tableName, rowData, rowIndex);
-                this.updateTablesForClickUpdate();
+                // this.updateTablesForClickUpdate();
             }
         } else { // otherwise just select this row
             this.state.addConstraint(tableName, rowData, rowIndex);
-            this.updateTablesForClickUpdate();
+            // this.updateTablesForClickUpdate();
         }
     }
 
