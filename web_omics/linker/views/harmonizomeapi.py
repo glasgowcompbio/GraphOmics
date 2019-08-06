@@ -65,10 +65,13 @@ DOWNLOAD_URL = 'http://amp.pharm.mssm.edu/static/hdfs/harmonizome/data'
 # This config objects pulls the names of the datasets, their directories, and
 # the possible downloads from the API. This allows us to add new datasets and
 # downloads without breaking this file.
-config = json_from_url(API_URL + '/dark/script_config')
-DOWNLOADS = [x for x in config.get('downloads')]
-DATASET_TO_PATH = config.get('datasets')
-
+try:
+    config = json_from_url(API_URL + '/dark/script_config')
+    DOWNLOADS = [x for x in config.get('downloads')]
+    DATASET_TO_PATH = config.get('datasets')
+except:
+    DOWNLOADS = []
+    DATASET_TO_PATH = {}
 
 # Harmonizome class
 # -----------------------------------------------------------------------------
