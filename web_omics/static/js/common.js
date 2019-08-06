@@ -71,7 +71,7 @@ function setupCsrfForAjax() {
 
 const FIRDI_UPDATE_EVENT = 0;
 const CLUSTERGRAMMER_UPDATE_EVENT = 1;
-const SELECTION_MANAGER_UPDATE_EVENT = 2;
+const FIRDI_LOADED_EVENT = 2;
 
 export {
     loadData,
@@ -81,5 +81,5 @@ export {
     setupCsrfForAjax,
     FIRDI_UPDATE_EVENT,
     CLUSTERGRAMMER_UPDATE_EVENT,
-    SELECTION_MANAGER_UPDATE_EVENT
+    FIRDI_LOADED_EVENT
 }

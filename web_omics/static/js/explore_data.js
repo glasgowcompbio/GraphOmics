@@ -5,12 +5,11 @@ import '../css/summary.css';
 import {blockUI, loadData, setupCsrfForAjax, unblockUI} from './common';
 import clustergrammer_setup from './clustergrammer_setup';
 
-import FirdiState from "./firdi/FirdiState";
+import RootStore from "./stores/RootStore";
 import Firdi from "./firdi/Firdi";
 import SqlManager from "./firdi/SqlManager";
 import InfoPanesManager from "./firdi/InfoPanesManager";
 import GroupManager from './firdi/GroupManager';
-import ObservableTodoStore from "./firdi/ObservableTodoStore";
 
 $(document).ready(function () {
 
@@ -24,25 +23,25 @@ $(document).ready(function () {
         // required for pop-up submits to work
         setupCsrfForAjax()
 
-        // load data and create a shared state
+        // load data and create a shared state object
         const firdiData = await loadData(viewNames['get_firdi_data']);
         const tablesInfo = getTablesInfo(firdiData.tableData);
         const tableFields = firdiData.tableFields;
-        const state = new FirdiState(tablesInfo, tableFields);
+        const rootStore = new RootStore(tablesInfo, tableFields);
 
         // init firdi
-        const firdi = new Firdi(state, viewNames);
+        const firdi = new Firdi(rootStore, viewNames);
 
         // init group manager
-        const groupManager = new GroupManager(state, viewNames);
+        const groupManager = new GroupManager(rootStore, viewNames);
 
         unblockUI();
 
         // init heatmap
         const heatmapData = await loadData(viewNames['get_heatmap_data']);
-        await clustergrammer_setup('#summary-vis-gene', 'genes', heatmapData, state);
-        await clustergrammer_setup('#summary-vis-protein', 'proteins', heatmapData, state);
-        await clustergrammer_setup('#summary-vis-compound', 'compounds', heatmapData, state);
+        await clustergrammer_setup('#summary-vis-gene', 'genes', heatmapData, rootStore);
+        await clustergrammer_setup('#summary-vis-protein', 'proteins', heatmapData, rootStore);
+        await clustergrammer_setup('#summary-vis-compound', 'compounds', heatmapData, rootStore);
 
     })().catch(e => {
         console.error(e);

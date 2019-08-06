@@ -3,14 +3,14 @@ import Awesomplete from 'awesomplete-es6';
 
 class GroupManager {
 
-    constructor(state, viewNames) {
+    constructor(rootStore, viewNames) {
+        this.rootStore = rootStore;
 
         // set an initial linker state to be updated later
-        this.state = state;
-        this.state.on(FIRDI_UPDATE_EVENT, (data) => {
+        this.rootStore.firdiStore.on(FIRDI_UPDATE_EVENT, (data) => {
             this.handleFirdiUpdate(data); // update selected item counter from Firdi
         });
-        this.state.on(CLUSTERGRAMMER_UPDATE_EVENT, (data) => {
+        this.rootStore.cgmStore.on(CLUSTERGRAMMER_UPDATE_EVENT, (data) => {
             this.handleClustergrammerUpdate(data);  // update selected item counter from Clustergrammer
         })
 
@@ -35,7 +35,7 @@ class GroupManager {
         const elem = document.getElementById(this.selectBoxId);
         this.listUrl = viewNames['list_groups'];
         this.updateList();
-        this.checkSaveButtonStatus(this.state.totalSelected);
+        this.checkSaveButtonStatus(this.rootStore.firdiStore.totalSelected);
         this.checkLoadButtonStatus(elem);
 
     }
@@ -79,8 +79,8 @@ class GroupManager {
         const groupId = this.selectedSuggestion.value;
         loadData(this.loadUrl, { 'groupId' : groupId }).then( data => {
             const newState = JSON.parse(data.state);
-            this.state.restoreSelection(newState);
-            this.state.notifySelectionManagerUpdate();
+            this.rootStore.firdiStore.restoreSelection(newState);
+            this.rootStore.firdiStore.notifyUpdate();
             this.numSelected.text(newState.totalSelected);
             this.groupId = groupId;
             this.showGroupTab();
@@ -101,11 +101,8 @@ class GroupManager {
         $('#groupSubmit').on('click', () => {
             // copy current state
             const stateCopy = {};
-            stateCopy.constraints = self.state.constraints;
-            stateCopy.selections = self.state.selections;
-            stateCopy.numSelected = self.state.numSelected;
-            stateCopy.totalSelected = self.state.totalSelected;
-            stateCopy.whereType = self.state.whereType;
+            stateCopy.selections = self.rootStore.firdiStore.selections;
+            stateCopy.whereType = self.rootStore.firdiStore.whereType;
             const stateJson = JSON.stringify(stateCopy);
 
             // create form data and POST it

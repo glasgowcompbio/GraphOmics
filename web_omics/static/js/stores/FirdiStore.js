@@ -1,37 +1,37 @@
 import Observable from './Observable';
-import {CLUSTERGRAMMER_UPDATE_EVENT, deepCopy, FIRDI_UPDATE_EVENT, SELECTION_MANAGER_UPDATE_EVENT} from "../common";
-import {getConstraintTablesConstraintKeyName, getDisplayName, isTableVisible} from "./Utils";
+import {CLUSTERGRAMMER_UPDATE_EVENT, deepCopy, FIRDI_UPDATE_EVENT, FIRDI_LOADED_EVENT} from "../common";
+import {getConstraintTablesConstraintKeyName, getDisplayName, isTableVisible} from "../firdi/Utils";
 import {observable, computed, autorun, action} from 'mobx';
 import {computedFn} from 'mobx-utils';
-import SqlManager from "./SqlManager";
+import SqlManager from "../firdi/SqlManager";
 import alasql from "alasql";
 
 
-class FirdiState extends Observable {
+class FirdiStore extends Observable {
 
     // public fields
-    @observable tablesInfo = undefined;
-    @observable tableFields = undefined;
+    tablesInfo = undefined;
+    tableFields = undefined;
+
+    // reactive stuff
     @observable selections = undefined;
     @observable whereType = null;
     @observable selectedIndex = {};
+    @observable loaded = undefined;
 
-    // Cgm fields
-    originalCgmNodes = {}; // to restore original cgm nodes when we reset the view in clustergrammer
-    cgmLastClickedName = null; // to store the table name for the last-clicked clustergrammer
-    cgmSelections = null; // to store the selections for the last-clicked clustergrammer
-
-    constructor(tablesInfo, tableFields) {
+    constructor(rootStore, tablesInfo, tableFields) {
         super();
+        this.rootStore = rootStore;
         this.tablesInfo = tablesInfo;
         this.tableFields = tableFields;
         this.selections = this.emptySelections();
         this.sqlManager = new SqlManager(this.tablesInfo);
+        this.loaded = false;
     }
 
-    // computed properties
+    // getters
 
-    @computed get defaultConstraints() {
+    get defaultConstraints() {
         return getConstraintTablesConstraintKeyName(this.tablesInfo)
             .reduce((constraints, tableInfo) => {
                 constraints[tableInfo['tableName']] = this.getKeys(
@@ -40,14 +40,14 @@ class FirdiState extends Observable {
             }, {});
     }
 
-    @computed get dataTablesIds() {
+    get dataTablesIds() {
         return this.tablesInfo.filter(isTableVisible).reduce((apis, t) => {
             apis[t['tableName']] = "#" + t['tableName'];
             return apis
         }, {});
     }
 
-    @computed get fieldNames() {
+    get fieldNames() {
         // Gets the field names for each visible table
         return this.tablesInfo
             .filter(isTableVisible)
@@ -57,7 +57,7 @@ class FirdiState extends Observable {
             }));
     }
 
-    @computed get displayNameToConstraintKey() {
+    get displayNameToConstraintKey() {
         return getConstraintTablesConstraintKeyName(this.tablesInfo)
             .reduce((constraints, tableInfo) => {
                 constraints[tableInfo['tableName']] = this.getDisplayNameToPk(
@@ -66,12 +66,14 @@ class FirdiState extends Observable {
             }, {});
     }
 
-    @computed get tableIdToIdColumnMap() {
+    get tableIdToIdColumnMap() {
         // Get the table name and key used in the WHERE clause in the form tableName: key
         return getConstraintTablesConstraintKeyName(this.tablesInfo)
             .map(t => ({[t['tableName']]: t['constraintKeyName']}))
             .reduce((o, v) => Object.assign(o, v), {});
     }
+
+    // mobx computer properties
 
     @computed get numSelected() {
         return this.countNumSelected();
@@ -100,10 +102,11 @@ class FirdiState extends Observable {
         return data;
     };
 
-    // actions
+    // mobx actions
 
     @action.bound
     addConstraint(tableName, rowData, rowIndex) {
+        this.loaded = false;
         const idVal = this.getId(tableName, rowData);
         const displayName = getDisplayName(rowData, tableName);
         this.selections[tableName].push({
@@ -122,12 +125,14 @@ class FirdiState extends Observable {
 
     @action.bound
     removeConstraint(tableName, rowData) {
+        this.loaded = false;
         const idVal = this.getId(tableName, rowData);
         this.selections[tableName] = this.selections[tableName].filter(x => x.idVal !== idVal);
     }
 
     @action.bound
     restoreSelection(newState) {
+        this.loaded = true;
         this.selections = newState.selections;
         this.whereType = newState.whereType;
     }
@@ -138,16 +143,12 @@ class FirdiState extends Observable {
         this.whereType = null;
     }
 
-    notifyFirdiUpdate() {
-        this.fire(FIRDI_UPDATE_EVENT, this);
-    }
-
-    notifyClustergrammerUpdate() {
-        this.fire(CLUSTERGRAMMER_UPDATE_EVENT, this)
-    }
-
-    notifySelectionManagerUpdate() {
-        this.fire(SELECTION_MANAGER_UPDATE_EVENT, this);
+    notifyUpdate() {
+        if (this.loaded) {
+            this.fire(FIRDI_LOADED_EVENT, this);
+        } else {
+            this.fire(FIRDI_UPDATE_EVENT, this);
+        }
     }
 
     // TODO: should be made private methods
@@ -223,4 +224,4 @@ class FirdiState extends Observable {
 
 }
 
-export default FirdiState;
+export default FirdiStore;

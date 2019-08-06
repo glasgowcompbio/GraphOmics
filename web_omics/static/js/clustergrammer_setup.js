@@ -2,7 +2,7 @@ import Clustergrammer from './clustergrammer/main';
 import filter_network_using_new_nodes from './clustergrammer/network/filter_network_using_new_nodes';
 import update_viz_with_network from './clustergrammer/update/update_viz_with_network';
 
-import {deepCopy, FIRDI_UPDATE_EVENT, CLUSTERGRAMMER_UPDATE_EVENT, SELECTION_MANAGER_UPDATE_EVENT} from './common'
+import {deepCopy, FIRDI_UPDATE_EVENT, CLUSTERGRAMMER_UPDATE_EVENT, FIRDI_LOADED_EVENT} from './common'
 import check_setup_enrichr from './enrichrgram';
 
 const seenData = {};
@@ -53,7 +53,8 @@ function filter_viz_using_names(names, cgm, originalCgmNodes) {
 
 };
 
-function clustergrammer_setup(elementId, dataType, clusterJson, state) {
+function clustergrammer_setup(elementId, dataType, clusterJson, rootStore) {
+    const store = rootStore.cgmStore;
     if (clusterJson.hasOwnProperty(dataType) && clusterJson[dataType]) {
 
         $(elementId).text('');
@@ -80,7 +81,7 @@ function clustergrammer_setup(elementId, dataType, clusterJson, state) {
         const cgm = Clustergrammer(args);
 
         // save the original, complete set of nodes
-        state.originalCgmNodes[dataType] = deepCopy(cgm.params.inst_nodes);
+        store.originalCgmNodes[dataType] = deepCopy(cgm.params.inst_nodes);
 
         // TODO: setup enrichr. Still broken!!
         if (dataType === 'genes') {
@@ -98,8 +99,8 @@ function clustergrammer_setup(elementId, dataType, clusterJson, state) {
 
         // save current state instance to clustergrammer, and also
         // set the callback to handle firdi update
-        cgm.state = state;
-        cgm.state.on(FIRDI_UPDATE_EVENT, (data) => {
+        cgm.store = store;
+        cgm.store.on(FIRDI_UPDATE_EVENT, (data) => {
             let names = [];
 
             // TODO: this is now broken
@@ -119,7 +120,7 @@ function clustergrammer_setup(elementId, dataType, clusterJson, state) {
             const originalCgmNodes = data.originalCgmNodes[dataType];
             filter_viz_using_names({'row': names}, cgm, originalCgmNodes);
         })
-        cgm.state.on(SELECTION_MANAGER_UPDATE_EVENT, (data) => {
+        cgm.store.on(FIRDI_LOADED_EVENT, (data) => {
             console.log('clustergrammer receives update from selection manager');
             console.log(data);
         })
@@ -229,14 +230,15 @@ function dendroFilterCallback(cgm) {
 
     // save into the global app state, and notify other observers that we've made a clustergrammer selection
     console.log('Notifying clustergrammer update');
-    const state = cgm.state;
-    state.cgmLastClickedName = tableName;
+    const cgmStore = cgm.store;
+    cgmStore.cgmLastClickedName = tableName;
 
     // convert node name to constraint key
-    state.cgmSelections = nodeNames.map(d => state.displayNameToConstraintKey[tableName][d]);
+    const firdiStore = cgmStore.rootStore.firdiStore;
+    cgmStore.cgmSelections = nodeNames.map(d => firdiStore.displayNameToConstraintKey[tableName][d]);
 
     // notify other observers
-    state.notifyClustergrammerUpdate();
+    cgmStore.notifyUpdate();
 }
 
 export default clustergrammer_setup;

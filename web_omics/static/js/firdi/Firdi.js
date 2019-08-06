@@ -16,7 +16,7 @@ import {
     blockUI,
     CLUSTERGRAMMER_UPDATE_EVENT,
     deepCopy,
-    SELECTION_MANAGER_UPDATE_EVENT,
+    FIRDI_LOADED_EVENT,
     unblockUI
 } from '../common';
 import DataTablesManager from './DataTablesManager';
@@ -26,9 +26,10 @@ import InfoPanesManager from "./InfoPanesManager";
 
 class Firdi {
 
-    constructor(state, viewNames) {
-        this.state = state;
-        this.state.on(CLUSTERGRAMMER_UPDATE_EVENT, (data) => {
+    constructor(rootStore, viewNames) {
+        this.rootStore = rootStore;
+        this.state = rootStore.firdiStore;
+        this.rootStore.cgmStore.on(CLUSTERGRAMMER_UPDATE_EVENT, (data) => {
             console.log('firdi receives update from clustergrammer');
             console.log(data);
             const tableName = data.cgmLastClickedName;
@@ -36,7 +37,7 @@ class Firdi {
             this.resetFiRDI(true);
             this.multipleTrClickHandlerUpdate(tableName, selectedPkValues);
         })
-        this.state.on(SELECTION_MANAGER_UPDATE_EVENT, (data) => {
+        this.rootStore.firdiStore.on(FIRDI_LOADED_EVENT, (data) => {
             console.log('firdi receives update from selection manager');
             console.log(data);
             this.resetFiRDI(false);
@@ -67,7 +68,7 @@ class Firdi {
                 let filterColumnName = selectedValue.length > 0 ? selectedValue : null;
                 currObj.state.whereType = filterColumnName;
                 currObj.updateTables();
-                currObj.state.notifyFirdiUpdate();
+                currObj.state.notifyUpdate();
                 unblockUI();
             }, 1); // we need a small delay to allow blockUI to be rendered correctly
         };
@@ -138,7 +139,7 @@ class Firdi {
         } else {
             this.resetTables();
         }
-        this.state.notifyFirdiUpdate();
+        this.state.notifyUpdate();
     }
 
     updateSingleTable(tableFieldName, queryResult) {
