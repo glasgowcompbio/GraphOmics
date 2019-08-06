@@ -143,9 +143,9 @@ class Firdi {
     }
 
     updateSingleTable(tableFieldName, queryResult) {
-        const data = this.state.getLastQueryResults(tableFieldName, queryResult);
         const dataTablesIds = this.state.dataTablesIds;
         const tableName = tableFieldName['tableName'];
+        const data = queryResult[tableName];
         $(dataTablesIds[tableName]).DataTable().clear();
         $(dataTablesIds[tableName]).DataTable().rows.add(data);
         $(dataTablesIds[tableName]).DataTable().draw();
@@ -214,13 +214,11 @@ class Firdi {
         }
     }
 
-    resetTable(tableFieldNames, queryResult) {
-        const tableName = tableFieldNames['tableName'];
+    resetTable(tableName, tableData) {
         const dataTablesIds = this.state.dataTablesIds;
-        const data = this.state.getLastQueryResults(tableName, queryResult);
         const tableAPI = $(dataTablesIds[tableName]).DataTable();
         tableAPI.clear();
-        tableAPI.rows.add(data);
+        tableAPI.rows.add(tableData);
         tableAPI.draw();
         tableAPI.page(0).draw('page');
     }
@@ -229,7 +227,11 @@ class Firdi {
         console.log('resetTable');
         const fieldNames = this.state.fieldNames;
         const queryResult = this.state.queryResult;
-        fieldNames.forEach(tableFieldNames => this.resetTable(tableFieldNames, queryResult));
+        for (let i = 0; i < fieldNames.length; i++) { // update all the tables
+            const tableFieldName = fieldNames[i];
+            const tableName = tableFieldName['tableName'];
+            this.resetTable(tableName, queryResult[tableName]);
+        }
     }
 
     trClickHandler(e, dt, type, cell, originalEvent) {

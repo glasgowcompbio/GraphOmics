@@ -91,16 +91,23 @@ class FirdiStore extends Observable {
 
     @computed get queryResult() {
         // console.trace('queryResult');
-        const queryResult = this.sqlManager.queryDatabase(this.tablesInfo, this.constraints,
-            this.whereType);
-        return queryResult;
-    }
 
-    // TODO: should be a computed property, but can't make queryResult cached properly
-    getLastQueryResults(tableFieldName, queryResult) {
-        const data = this.sqlManager.prefixQuery(tableFieldName, queryResult);
-        return data;
-    };
+        // get alasql query result
+        const resultset = this.sqlManager.queryDatabase(this.tablesInfo, this.constraints,
+            this.whereType);
+
+        // get results for each table
+        const fieldNames = this.fieldNames;
+        const tableData = {};
+        for (let i = 0; i < fieldNames.length; i++) {
+            const tableFieldNames = fieldNames[i];
+            const tableName = tableFieldNames['tableName'];
+            const data = this.sqlManager.prefixQuery(tableFieldNames, resultset);
+            tableData[tableName] = data;
+        }
+
+        return tableData;
+    }
 
     // mobx actions
 
