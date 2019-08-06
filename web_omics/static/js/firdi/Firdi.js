@@ -17,7 +17,7 @@ import {
     HEATMAP_CLICKED_EVENT,
     deepCopy,
     GROUP_LOADED_EVENT,
-    unblockUI, SELECTION_UPDATE_EVENT
+    unblockUI, SELECTION_UPDATE_EVENT, LAST_CLICKED_FIRDI
 } from '../common';
 import DataTablesManager from './DataTablesManager';
 import {getPkCol, getPkValue, getRowObj, isTableVisible} from "./Utils";
@@ -43,6 +43,7 @@ class Firdi {
         })
         this.rootStore.firdiStore.on(SELECTION_UPDATE_EVENT, (data) => {
             console.log('Firdi --> Firdi');
+            // this.resetFiRDI(false);
             this.updateTablesForClickUpdate();
         })
 
@@ -61,16 +62,15 @@ class Firdi {
     }
 
     initSignificantFilters() {
-        const currObj = this;
+        const self = this;
         const filterTableFunc = function () {
             blockUI();
+            // set last clicked UI element
+            self.rootStore.lastClicked = LAST_CLICKED_FIRDI;
             const selectedValue = this.value;
             window.setTimeout(function () {
-                currObj.resetFiRDI(true);
                 let filterColumnName = selectedValue.length > 0 ? selectedValue : null;
-                currObj.state.whereType = filterColumnName;
-                currObj.updateTables();
-                // currObj.state.notifyUpdate();
+                self.state.setWhereType(filterColumnName);
                 unblockUI();
             }, 1); // we need a small delay to allow blockUI to be rendered correctly
         };
@@ -240,6 +240,9 @@ class Firdi {
         blockUI();
         const self = this;
         window.setTimeout(function () {
+
+            // set last clicked UI element
+            self.rootStore.lastClicked = LAST_CLICKED_FIRDI;
 
             // clear search result
             $('#global_filter').val('');

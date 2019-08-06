@@ -1,4 +1,11 @@
-import {blockUI, SELECTION_UPDATE_EVENT, loadData, unblockUI} from "../common";
+import {
+    blockUI,
+    SELECTION_UPDATE_EVENT,
+    loadData,
+    unblockUI,
+    HEATMAP_CLICKED_EVENT,
+    LAST_CLICKED_FIRDI
+} from "../common";
 import Awesomplete from 'awesomplete-es6';
 
 class GroupManager {
@@ -9,6 +16,9 @@ class GroupManager {
         // set an initial linker state to be updated later
         this.rootStore.firdiStore.on(SELECTION_UPDATE_EVENT, (data) => {
             this.handleFirdiUpdate(data); // update selected item counter from Firdi
+        });
+        this.rootStore.cgmStore.on(HEATMAP_CLICKED_EVENT, (data) => {
+            this.handleClustergrammerUpdate(data); // update selected item counter from cgm
         });
 
         this.awesomeplete = undefined;
@@ -76,6 +86,7 @@ class GroupManager {
         const groupId = this.selectedSuggestion.value;
         loadData(this.loadUrl, { 'groupId' : groupId }).then( data => {
             const newState = JSON.parse(data.state);
+            this.rootStore.lastClicked = LAST_CLICKED_FIRDI;
             this.rootStore.firdiStore.restoreSelection(newState);
             // this.rootStore.firdiStore.notifyUpdate();
             this.numSelected.text(newState.totalSelected);
@@ -125,6 +136,12 @@ class GroupManager {
 
     handleFirdiUpdate(data) {
         console.log('Firdi --> GroupManager');
+        this.numSelected.text(data.totalSelected);
+        this.checkSaveButtonStatus(data.totalSelected);
+    }
+
+    handleClustergrammerUpdate(data) {
+        console.log('Clustergrammer --> GroupManager');
         this.numSelected.text(data.totalSelected);
         this.checkSaveButtonStatus(data.totalSelected);
     }

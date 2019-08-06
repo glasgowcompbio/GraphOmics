@@ -2,7 +2,14 @@ import Clustergrammer from './clustergrammer/main';
 import filter_network_using_new_nodes from './clustergrammer/network/filter_network_using_new_nodes';
 import update_viz_with_network from './clustergrammer/update/update_viz_with_network';
 
-import {deepCopy, SELECTION_UPDATE_EVENT, HEATMAP_CLICKED_EVENT, GROUP_LOADED_EVENT} from './common'
+import {
+    deepCopy,
+    SELECTION_UPDATE_EVENT,
+    HEATMAP_CLICKED_EVENT,
+    GROUP_LOADED_EVENT,
+    LAST_CLICKED_FIRDI,
+    LAST_CLICKED_CLUSTERGRAMMER
+} from './common'
 import check_setup_enrichr from './enrichrgram';
 
 const seenData = {};
@@ -55,6 +62,23 @@ function filter_viz_using_names(names, cgm, originalCgmNodes) {
 
 function clustergrammer_setup(elementId, dataType, clusterJson, rootStore) {
     const store = rootStore.cgmStore;
+
+    function handleUpdate(data, tableName, idName, cgm) {
+        let names = [];
+
+        if (data.queryResult.hasOwnProperty(tableName)) {
+            // populate names based on the last query results for this table
+            const queryResult = data.queryResult[tableName];
+            names = queryResult.map(x => x[idName]);
+        } else { // if no last query result for this table, then use the selections for the table
+            const selections = data.selections[tableName];
+            names = selections.map(x => x.displayName);
+        }
+
+        const originalCgmNodes = data.originalCgmNodes[dataType];
+        filter_viz_using_names({'row': names}, cgm, originalCgmNodes);
+    }
+
     if (clusterJson.hasOwnProperty(dataType) && clusterJson[dataType]) {
 
         $(elementId).text('');
@@ -100,25 +124,14 @@ function clustergrammer_setup(elementId, dataType, clusterJson, rootStore) {
         // save current state instance to clustergrammer, and also
         // set the callback to handle firdi update
         cgm.store = store;
+        cgm.rootStore = rootStore;
         store.rootStore.firdiStore.on(SELECTION_UPDATE_EVENT, (data) => {
             console.log('Firdi --> Clustergrammer');
-            let names = [];
-
-            if (data.queryResult.hasOwnProperty(tableName)) {
-                // populate names based on the last query results for this table
-                const queryResult = data.queryResult[tableName];
-                names = queryResult.map(x => x[idName]);
-            } else { // if no last query result for this table, then use the selections for the table
-                const selections = data.selections[tableName];
-                names = selections.map(x => x.displayName);
-            }
-
-            const originalCgmNodes = data.originalCgmNodes[dataType];
-            filter_viz_using_names({'row': names}, cgm, originalCgmNodes);
+            handleUpdate(data, tableName, idName, cgm);
         })
         store.rootStore.firdiStore.on(GROUP_LOADED_EVENT, (data) => {
             console.log('GroupManager --> Clustergrammer');
-            console.log(data);
+            handleUpdate(data, tableName, idName, cgm);
         })
 
     } else {
@@ -219,6 +232,9 @@ function matrixUpdateCallback(cgm) {
 // Note: clustergrammer/dendrogram/run_dendro_filter.js has been modified to call this method
 function dendroFilterCallback(cgm) {
     // console.log('dendro_filter_callback');
+
+    // set last clicked UI element
+    cgm.rootStore.lastClicked = LAST_CLICKED_CLUSTERGRAMMER;
 
     // get the selections in the clustergrammer for each table type
     const tableName = cgm.tableName;

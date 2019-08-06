@@ -5,6 +5,7 @@ class RootStore {
 
     firdiStore = undefined;
     cgmStore = undefined;
+    lastClicked = undefined;
 
     constructor(tablesInfo, tableFields) {
         this.firdiStore = new FirdiStore(this, tablesInfo, tableFields);

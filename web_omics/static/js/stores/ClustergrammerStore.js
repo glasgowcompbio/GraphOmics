@@ -1,6 +1,6 @@
 import Observable from './Observable';
 import {observable, computed, autorun, action} from 'mobx';
-import {HEATMAP_CLICKED_EVENT} from "../common";
+import {HEATMAP_CLICKED_EVENT, LAST_CLICKED_CLUSTERGRAMMER, LAST_CLICKED_FIRDI} from "../common";
 
 class ClustergrammerStore extends Observable {
 
@@ -12,9 +12,14 @@ class ClustergrammerStore extends Observable {
         super();
         this.rootStore = rootStore;
         autorun(() => {
+            let totalSelected = 0;
+            if (this.cgmSelections) {
+                totalSelected = this.cgmSelections.length;
+            }
             const data = {
                 'cgmLastClickedName': this.cgmLastClickedName,
-                'cgmSelections': this.cgmSelections
+                'cgmSelections': this.cgmSelections,
+                'totalSelected': totalSelected
             }
             console.log('%c ClustergrammerStore autorun ', 'background: #000; color: #c5f9f0', data);
             this.notifyUpdate(data);
@@ -22,7 +27,9 @@ class ClustergrammerStore extends Observable {
     }
 
     notifyUpdate(data) {
-        this.fire(HEATMAP_CLICKED_EVENT, data)
+        if (this.rootStore.lastClicked == LAST_CLICKED_CLUSTERGRAMMER) {
+            this.fire(HEATMAP_CLICKED_EVENT, data);
+        }
     }
 
 }

@@ -1,5 +1,11 @@
 import Observable from './Observable';
-import {HEATMAP_CLICKED_EVENT, deepCopy, SELECTION_UPDATE_EVENT, GROUP_LOADED_EVENT} from "../common";
+import {
+    HEATMAP_CLICKED_EVENT,
+    deepCopy,
+    SELECTION_UPDATE_EVENT,
+    GROUP_LOADED_EVENT,
+    LAST_CLICKED_FIRDI
+} from "../common";
 import {getConstraintTablesConstraintKeyName, getDisplayName, isTableVisible} from "../firdi/Utils";
 import {observable, computed, autorun, action} from 'mobx';
 import {computedFn} from 'mobx-utils';
@@ -17,7 +23,7 @@ class FirdiStore extends Observable {
     @observable selections = undefined;
     @observable whereType = null;
     @observable selectedIndex = {};
-    @observable loaded = undefined;
+    loaded = undefined;
 
     constructor(rootStore, tablesInfo, tableFields) {
         super();
@@ -37,7 +43,8 @@ class FirdiStore extends Observable {
                 'totalSelected': this.totalSelected,
                 'selections': this.selections,
                 'queryResult': this.queryResult,
-                'originalCgmNodes': originalCgmNodes
+                'originalCgmNodes': originalCgmNodes,
+                'whereType': this.whereType
             }
             console.log('%c FirdiStore autorun ', 'background: #222; color: #bada55', data);
             this.notifyUpdate(data);
@@ -165,11 +172,18 @@ class FirdiStore extends Observable {
         this.whereType = null;
     }
 
+    @action.bound
+    setWhereType(newType) {
+        this.whereType = newType;
+    }
+
     notifyUpdate(data) {
-        if (this.loaded) {
-            this.fire(GROUP_LOADED_EVENT, data);
-        } else {
-            this.fire(SELECTION_UPDATE_EVENT, data);
+        if (this.rootStore.lastClicked == LAST_CLICKED_FIRDI) {
+            if (this.loaded) {
+                this.fire(GROUP_LOADED_EVENT, data);
+            } else {
+                this.fire(SELECTION_UPDATE_EVENT, data);
+            }
         }
     }
 
