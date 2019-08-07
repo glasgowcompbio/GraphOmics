@@ -168,6 +168,7 @@ class FirdiStore extends Observable {
 
     @action.bound
     reset() {
+        this.loaded = false;
         this.selections = this.emptySelections();
         this.whereType = null;
     }
