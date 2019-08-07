@@ -141,10 +141,10 @@ def inference_t_test(request, analysis_id):
             analysis_data.timestamp = timezone.localtime()
             if data_type == GENOMICS:
                 analysis_data.display_name = 'DESeq2: %s (case) vs %s (control)' % (case, control)
-                analysis_data.metadata = {
+                analysis_data.metadata.update({
                     'rld_df': rld_df.to_json(),
                     'res_ordered': jsonpickle.encode(res_ordered)
-                }
+                })
             elif data_type == PROTEOMICS or data_type == METABOLOMICS:
                 analysis_data.display_name = 't-test: %s (case) vs %s (control)' % (case, control)
 
