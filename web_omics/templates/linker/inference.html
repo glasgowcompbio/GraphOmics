@@ -15,32 +15,36 @@
 
         {% include 'linker/navbar.html' %}
 
-        {% if analysis_data_list.count > 0 %}
+        {% if list_data %}
             <div class="m-1 mb-3">
                 <div class="card">
                     <div class="card-body">
-                            <h5>Inference Results</h5>
-                            <p>
-                                The following table shows all inferences that have been created for this analysis.
-                                To add a new inference, see the panel at the bottom. Inference results
-                                are shown in the <strong>Explore Data</strong> or from links in this page.
-                            </p>
-                            <table class="table table-sm">
+                        <h5>Inference Results</h5>
+                        <p>
+                            The following table shows all inferences that have been created for this analysis.
+                            To add a new inference, see the panel at the bottom. Inference results
+                            are shown in the <strong>Explore Data</strong> page or from links in this page.
+                        </p>
+                        <table class="table table-sm">
+                            <tr>
+                                <th>Name</th>
+                                <th>Data Type</th>
+                                <th>Type</th>
+                                <th>Date</th>
+                            </tr>
+                            {% for item in list_data %}
                                 <tr>
-                                    <th>Name</th>
-                                    <th>Data Type</th>
-                                    <th>Type</th>
-                                    <th>Date</th>
+                                    <td>
+                                        <a href="{{ item.1 }}">
+                                            {{ item.0.display_name }}
+                                        </a>
+                                    </td>
+                                    <td>{{ item.0.get_data_type_str }}</td>
+                                    <td>{{ item.0.get_inference_type_str }}</td>
+                                    <td>{{ item.0.timestamp|date:"jS F Y H:i" }}</td>
                                 </tr>
-                                {% for ad in analysis_data_list %}
-                                    <tr>
-                                        <td>{{ ad.display_name }}</td>
-                                        <td>{{ ad.get_data_type_str }}</td>
-                                        <td>{{ ad.get_inference_type_str }}</td>
-                                        <td>{{ ad.timestamp|date:"jS F Y H:i" }}</td>
-                                    </tr>
-                                {% endfor %}
-                            </table>
+                            {% endfor %}
+                        </table>
                     </div>
                 </div>
             </div>

@@ -1,0 +1,34 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load render_bundle from webpack_loader %}
+
+{% block title %}WebOmics{% endblock %}
+
+{% block body_block %}
+
+    <div class="container-fluid mt-2">
+
+        {% include 'linker/navbar.html' %}
+
+        <div class="m-1 mb-3">
+            <div class="card">
+                <div class="card-body">
+                    <h5>
+                        <a href="{% url 'inference' analysis_id=analysis_id %}">
+                            Inference Results
+                        </a>
+                        /
+                        Principal Component Analysis: {{ pca_group }}
+                    </h5>
+                    {% if graph %}
+                        <div style="width:600;height:500">
+                            {{ graph|safe }}
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+{% endblock %}

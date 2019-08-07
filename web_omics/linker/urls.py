@@ -27,8 +27,9 @@ urlpatterns = [
     path('get_short_info', views.get_short_info, name='get_short_info'),
 
     path('inference/<int:analysis_id>', views.inference, name='inference'),
-    path('inference/t_test/<int:analysis_id>', views.inference_t_test, name='inference_t_test'),
+    path('inference/t_test/<int:analysis_id>', views.inference_deseq_t_test, name='inference_deseq_t_test'),
     path('inference/pca/<int:analysis_id>', views.inference_pca, name='inference_pca'),
+    path('inference/pca/results/<int:analysis_id>/<int:analysis_data_id>/', views.PCAResult.as_view(), name='pca_result'),
 
     path('summary/<int:analysis_id>', views.summary, name='summary'),
     path('summary/download_list/<int:analysis_id>/<str:data_type>/<str:observed>/<str:id_or_pk>', views.download_list, name='download_list'),
