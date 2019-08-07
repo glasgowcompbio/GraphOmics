@@ -58,7 +58,6 @@ T_TEST, CORRELATION, PCA, REACTOME = range(0, 4)
 InferenceTypeChoices = (
     (None, NA),
     (T_TEST, 'DESeq2 / t-test'),
-    (CORRELATION, 'Global Correlation Analysis'),
     (PCA, 'Principal Component Analysis'),
     (REACTOME, 'Reactome Analysis Service')
 )
