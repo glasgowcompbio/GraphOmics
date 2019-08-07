@@ -30,6 +30,7 @@ tzlocal = "*"
 django-webpack-loader = "*"
 clustergrammer = "*"
 goatools = "*"
+plotly = "*"
 
 [dev-packages]
 
