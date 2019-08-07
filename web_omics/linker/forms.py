@@ -4,7 +4,7 @@ from django import forms
 from django_select2.forms import Select2Widget, Select2MultipleWidget
 
 from linker.constants import AddNewDataChoices, InferenceTypeChoices, CompoundDatabaseChoices, \
-    MetabolicPathwayOnlyChoices
+    MetabolicPathwayOnlyChoices, SELECT_WIDGET_ATTRS
 from linker.reactome import get_species_dict, get_all_pathways
 from linker.models import Analysis, AnalysisUpload
 
@@ -113,17 +113,5 @@ class AddPathwayForm(forms.Form):
 
 
 class BaseInferenceForm(forms.Form):
-    data_type = forms.ChoiceField(required=True, choices=AddNewDataChoices, widget=Select2Widget(attrs={'style': 'width: 200px'}))
-    inference_type = forms.ChoiceField(required=True, choices=InferenceTypeChoices, widget=Select2Widget(attrs={'style': 'width: 200px'}))
-
-
-class T_test_Form(forms.Form):
-    data_type = forms.ChoiceField(required=True, choices=AddNewDataChoices, widget=Select2Widget(attrs={'style': 'width: 200px'}))
-    inference_type = forms.ChoiceField(required=True, choices=InferenceTypeChoices, widget=Select2Widget(attrs={'style': 'width: 200px'}))
-    case = forms.ChoiceField(required=True, widget=Select2Widget(attrs={'style': 'width: 200px'}))
-    control = forms.ChoiceField(required=True, widget=Select2Widget(attrs={'style': 'width: 200px'}))
-
-
-class HierarchicalClusteringForm(forms.Form):
-    data_type = forms.ChoiceField(required=True, choices=AddNewDataChoices, widget=Select2Widget(attrs={'style': 'width: 200px'}))
-    inference_type = forms.ChoiceField(required=True, choices=InferenceTypeChoices, widget=Select2Widget(attrs={'style': 'width: 200px'}))
+    data_type = forms.ChoiceField(required=True, choices=AddNewDataChoices, widget=Select2Widget(attrs=SELECT_WIDGET_ATTRS))
+    inference_type = forms.ChoiceField(required=True, choices=InferenceTypeChoices, widget=Select2Widget(attrs=SELECT_WIDGET_ATTRS))

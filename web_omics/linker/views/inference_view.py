@@ -9,7 +9,7 @@ import numpy as np
 import pandas as pd
 import jsonpickle
 
-from linker.forms import BaseInferenceForm, T_test_Form, HierarchicalClusteringForm
+from linker.forms import BaseInferenceForm
 from linker.models import Analysis, AnalysisData
 from linker.views.functions import get_last_analysis_data, get_groups, get_dataframes
 from linker.views.pipelines import WebOmicsInference
@@ -32,23 +32,23 @@ def inference(request, analysis_id):
                 action_url = reverse('inference_t_test', kwargs={
                     'analysis_id': analysis_id,
                 })
-                selected_form = T_test_Form()
+                selected_form = BaseInferenceForm()
                 selected_form.fields['data_type'].initial = data_type
                 selected_form.fields['inference_type'].initial = inference_type
-                selected_form.fields['case'] = forms.ChoiceField(choices=groups, widget=Select2Widget())
-                selected_form.fields['control'] = forms.ChoiceField(choices=groups, widget=Select2Widget())
+                selected_form.fields['case'] = forms.ChoiceField(choices=groups, widget=Select2Widget(SELECT_WIDGET_ATTRS))
+                selected_form.fields['control'] = forms.ChoiceField(choices=groups, widget=Select2Widget(SELECT_WIDGET_ATTRS))
 
-            # do hierarchical clustering
-            elif inference_type == HIERARCHICAL:
+            # do PCA
+            elif inference_type == PCA:
                 analysis_data = get_last_analysis_data(analysis, data_type)
                 groups = get_groups(analysis_data) + ((ALL, ALL),)
-                action_url = reverse('inference_hierarchical', kwargs={
+                action_url = reverse('inference_pca', kwargs={
                     'analysis_id': analysis_id,
                 })
-                selected_form = HierarchicalClusteringForm()
+                selected_form = BaseInferenceForm()
                 selected_form.fields['data_type'].initial = data_type
                 selected_form.fields['inference_type'].initial = inference_type
-                selected_form.fields['group'] = forms.ChoiceField(choices=groups, widget=Select2Widget())
+                selected_form.fields['group'] = forms.ChoiceField(choices=groups, widget=Select2Widget(SELECT_WIDGET_ATTRS))
 
             else: # default
                 action_url = reverse('inference', kwargs={
@@ -81,7 +81,7 @@ def inference_t_test(request, analysis_id):
     if request.method == 'POST':
 
         analysis = get_object_or_404(Analysis, pk=analysis_id)
-        form = T_test_Form(request.POST)
+        form = BaseInferenceForm(request.POST)
         data_type = int(request.POST['data_type'])
         analysis_data = get_last_analysis_data(analysis, data_type)
         groups = get_groups(analysis_data)
@@ -157,11 +157,11 @@ def inference_t_test(request, analysis_id):
     return inference(request, analysis_id)
 
 
-def inference_hierarchical(request, analysis_id):
+def inference_pca(request, analysis_id):
     if request.method == 'POST':
 
         analysis = get_object_or_404(Analysis, pk=analysis_id)
-        form = HierarchicalClusteringForm(request.POST)
+        form = BaseInferenceForm(request.POST)
         data_type = int(request.POST['data_type'])
         analysis_data = get_last_analysis_data(analysis, data_type)
         groups = get_groups(analysis_data) + ((ALL, ALL),)
@@ -169,8 +169,9 @@ def inference_hierarchical(request, analysis_id):
 
         if form.is_valid():
             group = form.cleaned_data['group']
-            data_df, design_df = get_dataframes(analysis_data)
-            do_hierarchical_clustering(data_df, design_df, group)
+            index_col = IDS[data_type]
+            data_df, design_df = get_dataframes(analysis_data, index_col, SAMPLE_COL)
+            do_pca(data_df, design_df, group)
             messages.success(request, 'Add new inference successful.', extra_tags='primary')
             return inference(request, analysis_id)
         else:
@@ -179,5 +180,5 @@ def inference_hierarchical(request, analysis_id):
     return inference(request, analysis_id)
 
 
-def do_hierarchical_clustering(data_df, design_df, group):
+def do_pca(data_df, design_df, group):
     pass

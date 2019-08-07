@@ -54,12 +54,15 @@ MAPPING = {
     REACTIONS_TO_PATHWAYS: 'reaction_pathways'
 }
 
-T_TEST, CORRELATION, PCA, PLSDA, HIERARCHICAL, KMEANS = range(0, 6)
+T_TEST, CORRELATION, PCA, REACTOME = range(0, 4)
 InferenceTypeChoices = (
     (None, NA),
     (T_TEST, 'DESeq2 / t-test'),
+    (CORRELATION, 'Global Correlation Analysis'),
     (PCA, 'Principal Component Analysis'),
+    (REACTOME, 'Reactome Analysis Service')
 )
+SELECT_WIDGET_ATTRS = {'style': 'width: 300px'}
 
 T_TEST_THRESHOLD = 0.05
 PKS = {

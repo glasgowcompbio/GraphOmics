@@ -787,11 +787,15 @@ def get_last_analysis_data(analysis, data_type):
     return analysis_data
 
 
-def get_dataframes(analysis_data, pk_col, sample_col):
-    data_df = pd.DataFrame(analysis_data.json_data).set_index(pk_col)
+def get_dataframes(analysis_data, pk_col=None, sample_col=None):
+    data_df = pd.DataFrame(analysis_data.json_data)
+    if pk_col is not None:
+        data_df.set_index(pk_col)
     design_df = None
     if analysis_data.json_design:
-        design_df = pd.DataFrame(analysis_data.json_design).set_index(sample_col)
+        design_df = pd.DataFrame(analysis_data.json_design)
+        if sample_col is not None:
+            design_df.set_index(sample_col)
     return data_df, design_df
 
 
