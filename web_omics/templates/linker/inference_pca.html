@@ -18,11 +18,16 @@
                             Inference Results
                         </a>
                         /
-                        Principal Component Analysis: {{ pca_group }}
+                        Principal Component Analysis: {{ n_components }} components
                     </h5>
-                    {% if graph %}
-                        <div style="width:600;height:500">
-                            {{ graph|safe }}
+                    {% if pca_plot %}
+                        <div>
+                            {{ pca_plot|safe }}
+                        </div>
+                    {% endif %}
+                    {% if variance_plot %}
+                        <div>
+                            {{ variance_plot|safe }}
                         </div>
                     {% endif %}
                 </div>

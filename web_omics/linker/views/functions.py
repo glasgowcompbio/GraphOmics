@@ -287,19 +287,29 @@ def save_analysis(analysis_name, analysis_desc,
 
 
 def get_clusters(analysis_data, data_type):
-    index_col = IDS[data_type]
-    data_df, design_df = get_dataframes(analysis_data, index_col, SAMPLE_COL)
+    axis = 1
+    X_std, data_df, design_df = get_standardized_df(analysis_data, axis)
+
+    if data_type == GENOMICS:
+        json_data = to_clustergrammer(X_std, design_df, run_enrichr=None, enrichrgram=True)
+    elif data_type == PROTEOMICS or data_type == METABOLOMICS:
+        json_data = to_clustergrammer(X_std, design_df)
+    return json_data
+
+
+def get_standardized_df(analysis_data, axis):
+    data_type = analysis_data.data_type
+    data_df, design_df = get_dataframes(analysis_data)
 
     # standardise data differently for genomics vs proteomics/metabolomics
+    X_std = None
     if data_type == GENOMICS:
         inference = WebOmicsInference(data_df, design_df, data_type)
-        df = inference.standardize_df(inference.data_df)
-        json_data = to_clustergrammer(df, design_df, run_enrichr=None, enrichrgram=True)
+        X_std = inference.standardize_df(inference.data_df, axis=axis)
     elif data_type == PROTEOMICS or data_type == METABOLOMICS:
         inference = WebOmicsInference(data_df, design_df, data_type, min_value=5000)
-        df = inference.standardize_df(inference.data_df, log=True)
-        json_data = to_clustergrammer(df, design_df)
-    return json_data
+        X_std = inference.standardize_df(inference.data_df, log=True, axis=axis)
+    return X_std, data_df, design_df
 
 
 def to_clustergrammer(data_df, design_df, run_enrichr=None, enrichrgram=None):
@@ -787,11 +797,12 @@ def get_last_analysis_data(analysis, data_type):
     return analysis_data
 
 
-def get_dataframes(analysis_data, pk_col, sample_col):
+def get_dataframes(analysis_data):
+    pk_col = IDS[analysis_data.data_type]
     data_df = pd.DataFrame(analysis_data.json_data).set_index(pk_col)
     design_df = None
     if analysis_data.json_design:
-        design_df = pd.DataFrame(analysis_data.json_design).set_index(sample_col)
+        design_df = pd.DataFrame(analysis_data.json_design).set_index(SAMPLE_COL)
     return data_df, design_df
 
 
@@ -802,4 +813,13 @@ def get_groups(analysis_data):
         groups = ((None, NA),) + tuple(zip(analysis_groups, analysis_groups))
     else:
         groups = ((None, NA),)
+    return groups
+
+
+def get_group_members(analysis_data):
+    groups = {}
+    if analysis_data.json_design:
+        df = pd.DataFrame(analysis_data.json_design)
+        for k, v in df.groupby(GROUP_COL).agg('sample'):
+            groups[k] = v.values
     return groups

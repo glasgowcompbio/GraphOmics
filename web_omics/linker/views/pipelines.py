@@ -52,14 +52,14 @@ class WebOmicsInference(object):
     #         plt.matshow(data_df)
     #     plt.colorbar()
 
-    def standardize_df(self, data_df, log=False):
+    def standardize_df(self, data_df, log=False, axis=1):
         if data_df.empty:
             return data_df
         data_df = data_df.copy()
         scaled_data = np.array(data_df)
         if log:
             scaled_data = np.log(np.array(data_df))
-        scaled_data = preprocessing.scale(scaled_data, axis=1)
+        scaled_data = preprocessing.scale(scaled_data, axis)
         sample_names = data_df.columns
         data_df[sample_names] = scaled_data
         return data_df
@@ -70,7 +70,8 @@ class WebOmicsInference(object):
         design = Formula("~ group")
         col_data = self.design_df
         count_data = self.data_df.astype(int)
-        count_data = count_data[col_data.index] # make sure columns in count_data is ordered the same way as the index of col_data
+        count_data = count_data[
+            col_data.index]  # make sure columns in count_data is ordered the same way as the index of col_data
         dds = deseq.DESeqDataSetFromMatrix(countData=count_data, colData=col_data, design=design)
         sv = robjects.StrVector(col_data[GROUP_COL].values)
         condition = robjects.FactorVector(sv)

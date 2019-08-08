@@ -1,23 +1,21 @@
-from django.shortcuts import render, get_object_or_404
+import jsonpickle
+import numpy as np
+import plotly.offline as opy
 from django import forms
+from django.contrib import messages
+from django.shortcuts import render, get_object_or_404
+from django.urls import reverse
+from django.utils import timezone
 from django.views.generic import TemplateView
 from django_select2.forms import Select2Widget
-from django.urls import reverse
-from django.contrib import messages
-from django.utils import timezone
+from sklearn.decomposition import PCA as skPCA
 
-import numpy as np
-import pandas as pd
-import jsonpickle
-
-import plotly.offline as opy
-import plotly.graph_objs as go
-
+from linker.constants import *
 from linker.forms import BaseInferenceForm
 from linker.models import Analysis, AnalysisData
-from linker.views.functions import get_last_analysis_data, get_groups, get_dataframes
+from linker.views.functions import get_last_analysis_data, get_groups, get_dataframes, get_standardized_df, \
+    get_group_members
 from linker.views.pipelines import WebOmicsInference
-from linker.constants import *
 
 
 def inference(request, analysis_id):
@@ -50,15 +48,16 @@ def inference(request, analysis_id):
             # do PCA
             elif inference_type == PCA:
                 analysis_data = get_last_analysis_data(analysis, data_type)
-                groups = get_groups(analysis_data) + ((ALL, ALL),)
                 action_url = reverse('inference_pca', kwargs={
                     'analysis_id': analysis_id,
                 })
                 selected_form = BaseInferenceForm()
                 selected_form.fields['data_type'].initial = data_type
                 selected_form.fields['inference_type'].initial = inference_type
-                selected_form.fields['group'] = forms.ChoiceField(choices=groups,
-                                                                  widget=Select2Widget(SELECT_WIDGET_ATTRS))
+                choices = zip(range(2, 11), range(2, 11))
+                selected_form.fields['pca_n_components'] = forms.ChoiceField(choices=choices,
+                                                                             widget=Select2Widget(SELECT_WIDGET_ATTRS),
+                                                                             label='PCA components')
 
             else:  # default
                 action_url = reverse('inference', kwargs={
@@ -125,7 +124,7 @@ def inference_deseq_t_test(request, analysis_id):
         if form.is_valid():
             case = form.cleaned_data['case']
             control = form.cleaned_data['control']
-            data_df, design_df = get_dataframes(analysis_data, PKS[data_type], SAMPLE_COL)
+            data_df, design_df = get_dataframes(analysis_data)
 
             if data_type == GENOMICS:  # run deseq2 here
                 wi = WebOmicsInference(data_df, design_df, data_type)
@@ -176,7 +175,7 @@ def inference_deseq_t_test(request, analysis_id):
             elif data_type == PROTEOMICS or data_type == METABOLOMICS:
                 display_name = 't-test: %s (case) vs %s (control)' % (case, control)
                 metadata = {}
-            copy_analysis_data(analysis_data, json_data, display_name, metadata, T-TEST)
+            copy_analysis_data(analysis_data, json_data, display_name, metadata, T_TEST)
 
             messages.success(request, 'Add new inference successful.', extra_tags='primary')
             return inference(request, analysis_id)
@@ -207,18 +206,26 @@ def inference_pca(request, analysis_id):
         form = BaseInferenceForm(request.POST)
         data_type = int(request.POST['data_type'])
         analysis_data = get_last_analysis_data(analysis, data_type)
-        groups = get_groups(analysis_data) + ((ALL, ALL),)
-        form.fields['group'] = forms.ChoiceField(choices=groups, widget=Select2Widget())
+        choices = zip(range(2, 11), range(2, 11))
+        form.fields['pca_n_components'] = forms.ChoiceField(choices=choices,
+                                                            widget=Select2Widget(SELECT_WIDGET_ATTRS),
+                                                            label='PCA Components')
 
         if form.is_valid():
-            group = form.cleaned_data['group']
-            index_col = IDS[data_type]
-            data_df, design_df = get_dataframes(analysis_data, index_col, SAMPLE_COL)
-            do_pca(data_df, design_df, group)
-            display_name = 'PCA: %s' % group
+            n_components = int(form.cleaned_data['pca_n_components'])
+
+            # do pca on the samples
+            X_proj, X_std, pca = get_pca_proj(analysis_data, n_components)
+            var_exp = pca.explained_variance_ratio_
+
+            # store pca results to the metadata field of this AnalysisData
             metadata = {
-                'pca_group': group
+                'pca_n_components': jsonpickle.dumps(n_components),
+                'pca_X_std_index': jsonpickle.dumps(X_std.index.values),
+                'pca_X_proj': jsonpickle.dumps(X_proj),
+                'pca_var_exp': jsonpickle.dumps(var_exp)
             }
+            display_name = 'PCA: %s components' % n_components
             copy_analysis_data(analysis_data, analysis_data.json_data, display_name, metadata, PCA)
             messages.success(request, 'Add new inference successful.', extra_tags='primary')
             return inference(request, analysis_id)
@@ -228,8 +235,13 @@ def inference_pca(request, analysis_id):
     return inference(request, analysis_id)
 
 
-def do_pca(data_df, design_df, group):
-    pass
+def get_pca_proj(analysis_data, n_components):
+    axis = 0
+    X_std, data_df, design_df = get_standardized_df(analysis_data, axis)
+    X_std = X_std.transpose()
+    pca = skPCA(n_components)
+    X_proj = pca.fit_transform(X_std)
+    return X_proj, X_std, pca
 
 
 class PCAResult(TemplateView):
@@ -239,22 +251,96 @@ class PCAResult(TemplateView):
         analysis_id = self.kwargs['analysis_id']
         analysis_data_id = self.kwargs['analysis_data_id']
         analysis_data = AnalysisData.objects.get(pk=analysis_data_id)
-        pca_group = analysis_data.metadata['pca_group']
 
-        x = [-2, 0, 4, 6, 7]
-        y = [q ** 2 - q + 3 for q in x]
-        trace1 = go.Scatter(x=x, y=y, marker={'color': 'red', 'symbol': 104, 'size': 10},
-                            mode="lines", name='1st Trace')
+        n_components = jsonpickle.loads(analysis_data.metadata['pca_n_components'])
+        X_std_index = jsonpickle.loads(analysis_data.metadata['pca_X_std_index'])
+        X_proj = jsonpickle.loads(analysis_data.metadata['pca_X_proj'])
+        var_exp = jsonpickle.loads(analysis_data.metadata['pca_var_exp'])
 
-        data = go.Data([trace1])
-        layout = go.Layout(title="Meine Daten", xaxis={'title': 'x1'}, yaxis={'title': 'x2'})
-        figure = go.Figure(data=data, layout=layout)
-        div = opy.plot(figure, auto_open=False, output_type='div')
+        # make pca plot
+        fig = self.get_pca_plot(analysis_data, X_std_index, X_proj)
+        pca_plot = self.fig_to_div(fig)
 
+        # make explained variance plot
+        fig = self.get_variance_plot(var_exp)
+        variance_plot = self.fig_to_div(fig)
+
+        # set the div to context
         context = super(PCAResult, self).get_context_data(**kwargs)
         context.update({
-            'graph': div,
+            'pca_plot': pca_plot,
+            'variance_plot': variance_plot,
             'analysis_id': analysis_id,
-            'pca_group': pca_group,
+            'n_components': n_components,
         })
         return context
+
+    def get_variance_plot(self, var_exp):
+        cum_var_exp = np.cumsum(var_exp)
+        trace1 = dict(
+            type='bar',
+            x=['PC %s' % (i + 1) for i in range(len(var_exp))],
+            y=var_exp,
+            name='Individual'
+        )
+        trace2 = dict(
+            type='scatter',
+            x=['PC %s' % (i + 1) for i in range(len(var_exp))],
+            y=cum_var_exp,
+            name='Cumulative'
+        )
+        data = [trace1, trace2]
+        layout = dict(
+            title='Explained variance by different principal components',
+            yaxis=dict(
+                title='Explained variance'
+            ),
+            width=800,
+            annotations=list([
+                dict(
+                    x=1.20,
+                    y=1.05,
+                    xref='paper',
+                    yref='paper',
+                    text='Explained Variance',
+                    showarrow=False,
+                )
+            ])
+        )
+        fig = dict(data=data, layout=layout)
+        return fig
+
+    def fig_to_div(self, fig):
+        div = opy.plot(fig, auto_open=False, output_type='div')  # output plotly graph as html div
+        return div
+
+    def get_pca_plot(self, analysis_data, X_std_index, X_proj):
+        data = []
+        group_members = get_group_members(analysis_data)
+        for group in group_members:
+            members = group_members[group]
+            pos = np.in1d(X_std_index, members).nonzero()[0]  # find position of group members in sample indices of X
+            labels = X_std_index[pos]
+            trace = dict(
+                type='scatter',
+                x=X_proj[pos, 0],
+                y=X_proj[pos, 1],
+                mode='markers',
+                name=group,
+                text=labels,
+                marker=dict(
+                    size=12,
+                    line=dict(
+                        color='rgba(217, 217, 217, 0.14)',
+                        width=0.5),
+                    opacity=0.8)
+            )
+            data.append(trace)
+        layout = dict(
+            width=800,
+            title='PCA Projection',
+            xaxis=dict(title='PC1', showline=False),
+            yaxis=dict(title='PC2', showline=False)
+        )
+        fig = dict(data=data, layout=layout)
+        return fig
