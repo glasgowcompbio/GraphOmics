@@ -1,10 +1,11 @@
 import {
     blockUI,
-    SELECTION_UPDATE_EVENT,
-    loadData,
-    unblockUI,
+    GROUP_LOADED_EVENT,
     HEATMAP_CLICKED_EVENT,
-    LAST_CLICKED_FIRDI
+    LAST_CLICKED_GROUP_MANAGER,
+    loadData,
+    SELECTION_UPDATE_EVENT,
+    unblockUI
 } from "../common";
 import Awesomplete from 'awesomplete-es6';
 
@@ -15,6 +16,9 @@ class GroupManager {
 
         // set an initial linker state to be updated later
         this.rootStore.firdiStore.on(SELECTION_UPDATE_EVENT, (data) => {
+            this.handleFirdiUpdate(data); // update selected item counter from Firdi
+        });
+        this.rootStore.firdiStore.on(GROUP_LOADED_EVENT, (data) => {
             this.handleFirdiUpdate(data); // update selected item counter from Firdi
         });
         this.rootStore.cgmStore.on(HEATMAP_CLICKED_EVENT, (data) => {
@@ -77,8 +81,10 @@ class GroupManager {
         })
     }
 
-    showGroupTab() {
-        $('#pills-factor-tab').removeClass('d-none');
+    showGroupTab(totalSelected) {
+        if (totalSelected > 0){
+            $('#pills-factor-tab').removeClass('d-none');
+        }
     }
 
     loadLinkerState() {
@@ -86,12 +92,9 @@ class GroupManager {
         const groupId = this.selectedSuggestion.value;
         loadData(this.loadUrl, { 'groupId' : groupId }).then( data => {
             const newState = JSON.parse(data.state);
-            this.rootStore.lastClicked = LAST_CLICKED_FIRDI;
+            this.rootStore.lastClicked = LAST_CLICKED_GROUP_MANAGER;
             this.rootStore.firdiStore.restoreSelection(newState);
-            // this.rootStore.firdiStore.notifyUpdate();
-            this.numSelected.text(newState.totalSelected);
             this.groupId = groupId;
-            this.showGroupTab();
             unblockUI();
         })
     }
@@ -138,29 +141,24 @@ class GroupManager {
         console.log('Firdi --> GroupManager');
         this.numSelected.text(data.totalSelected);
         this.checkSaveButtonStatus(data.totalSelected);
+        this.showGroupTab(data.totalSelected);
     }
 
     handleClustergrammerUpdate(data) {
         console.log('Clustergrammer --> GroupManager');
         this.numSelected.text(data.totalSelected);
         this.checkSaveButtonStatus(data.totalSelected);
+        this.showGroupTab(data.totalSelected);
     }
 
     checkSaveButtonStatus(totalSelected) {
-        if (totalSelected == 0) {
-            this.saveButton.prop('disabled', true);
-        } else {
-            this.saveButton.prop('disabled', false);
-            this.showGroupTab();
-        }
+        const disabled = totalSelected == 0 ? true : false;
+        this.saveButton.prop('disabled', disabled);
     }
 
     checkLoadButtonStatus(elem) {
-        if (elem.value === '') {
-            this.loadButton.prop('disabled', true);
-        } else {
-            this.loadButton.prop('disabled', false);
-        }
+        const disabled = elem.value === '' ? true : false;
+        this.loadButton.prop('disabled', disabled);
     }
 
 }

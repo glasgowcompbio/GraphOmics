@@ -1,16 +1,8 @@
 import Observable from './Observable';
-import {
-    HEATMAP_CLICKED_EVENT,
-    deepCopy,
-    SELECTION_UPDATE_EVENT,
-    GROUP_LOADED_EVENT,
-    LAST_CLICKED_FIRDI
-} from "../common";
+import {GROUP_LOADED_EVENT, LAST_CLICKED_FIRDI, LAST_CLICKED_GROUP_MANAGER, SELECTION_UPDATE_EVENT} from "../common";
 import {getConstraintTablesConstraintKeyName, getDisplayName, isTableVisible} from "../firdi/Utils";
-import {observable, computed, autorun, action} from 'mobx';
-import {computedFn} from 'mobx-utils';
+import {action, autorun, computed, observable} from 'mobx';
 import SqlManager from "../firdi/SqlManager";
-import alasql from "alasql";
 
 
 class FirdiStore extends Observable {
@@ -25,7 +17,6 @@ class FirdiStore extends Observable {
 
     // private stuff
     tableIdToIdColumnMap = undefined;
-    loaded = undefined;
 
     // reactive stuff
     @observable selections = undefined;
@@ -47,7 +38,6 @@ class FirdiStore extends Observable {
 
         this.selections = this.emptySelections();
         this.sqlManager = new SqlManager(this.tablesInfo);
-        this.loaded = false;
 
         autorun(() => {
             let originalCgmNodes = undefined;
@@ -106,7 +96,6 @@ class FirdiStore extends Observable {
 
     @action.bound
     addConstraint(tableName, rowData, rowIndex) {
-        this.loaded = false;
         const idVal = this.getId(tableName, rowData);
         const displayName = getDisplayName(rowData, tableName);
         this.selections[tableName].push({
@@ -125,21 +114,18 @@ class FirdiStore extends Observable {
 
     @action.bound
     removeConstraint(tableName, rowData) {
-        this.loaded = false;
         const idVal = this.getId(tableName, rowData);
         this.selections[tableName] = this.selections[tableName].filter(x => x.idVal !== idVal);
     }
 
     @action.bound
     restoreSelection(newState) {
-        this.loaded = true;
         this.selections = newState.selections;
         this.whereType = newState.whereType;
     }
 
     @action.bound
     reset() {
-        this.loaded = false;
         this.selections = this.emptySelections();
         this.whereType = null;
     }
@@ -151,11 +137,9 @@ class FirdiStore extends Observable {
 
     notifyUpdate(data) {
         if (this.rootStore.lastClicked == LAST_CLICKED_FIRDI) {
-            if (this.loaded) {
-                this.fire(GROUP_LOADED_EVENT, data);
-            } else {
-                this.fire(SELECTION_UPDATE_EVENT, data);
-            }
+            this.fire(SELECTION_UPDATE_EVENT, data);
+        } else if (this.rootStore.lastClicked == LAST_CLICKED_GROUP_MANAGER) {
+            this.fire(GROUP_LOADED_EVENT, data);
         }
     }
 

@@ -75,6 +75,7 @@ const GROUP_LOADED_EVENT = 2;
 
 const LAST_CLICKED_FIRDI = 0;
 const LAST_CLICKED_CLUSTERGRAMMER = 1;
+const LAST_CLICKED_GROUP_MANAGER = 2;
 
 export {
     loadData,
