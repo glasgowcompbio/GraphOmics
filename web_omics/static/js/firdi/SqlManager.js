@@ -211,7 +211,7 @@ class SqlManager {
 
         // debugger;
         const sqlQuery = this.makeSQLquery(tablesInfo, skipConstraints, whereType);
-        // console.log(sqlQuery);
+        console.log(sqlQuery);
         const compiledSQLQuery = alasql.compile(sqlQuery);
 
         return compiledSQLQuery(selectedConstraints);
@@ -222,8 +222,9 @@ class SqlManager {
         const prefix = tableName + '_';
         const fieldNames = tableFieldNames['fieldNames'].map(x => prefix + x);
 
-        const sqlStatement = "SELECT DISTINCT " + fieldNames.join(", ") + " FROM ?";
-        const temp = alasql(sqlStatement, [dataSource]);
+        const sqlQuery = "SELECT DISTINCT " + fieldNames.join(", ") + " FROM ?";
+        console.log(sqlQuery);
+        const temp = alasql(sqlQuery, [dataSource]);
 
         temp.map(x => { // for each row in the sql results
             Object.keys(x).map(key => { // rename the properties to remove the table name in front

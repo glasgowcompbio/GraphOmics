@@ -18,18 +18,33 @@ class FirdiStore extends Observable {
     // public fields
     tablesInfo = undefined;
     tableFields = undefined;
+    defaultConstraints = undefined;
+    dataTablesIds = undefined;
+    fieldNames = undefined;
+    displayNameToConstraintKey = undefined;
+
+    // private stuff
+    tableIdToIdColumnMap = undefined;
+    loaded = undefined;
 
     // reactive stuff
     @observable selections = undefined;
     @observable whereType = null;
     @observable selectedIndex = {};
-    loaded = undefined;
 
     constructor(rootStore, tablesInfo, tableFields) {
         super();
         this.rootStore = rootStore;
         this.tablesInfo = tablesInfo;
         this.tableFields = tableFields;
+
+        // precompute stuff that won't change
+        this.defaultConstraints = this.getDefaultConstraints();
+        this.dataTablesIds = this.getDataTablesIds();
+        this.fieldNames = this.getFieldNames();
+        this.displayNameToConstraintKey = this.getDisplayNameToConstraintKey();
+        this.tableIdToIdColumnMap = this.getTableIdToIdColumnMap();
+
         this.selections = this.emptySelections();
         this.sqlManager = new SqlManager(this.tablesInfo);
         this.loaded = false;
@@ -49,50 +64,6 @@ class FirdiStore extends Observable {
             console.log('%c FirdiStore autorun ', 'background: #222; color: #bada55', data);
             this.notifyUpdate(data);
         });
-    }
-
-    // getters
-
-    get defaultConstraints() {
-        return getConstraintTablesConstraintKeyName(this.tablesInfo)
-            .reduce((constraints, tableInfo) => {
-                constraints[tableInfo['tableName']] = this.getKeys(
-                    this.tablesInfo, tableInfo['tableName'], tableInfo['constraintKeyName']);
-                return constraints;
-            }, {});
-    }
-
-    get dataTablesIds() {
-        return this.tablesInfo.filter(isTableVisible).reduce((apis, t) => {
-            apis[t['tableName']] = "#" + t['tableName'];
-            return apis
-        }, {});
-    }
-
-    get fieldNames() {
-        // Gets the field names for each visible table
-        return this.tablesInfo
-            .filter(isTableVisible)
-            .map(tableInfo => ({
-                'tableName': tableInfo['tableName'],
-                'fieldNames': Object.keys(tableInfo['tableData'][0])
-            }));
-    }
-
-    get displayNameToConstraintKey() {
-        return getConstraintTablesConstraintKeyName(this.tablesInfo)
-            .reduce((constraints, tableInfo) => {
-                constraints[tableInfo['tableName']] = this.getDisplayNameToPk(
-                    this.tablesInfo, tableInfo['tableName'], tableInfo['constraintKeyName']);
-                return constraints;
-            }, {});
-    }
-
-    get tableIdToIdColumnMap() {
-        // Get the table name and key used in the WHERE clause in the form tableName: key
-        return getConstraintTablesConstraintKeyName(this.tablesInfo)
-            .map(t => ({[t['tableName']]: t['constraintKeyName']}))
-            .reduce((o, v) => Object.assign(o, v), {});
     }
 
     // mobx computer properties
@@ -189,6 +160,48 @@ class FirdiStore extends Observable {
     }
 
     // TODO: should be made private methods
+
+    getDefaultConstraints() {
+        return getConstraintTablesConstraintKeyName(this.tablesInfo)
+            .reduce((constraints, tableInfo) => {
+                constraints[tableInfo['tableName']] = this.getKeys(
+                    this.tablesInfo, tableInfo['tableName'], tableInfo['constraintKeyName']);
+                return constraints;
+            }, {});
+    }
+
+    getDataTablesIds() {
+        return this.tablesInfo.filter(isTableVisible).reduce((apis, t) => {
+            apis[t['tableName']] = "#" + t['tableName'];
+            return apis
+        }, {});
+    }
+
+    getFieldNames() {
+        // Gets the field names for each visible table
+        return this.tablesInfo
+            .filter(isTableVisible)
+            .map(tableInfo => ({
+                'tableName': tableInfo['tableName'],
+                'fieldNames': Object.keys(tableInfo['tableData'][0])
+            }));
+    }
+
+    getDisplayNameToConstraintKey() {
+        return getConstraintTablesConstraintKeyName(this.tablesInfo)
+            .reduce((constraints, tableInfo) => {
+                constraints[tableInfo['tableName']] = this.getDisplayNameToPk(
+                    this.tablesInfo, tableInfo['tableName'], tableInfo['constraintKeyName']);
+                return constraints;
+            }, {});
+    }
+
+    getTableIdToIdColumnMap() {
+        // Get the table name and key used in the WHERE clause in the form tableName: key
+        return getConstraintTablesConstraintKeyName(this.tablesInfo)
+            .map(t => ({[t['tableName']]: t['constraintKeyName']}))
+            .reduce((o, v) => Object.assign(o, v), {});
+    }
 
     getKeys(tablesInfo, tableName, k) {
         // Gets the values of the key used in the table relationship for the SQL IN clause
