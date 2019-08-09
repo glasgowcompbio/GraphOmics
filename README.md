@@ -9,7 +9,8 @@ The **Data Browser** tab shows all the interconnected transcripts, proteins, met
 ![Data Explorer](web_omics/images/screenshot1.PNG?raw=true "Data Explorer")
 
 For **interactive heatmap visualisation**, WebOmics uses [Clustergrammer](https://amp.pharm.mssm.edu/clustergrammer/), a web-based tool for visualizing and analyzing high-dimensional data as interactive clustered heatmaps.
-A cluster can be selected from the heatmap in Clustergrammer and be used to create selection group for further analysis in WebOmics.
+The heatmap is linked to the Data Browser such that anything that is clicked on one will also be selected on the other.
+A cluster can also be selected from the heatmap in Clustergrammer and be used to create selection group for further analysis in WebOmics.
 
 ![Heatmap](web_omics/images/screenshot2.PNG?raw=true "Heatmap")
 
