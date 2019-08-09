@@ -216,18 +216,22 @@ def inference_pca(request, analysis_id):
 
             # do pca on the samples
             X_proj, X_std, pca = get_pca_proj(analysis_data, n_components)
-            var_exp = pca.explained_variance_ratio_
+            if pca is not None:
+                var_exp = pca.explained_variance_ratio_
 
-            # store pca results to the metadata field of this AnalysisData
-            metadata = {
-                'pca_n_components': jsonpickle.dumps(n_components),
-                'pca_X_std_index': jsonpickle.dumps(X_std.index.values),
-                'pca_X_proj': jsonpickle.dumps(X_proj),
-                'pca_var_exp': jsonpickle.dumps(var_exp)
-            }
-            display_name = 'PCA: %s components' % n_components
-            copy_analysis_data(analysis_data, analysis_data.json_data, display_name, metadata, PCA)
-            messages.success(request, 'Add new inference successful.', extra_tags='primary')
+                # store pca results to the metadata field of this AnalysisData
+                metadata = {
+                    'pca_n_components': jsonpickle.dumps(n_components),
+                    'pca_X_std_index': jsonpickle.dumps(X_std.index.values),
+                    'pca_X_proj': jsonpickle.dumps(X_proj),
+                    'pca_var_exp': jsonpickle.dumps(var_exp)
+                }
+                display_name = 'PCA: %s components' % n_components
+                copy_analysis_data(analysis_data, analysis_data.json_data, display_name, metadata, PCA)
+                messages.success(request, 'Add new inference successful.', extra_tags='primary')
+            else:
+                messages.warning(request, 'Add new inference failed. No data found.')
+
             return inference(request, analysis_id)
         else:
             messages.warning(request, 'Add new inference failed.')
@@ -238,9 +242,16 @@ def inference_pca(request, analysis_id):
 def get_pca_proj(analysis_data, n_components):
     axis = 0
     X_std, data_df, design_df = get_standardized_df(analysis_data, axis)
-    X_std = X_std.transpose()
-    pca = skPCA(n_components)
-    X_proj = pca.fit_transform(X_std)
+
+    if design_df is not None:
+        X_std = X_std.transpose()
+        pca = skPCA(n_components)
+        X_proj = pca.fit_transform(X_std)
+    else:
+        X_std = None
+        X_proj = None
+        pca = None
+
     return X_proj, X_std, pca
 
 
