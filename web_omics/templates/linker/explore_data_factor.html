@@ -1,13 +1,13 @@
 <div class="tab-pane fade" id="pills-factor" role="tabpanel" aria-labelledby="pills-factor-tab">
     <div>
-        <h3>Group 123</h3>
-        <p class="lead">Proximally enriched compounds.</p>
+        <h3>Group #<span id="groupId" /></h3>
+        <p id="groupName" class="lead"></p>
         <ul>
-            <li>Observed genes: 123</li>
-            <li>Observed proteins: 123</li>
-            <li>Observed compounds: 001</li>
-            <li>Reactions: 109</li>
-            <li>Pathways: 10</li>
+            <li>Observed genes: <span id="numGenes" /></li>
+            <li>Observed proteins: <span id="numProteins" /></li>
+            <li>Observed compounds: <span id="numCompounds" /></li>
+            <li>Reactions: <span id="numReactions" /></li>
+            <li>Pathways: <span id="numPathways" /></li>
         </ul>
         <hr class="my-4">
         <div class="card-deck">
@@ -21,18 +21,18 @@
                         Create a boxplot of the observed biological entities in this group.
                     </p>
                     <div class="form-check form-check-inline">
-                        <input class="form-check-input" type="radio" name="inlineRadioOptions" id="inlineRadio1"
-                               value="option1">
+                        <input class="form-check-input" type="radio" name="boxplotRadioOptions" id="boxplotRadio1"
+                               value="genes">
                         <label class="form-check-label" for="inlineRadio1">Genes</label>
                     </div>
                     <div class="form-check form-check-inline">
-                        <input class="form-check-input" type="radio" name="inlineRadioOptions" id="inlineRadio2"
-                               value="option2">
+                        <input class="form-check-input" type="radio" name="boxplotRadioOptions" id="boxplotRadio2"
+                               value="proteins">
                         <label class="form-check-label" for="inlineRadio2">Proteins</label>
                     </div>
                     <div class="form-check form-check-inline">
-                        <input class="form-check-input" type="radio" name="inlineRadioOptions" id="inlineRadio3"
-                               value="option3">
+                        <input class="form-check-input" type="radio" name="boxplotRadioOptions" id="boxplotRadio3"
+                               value="compounds">
                         <label class="form-check-label" for="inlineRadio3">Compounds</label>
                     </div>
                     <div class="mt-2">
@@ -47,7 +47,7 @@
                 <div class="card-body text-dark">
                     <h5 class="card-title">Goatools</h5>
                     <p class="card-text">
-                        Perform a gene ontology enrichment analysis of the observed genes using <a
+                        Perform a gene ontology enrichment analysis of the observed genes in this group using <a
                             href="https://github.com/tanghaibao/goatools">Goatools</a>.
                     </p>
                     <a href="#" class="btn btn-primary btn-sm">Submit</a>

@@ -27,27 +27,44 @@ class GroupManager {
 
         this.awesomeplete = undefined;
         this.selectedSuggestion = undefined;
-        this.groupId = undefined;
 
-        const numSelectedId = 'numSelected';
-        this.numSelected = $(`#${numSelectedId}`);
+        const numSelectedId = 'numSelectedElem';
+        this.numSelectedElem = $(`#${numSelectedId}`);
+
+        const groupId = 'groupId';
+        const groupName = 'groupName';
+        const groupTab = 'pills-factor-tab';
+        this.groupIdElem = $(`#${groupId}`);
+        this.groupNameElem = $(`#${groupName}`);
+        this.groupTabElem = $(`#${groupTab}`);
+
+        const numGenesId = 'numGenes';
+        const numProteinsId = 'numProteins';
+        const numCompoundsId = 'numCompounds';
+        const numReactionsId = 'numReactions';
+        const numPathwaysId = 'numPathways';
+        this.numGenesElem = $(`#${numGenesId}`);
+        this.numProteinsElem = $(`#${numProteinsId}`);
+        this.numCompoundsElem = $(`#${numCompoundsId}`);
+        this.numReactionsElem = $(`#${numReactionsId}`);
+        this.numPathwaysElem = $(`#${numPathwaysId}`);
 
         const saveButtonId = 'saveGroupButton';
         this.saveUrl = viewNames['save_group'];
-        this.saveButton = $(`#${saveButtonId}`);
-        this.saveButton.on('click', () => { this.showSaveDialog(); })
+        this.saveButtonElem = $(`#${saveButtonId}`);
+        this.saveButtonElem.on('click', () => { this.showSaveDialog(); })
 
         const loadButtonId = 'loadGroupButton';
         this.loadUrl = viewNames['load_group'];
-        this.loadButton = $(`#${loadButtonId}`);
-        this.loadButton.on('click', () => { this.loadLinkerState(); })
+        this.loadButtonElem = $(`#${loadButtonId}`);
+        this.loadButtonElem.on('click', () => { this.loadLinkerState(); })
 
         this.selectBoxId = 'group';
-        const elem = document.getElementById(this.selectBoxId);
+        const selectBoxElem = document.getElementById(this.selectBoxId);
         this.listUrl = viewNames['list_groups'];
         this.updateList();
         this.checkSaveButtonStatus(this.rootStore.firdiStore.totalSelected);
-        this.checkLoadButtonStatus(elem);
+        this.checkLoadButtonStatus(selectBoxElem);
 
     }
 
@@ -81,20 +98,16 @@ class GroupManager {
         })
     }
 
-    showGroupTab(totalSelected) {
-        if (totalSelected > 0){
-            $('#pills-factor-tab').removeClass('d-none');
-        }
-    }
-
     loadLinkerState() {
         blockUI();
-        const groupId = this.selectedSuggestion.value;
-        loadData(this.loadUrl, { 'groupId' : groupId }).then( data => {
+        this.rootStore.groupId = this.selectedSuggestion.value;
+        this.rootStore.groupName = this.selectedSuggestion.label;
+
+        const self = this;
+        loadData(this.loadUrl, { 'groupId' : this.rootStore.groupId }).then( data => {
             const newState = JSON.parse(data.state);
-            this.rootStore.lastClicked = LAST_CLICKED_GROUP_MANAGER;
-            this.rootStore.firdiStore.restoreSelection(newState);
-            this.groupId = groupId;
+            self.rootStore.lastClicked = LAST_CLICKED_GROUP_MANAGER;
+            self.rootStore.firdiStore.restoreSelection(newState);
             unblockUI();
         })
     }
@@ -139,26 +152,51 @@ class GroupManager {
 
     handleFirdiUpdate(data) {
         console.log('Firdi --> GroupManager');
-        this.numSelected.text(data.totalSelected);
+        this.numSelectedElem.text(data.totalSelected);
         this.checkSaveButtonStatus(data.totalSelected);
-        this.showGroupTab(data.totalSelected);
+        this.showGroupTab(data.totalSelected, data.queryResult);
     }
 
     handleClustergrammerUpdate(data) {
         console.log('Clustergrammer --> GroupManager');
-        this.numSelected.text(data.totalSelected);
+        this.numSelectedElem.text(data.totalSelected);
         this.checkSaveButtonStatus(data.totalSelected);
-        this.showGroupTab(data.totalSelected);
+        this.showGroupTab(data.totalSelected, data.queryResult);
+    }
+
+    showGroupTab(totalSelected, queryResult) {
+        if (totalSelected > 0){
+            this.groupTabElem.removeClass('d-none');
+            this.groupIdElem.text(this.rootStore.groupId);
+            this.groupNameElem.text(this.rootStore.groupName);
+
+            this.rootStore.observedEntities['genes'] = this.getObservedEntities(queryResult.genes_table);
+            this.rootStore.observedEntities['proteins'] = this.getObservedEntities(queryResult.proteins_table);
+            this.rootStore.observedEntities['compounds'] = this.getObservedEntities(queryResult.compounds_table);
+            this.rootStore.observedEntities['reactions'] = this.getObservedEntities(queryResult.reactions_table);
+            this.rootStore.observedEntities['pathways'] = this.getObservedEntities(queryResult.pathways_table);
+
+            this.numGenesElem.text(this.rootStore.observedEntities['genes'].length);
+            this.numProteinsElem.text(this.rootStore.observedEntities['proteins'].length);
+            this.numCompoundsElem.text(this.rootStore.observedEntities['compounds'].length);
+            this.numReactionsElem.text(this.rootStore.observedEntities['reactions'].length);
+            this.numPathwaysElem.text(this.rootStore.observedEntities['pathways'].length);
+        }
+    }
+
+    getObservedEntities(result) {
+        // count rows where obs is either true (for genes, proteins and compounds) or null (for reactions and pathways)
+        return (result.filter(x => (x.obs == true) || (x.obs == null)))
     }
 
     checkSaveButtonStatus(totalSelected) {
         const disabled = totalSelected == 0 ? true : false;
-        this.saveButton.prop('disabled', disabled);
+        this.saveButtonElem.prop('disabled', disabled);
     }
 
     checkLoadButtonStatus(elem) {
         const disabled = elem.value === '' ? true : false;
-        this.loadButton.prop('disabled', disabled);
+        this.loadButtonElem.prop('disabled', disabled);
     }
 
 }

@@ -40,14 +40,18 @@ class FirdiStore extends Observable {
         this.sqlManager = new SqlManager(this.tablesInfo);
 
         autorun(() => {
+            // set original cgm nodes
             let originalCgmNodes = undefined;
             if (this.rootStore.cgmStore) { // undefined when RootStore is still initialising
                 originalCgmNodes = this.rootStore.cgmStore.originalCgmNodes;
             }
+
+            // create data that will be sent to the observers
+            const queryResult = this.queryResult;
             const data = {
                 'totalSelected': this.totalSelected,
                 'selections': this.selections,
-                'queryResult': this.queryResult,
+                'queryResult': queryResult,
                 'originalCgmNodes': originalCgmNodes,
                 'whereType': this.whereType
             }
