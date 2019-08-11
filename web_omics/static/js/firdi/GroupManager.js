@@ -1,10 +1,12 @@
 import {
+    blockFirdiTable,
     blockUI,
     GROUP_LOADED_EVENT,
     HEATMAP_CLICKED_EVENT,
     LAST_CLICKED_GROUP_MANAGER,
     loadData,
     SELECTION_UPDATE_EVENT,
+    unblockFirdiTable,
     unblockUI
 } from "../common";
 import Awesomplete from 'awesomplete-es6';
@@ -66,6 +68,15 @@ class GroupManager {
         this.checkSaveButtonStatus(this.rootStore.firdiStore.totalSelected);
         this.checkLoadButtonStatus(selectBoxElem);
 
+        const boxplotButtonId = 'getBoxplotButton';
+        this.boxplotUrl = viewNames['get_boxplot'];
+        this.boxplotButtonElem = $(`#${boxplotButtonId}`);
+        this.boxplotButtonElem.on('click', () => { this.getBoxplot(); })
+
+        const boxplotResultId = 'boxplotResult';
+        this.boxplotResultElem = $(`#${boxplotResultId}`);
+        this.boxplotCardId = 'groupAnalysis';
+
     }
 
     updateList() {
@@ -99,7 +110,7 @@ class GroupManager {
     }
 
     loadLinkerState() {
-        blockUI();
+        blockFirdiTable();
         this.rootStore.groupId = this.selectedSuggestion.value;
         this.rootStore.groupName = this.selectedSuggestion.label;
 
@@ -108,7 +119,7 @@ class GroupManager {
             const newState = JSON.parse(data.state);
             self.rootStore.lastClicked = LAST_CLICKED_GROUP_MANAGER;
             self.rootStore.firdiStore.restoreSelection(newState);
-            unblockUI();
+            unblockFirdiTable();
         })
     }
 
@@ -148,6 +159,20 @@ class GroupManager {
                 }
             });
         });
+    }
+
+    getBoxplot() {
+        blockUI(`#${this.boxplotCardId}`);
+        const dataType = $('input[name=boxplotRadioOptions]:checked').val();
+        const self = this;
+        loadData(this.boxplotUrl, {
+            'groupId' : this.rootStore.groupId,
+            'dataType': dataType,
+        }).then( data => {
+            // console.log(data);
+            self.boxplotResultElem.html(data.div);
+            unblockUI(`#${this.boxplotCardId}`);
+        })
     }
 
     handleFirdiUpdate(data) {

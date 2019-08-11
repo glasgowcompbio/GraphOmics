@@ -40,7 +40,7 @@ module.exports = function play_demo(){
         cursor:'default'
     } });
 
-    d3.selectAll('.blockUI').style('opacity',0);
+    d3.selectAll('.blockFirdiTable').style('opacity',0);
 
     // intro text
     var inst_time = 750;

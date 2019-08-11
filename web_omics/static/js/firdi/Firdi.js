@@ -13,11 +13,11 @@ import 'datatables.net-select-dt/css/select.dataTables.min.css';
 import alasql from 'alasql';
 
 import {
-    blockUI,
+    blockFirdiTable,
     HEATMAP_CLICKED_EVENT,
     deepCopy,
     GROUP_LOADED_EVENT,
-    unblockUI, SELECTION_UPDATE_EVENT, LAST_CLICKED_FIRDI
+    unblockFirdiTable, SELECTION_UPDATE_EVENT, LAST_CLICKED_FIRDI
 } from '../common';
 import DataTablesManager from './DataTablesManager';
 import {getPkCol, getPkValue, getRowObj, isTableVisible} from "./Utils";
@@ -64,15 +64,15 @@ class Firdi {
     initSignificantFilters() {
         const self = this;
         const filterTableFunc = function () {
-            blockUI();
+            blockFirdiTable();
             // set last clicked UI element
             self.rootStore.lastClicked = LAST_CLICKED_FIRDI;
             const selectedValue = this.value;
             window.setTimeout(function () {
                 let filterColumnName = selectedValue.length > 0 ? selectedValue : null;
                 self.state.setWhereType(filterColumnName);
-                unblockUI();
-            }, 1); // we need a small delay to allow blockUI to be rendered correctly
+                unblockFirdiTable();
+            }, 1); // we need a small delay to allow blockFirdiTable to be rendered correctly
         };
         $('input[type=radio][name=inlineRadioOptions]').change(filterTableFunc);
     }
@@ -237,7 +237,7 @@ class Firdi {
 
     trClickHandler(e, dt, type, cell, originalEvent) {
         e.preventDefault();
-        blockUI();
+        blockFirdiTable();
         const self = this;
         window.setTimeout(function () {
 
@@ -259,7 +259,7 @@ class Firdi {
             const anyRowSelected = tableAPI.rows('.selected').any();
 
             self.trClickHandlerUpdate(tableName, targetTr, rowData, rowIndex, anyRowSelected);
-            unblockUI();
+            unblockFirdiTable();
             // update the related info panel for this table, if any
             if (self.state.numSelected[tableName] > 0) {
 
@@ -285,7 +285,7 @@ class Firdi {
             } else {
                 self.infoPanelManager.clearInfoPanel(tableName);
             }
-        }, 1); // we need a small delay to allow blockUI to be rendered correctly
+        }, 1); // we need a small delay to allow blockFirdiTable to be rendered correctly
     }
 
     trClickHandlerUpdate(tableName, targetTr, rowData, rowIndex, anyRowSelected) {

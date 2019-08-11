@@ -10,6 +10,7 @@ import numpy as np
 import pandas as pd
 import requests
 from clustergrammer import Network
+import plotly.offline as opy
 from django.templatetags.static import static
 from django.urls import reverse
 
@@ -359,7 +360,8 @@ def get_context(analysis):
         'get_short_info': get_reverse_url('get_short_info', None),
         'save_group': get_reverse_url('save_group', analysis),
         'load_group': get_reverse_url('load_group', analysis),
-        'list_groups': get_reverse_url('list_groups', analysis)
+        'list_groups': get_reverse_url('list_groups', analysis),
+        'get_boxplot': get_reverse_url('get_boxplot', analysis),
     }
     context = {
         'analysis_id': analysis.pk,
@@ -823,3 +825,8 @@ def get_group_members(analysis_data):
         for k, v in df.groupby(GROUP_COL).agg('sample'):
             groups[k] = v.values
     return groups
+
+
+def fig_to_div(fig):
+    div = opy.plot(fig, auto_open=False, output_type='div')  # output plotly graph as html div
+    return div

@@ -25,6 +25,7 @@ urlpatterns = [
     path('get_reactome_pathway_info/<int:analysis_id>', views.get_reactome_pathway_info,
          name='get_reactome_pathway_info'),
     path('get_short_info', views.get_short_info, name='get_short_info'),
+    path('get_boxplot/<int:analysis_id>', views.get_boxplot, name='get_boxplot'),
 
     path('inference/<int:analysis_id>', views.inference, name='inference'),
     path('inference/t_test/<int:analysis_id>', views.inference_deseq_t_test, name='inference_deseq_t_test'),

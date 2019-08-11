@@ -1,6 +1,5 @@
 import jsonpickle
 import numpy as np
-import plotly.offline as opy
 from django import forms
 from django.contrib import messages
 from django.shortcuts import render, get_object_or_404
@@ -14,7 +13,7 @@ from linker.constants import *
 from linker.forms import BaseInferenceForm
 from linker.models import Analysis, AnalysisData
 from linker.views.functions import get_last_analysis_data, get_groups, get_dataframes, get_standardized_df, \
-    get_group_members
+    get_group_members, fig_to_div
 from linker.views.pipelines import WebOmicsInference
 
 
@@ -270,11 +269,11 @@ class PCAResult(TemplateView):
 
         # make pca plot
         fig = self.get_pca_plot(analysis_data, X_std_index, X_proj)
-        pca_plot = self.fig_to_div(fig)
+        pca_plot = fig_to_div(fig)
 
         # make explained variance plot
         fig = self.get_variance_plot(var_exp)
-        variance_plot = self.fig_to_div(fig)
+        variance_plot = fig_to_div(fig)
 
         # set the div to context
         context = super(PCAResult, self).get_context_data(**kwargs)
@@ -320,10 +319,6 @@ class PCAResult(TemplateView):
         )
         fig = dict(data=data, layout=layout)
         return fig
-
-    def fig_to_div(self, fig):
-        div = opy.plot(fig, auto_open=False, output_type='div')  # output plotly graph as html div
-        return div
 
     def get_pca_plot(self, analysis_data, X_std_index, X_proj):
         data = []

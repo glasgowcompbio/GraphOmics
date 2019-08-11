@@ -7,6 +7,7 @@ from django.http import JsonResponse
 from django.shortcuts import render, get_object_or_404
 from django.urls import reverse
 from django.utils import timezone
+import plotly.graph_objects as go
 
 from linker.constants import *
 from linker.metadata import get_single_ensembl_metadata_online, get_single_uniprot_metadata_online, \
@@ -14,7 +15,7 @@ from linker.metadata import get_single_ensembl_metadata_online, get_single_unipr
 from linker.models import Analysis, AnalysisAnnotation, AnalysisGroup
 from linker.reactome import get_reactome_description, get_reaction_entities, pathway_to_reactions
 from linker.views.functions import change_column_order, recur_dictify, get_context, \
-    get_last_data
+    get_last_data, get_dataframes, fig_to_div
 from .harmonizomeapi import Harmonizome, Entity
 
 
@@ -633,3 +634,55 @@ def filter_dict(my_dict, exclude_keys):
     filtered_dict = {key: my_dict[key] for key in my_dict if
                      all(substring not in key for substring in exclude_keys)}
     return filtered_dict
+
+
+def get_boxplot(request, analysis_id):
+    analysis = Analysis.objects.get(id=analysis_id)
+    group_id = int(request.GET['groupId'])
+    data_type = int(request.GET['dataType'])
+    assert data_type in [GENOMICS, PROTEOMICS, METABOLOMICS]
+
+    group = AnalysisGroup.objects.get(id=group_id)
+    analysis_data = get_last_data(analysis, data_type)
+
+    x, y_df = get_plotly_data(analysis_data, group, data_type)
+    fig = get_plotly_boxplot(x, y_df)
+    div = fig_to_div(fig)
+
+    data = {'div': div}
+    return JsonResponse(data)
+
+
+def get_plotly_data(analysis_data, group, data_type):
+    # create data, design and selection dataframes
+    data_df, design_df = get_dataframes(analysis_data)
+    table_name = TABLE_IDS[data_type]
+    linker_state = json.loads(group.linker_state)
+    selection_df = pd.DataFrame(linker_state['selections'][table_name]).set_index('displayName')
+
+    # data and selection dataframes are both indexed by the entity names, so we can join based on the indices
+    joined_df = pd.merge(selection_df, data_df, left_index=True, right_index=True, how='inner')
+
+    # construct x for boxplot
+    x = design_df[GROUP_COL].values
+
+    # construct y for boxplot
+    y = joined_df[design_df.index]
+    return x, y
+
+
+def get_plotly_boxplot(x, y_df):
+    fig = go.Figure()
+    for idx, row in y_df.iterrows():
+        print(idx, row.values)
+        fig.add_trace(go.Box(
+            y=row.values,
+            x=x,
+            name=idx,
+        ))
+
+    fig.update_layout(
+        yaxis_title='Measurement',
+        boxmode='group' # group together boxes of the different traces for each value of x
+    )
+    return fig

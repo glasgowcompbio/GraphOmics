@@ -2,7 +2,7 @@ import '../css/linker.css';
 import 'webpack-jquery-ui';
 import 'webpack-jquery-ui/css';
 import '../css/summary.css';
-import {blockUI, loadData, setupCsrfForAjax, unblockUI} from './common';
+import {blockFirdiTable, loadData, setupCsrfForAjax, unblockFirdiTable} from './common';
 import clustergrammer_setup from './clustergrammer_setup';
 
 import RootStore from "./stores/RootStore";
@@ -18,7 +18,7 @@ $(document).ready(function () {
 
     (async () => {
 
-        blockUI();
+        blockFirdiTable();
 
         // required for pop-up submits to work
         setupCsrfForAjax()
@@ -35,7 +35,7 @@ $(document).ready(function () {
         // init group manager
         const groupManager = new GroupManager(rootStore, viewNames);
 
-        unblockUI();
+        unblockFirdiTable();
 
         // init heatmap
         const heatmapData = await loadData(viewNames['get_heatmap_data']);

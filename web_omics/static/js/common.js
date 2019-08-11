@@ -12,8 +12,8 @@ async function loadData(viewUrl, params) {
 // https://stackoverflow.com/questions/122102/what-is-the-most-efficient-way-to-deep-clone-an-object-in-javascript/5344074#5344074
 const deepCopy = obj => JSON.parse(JSON.stringify(obj));
 
-const blockUI = function() {
-    $('#all_tables').block({
+const blockUI = function(target) {
+    $(target).block({
         centerY: 0,
         message: '<h5>Please wait ...</h5>',
         css: {
@@ -31,8 +31,16 @@ const blockUI = function() {
     });
 };
 
-const unblockUI = function() {
-    $('#all_tables').unblock();
+const unblockUI = function(target) {
+    $(target).unblock();
+}
+
+const blockFirdiTable = function() {
+    blockUI('#all_tables');
+};
+
+const unblockFirdiTable = function() {
+    unblockUI('#all_tables');
 };
 
 // see https://docs.djangoproject.com/en/dev/ref/csrf/#ajax
@@ -82,6 +90,8 @@ export {
     deepCopy,
     blockUI,
     unblockUI,
+    blockFirdiTable,
+    unblockFirdiTable,
     setupCsrfForAjax,
     SELECTION_UPDATE_EVENT,
     HEATMAP_CLICKED_EVENT,
