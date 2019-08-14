@@ -17,6 +17,7 @@ class FirdiStore extends Observable {
 
     // private stuff
     tableIdToIdColumnMap = undefined;
+    lastQueryResult = null;
 
     // reactive stuff
     @observable selections = undefined;
@@ -47,11 +48,11 @@ class FirdiStore extends Observable {
             }
 
             // create data that will be sent to the observers
-            const queryResult = this.queryResult;
+            this.lastQueryResult = this.queryResult;
             const data = {
                 'totalSelected': this.totalSelected,
                 'selections': this.selections,
-                'queryResult': queryResult,
+                'queryResult': this.lastQueryResult,
                 'originalCgmNodes': originalCgmNodes,
                 'whereType': this.whereType
             }
@@ -126,12 +127,14 @@ class FirdiStore extends Observable {
     restoreSelection(newState) {
         this.selections = newState.selections;
         this.whereType = newState.whereType;
+        this.lastQueryResult = null;
     }
 
     @action.bound
     reset() {
         this.selections = this.emptySelections();
         this.whereType = null;
+        this.lastQueryResult = null;
     }
 
     @action.bound
