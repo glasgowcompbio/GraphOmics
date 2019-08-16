@@ -174,6 +174,9 @@ class WebOmicsInference(object):
                 self.data_df.loc[:, samples] = subset_df.mask(subset_df == 0, subset_df.mean(axis=1), axis=0)
 
     def _to_pd_df(self, r_df):
-        pd_df = pandas2ri.ri2py_dataframe(r_df)
-        pd_df.index = r_df.rownames
-        return pd_df
+        try:
+            pd_df = pandas2ri.ri2py_dataframe(r_df)
+            pd_df.index = r_df.rownames
+            return pd_df
+        except: # for rpy2 3.0
+            return r_df
