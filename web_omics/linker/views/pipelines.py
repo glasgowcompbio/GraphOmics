@@ -9,7 +9,8 @@ from sklearn.decomposition import PCA
 from sklearn import preprocessing
 
 from rpy2.robjects.packages import importr
-from rpy2 import robjects
+from rpy2 import robjects as ro
+from rpy2.robjects.conversion import localconverter
 from rpy2.robjects import Formula
 from rpy2.robjects import pandas2ri
 
@@ -73,8 +74,8 @@ class WebOmicsInference(object):
         count_data = count_data[
             col_data.index]  # make sure columns in count_data is ordered the same way as the index of col_data
         dds = deseq.DESeqDataSetFromMatrix(countData=count_data, colData=col_data, design=design)
-        sv = robjects.StrVector(col_data[GROUP_COL].values)
-        condition = robjects.FactorVector(sv)
+        sv = ro.StrVector(col_data[GROUP_COL].values)
+        condition = ro.FactorVector(sv)
         runs = col_data.index
         rstring = """
             function(dds, condition, runs, keepThreshold, case, control) {
@@ -96,7 +97,7 @@ class WebOmicsInference(object):
                 list(df, rld, resOrdered)
             }
         """
-        rfunc = robjects.r(rstring)
+        rfunc = ro.r(rstring)
         results = rfunc(dds, condition, runs, keep_threshold, case, control)
         pd_df = self._to_pd_df(results[0])
         rld_df = self._to_pd_df(results[1])
@@ -174,9 +175,10 @@ class WebOmicsInference(object):
                 self.data_df.loc[:, samples] = subset_df.mask(subset_df == 0, subset_df.mean(axis=1), axis=0)
 
     def _to_pd_df(self, r_df):
-        try:
+        try: # for rpy2 2.x
             pd_df = pandas2ri.ri2py_dataframe(r_df)
             pd_df.index = r_df.rownames
-            return pd_df
-        except: # for rpy2 3.0
-            return r_df
+        except: # for rpy2 3.x
+            with localconverter(ro.default_converter + pandas2ri.converter):
+                pd_df = ro.conversion.rpy2py(r_df)
+        return pd_df
