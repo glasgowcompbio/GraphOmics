@@ -25,7 +25,7 @@ jupyter = "*"
 bioservices = "*"
 jsonfield = "*"
 jsonpickle = "*"
-"rpy2" = "*"
+"rpy2" = "==2.9.5"
 tzlocal = "*"
 django-webpack-loader = "*"
 clustergrammer = "*"
@@ -35,4 +35,4 @@ plotly = "*"
 [dev-packages]
 
 [requires]
-python_version = "3.7.3"
+python_version = "3.7"
