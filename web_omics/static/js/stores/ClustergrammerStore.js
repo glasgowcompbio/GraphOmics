@@ -8,6 +8,9 @@ class ClustergrammerStore extends Observable {
     cgmLastClickedName = null; // to store the table name for the last-clicked clustergrammer
     @observable cgmSelections = null; // to store the selections for the last-clicked clustergrammer
 
+    clustergrammers = {}; // all the clustergrammer objects
+    newNetworkData = {}; // updated network data for each clustergrammer
+
     constructor(rootStore) {
         super();
         this.rootStore = rootStore;

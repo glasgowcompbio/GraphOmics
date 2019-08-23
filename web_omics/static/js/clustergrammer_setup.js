@@ -16,7 +16,7 @@ const seenData = {};
 
 // similar to the filter_viz_using_names function in clustergrammer, but slightly
 // modified to always restore all originalCgmNodes upon reset
-function filter_viz_using_names(names, cgm, originalCgmNodes) {
+function filter_viz_using_names(names, cgm) {
 
     // names is an object with row and column names that will be used to filter
     // the matrix
@@ -50,14 +50,7 @@ function filter_viz_using_names(names, cgm, originalCgmNodes) {
     });
 
     const new_network_data = filter_network_using_new_nodes(cgm.config, new_nodes);
-
-    // takes entire cgm object
-    // last argument tells it to not preserve categoty colors
-    update_viz_with_network(cgm, new_network_data);
-
-    // always restore the original nodes
-    cgm.params.inst_nodes = deepCopy(originalCgmNodes);
-
+    return new_network_data;
 };
 
 function clustergrammer_setup(elementId, dataType, clusterJson, rootStore) {
@@ -75,8 +68,8 @@ function clustergrammer_setup(elementId, dataType, clusterJson, rootStore) {
             names = selections.map(x => x.displayName);
         }
 
-        const originalCgmNodes = data.originalCgmNodes[dataType];
-        filter_viz_using_names({'row': names}, cgm, originalCgmNodes);
+        const newNetworkData = filter_viz_using_names({'row': names}, cgm);
+        store.newNetworkData[dataType] = newNetworkData;
     }
 
     if (clusterJson.hasOwnProperty(dataType) && clusterJson[dataType]) {
@@ -106,6 +99,7 @@ function clustergrammer_setup(elementId, dataType, clusterJson, rootStore) {
 
         // save the original, complete set of nodes
         store.originalCgmNodes[dataType] = deepCopy(cgm.params.inst_nodes);
+        store.clustergrammers[dataType] = cgm;
 
         // TODO: setup enrichr. Still broken!!
         if (dataType === 'genes') {
@@ -137,6 +131,24 @@ function clustergrammer_setup(elementId, dataType, clusterJson, rootStore) {
     } else {
         $(elementId).text('No data is available.');
     }
+
+    // setup click handler when the heatmap tab is clicked
+    // here we actually refresh the clustergrammer
+    $('#pills-heatmap-tab').click(function() {
+        if (store.clustergrammers.hasOwnProperty(dataType)) {
+            const cgm = store.clustergrammers[dataType];
+            const newNetworkData = store.newNetworkData[dataType];
+
+            console.log('Updating clustergrammer ' + dataType);
+            update_viz_with_network(cgm, newNetworkData);
+
+            // always restore the original nodes
+            // this is needed for selection to work again next time
+            // TODO: feels like this could be better
+            cgm.params.inst_nodes = store.originalCgmNodes[dataType];
+        }
+    });
+
 }
 
 function getGeneInfo(rootTip, rowData) {
