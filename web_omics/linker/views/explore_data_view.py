@@ -1,6 +1,7 @@
 import collections
 import json
 
+import numpy as np
 import pandas as pd
 from django.core.exceptions import ObjectDoesNotExist
 from django.http import JsonResponse
@@ -656,33 +657,39 @@ def get_boxplot(request, analysis_id):
 def get_plotly_data(analysis_data, group, data_type):
     # create data, design and selection dataframes
     data_df, design_df = get_dataframes(analysis_data)
+    if design_df is None: # no data
+        return None, None
+
     table_name = TABLE_IDS[data_type]
     linker_state = json.loads(group.linker_state)
-    selection_df = pd.DataFrame(linker_state['selections'][table_name]).set_index('displayName')
-
-    # data and selection dataframes are both indexed by the entity names, so we can join based on the indices
-    joined_df = pd.merge(selection_df, data_df, left_index=True, right_index=True, how='inner')
+    id_col = IDS[data_type]
+    selection_df = pd.DataFrame(linker_state['lastQueryResult'][table_name]).set_index(id_col)
+    try:
+        selection_df = selection_df.drop(labels=NA)
+    except KeyError:
+        pass # do nothing
 
     # construct x for boxplot
     x = design_df[GROUP_COL].values
 
     # construct y for boxplot
-    y = joined_df[design_df.index]
+    y = np.log2(selection_df[design_df.index])
     return x, y
 
 
 def get_plotly_boxplot(x, y_df):
     fig = go.Figure()
-    for idx, row in y_df.iterrows():
-        print(idx, row.values)
-        fig.add_trace(go.Box(
-            y=row.values,
-            x=x,
-            name=idx,
-        ))
+    if y_df is not None:
+        for idx, row in y_df.iterrows():
+            # print(idx, row.values)
+            fig.add_trace(go.Box(
+                y=row.values,
+                x=x,
+                name=idx,
+            ))
 
     fig.update_layout(
-        yaxis_title='Measurement',
+        yaxis_title='log2(measurement)',
         boxmode='group' # group together boxes of the different traces for each value of x
     )
     return fig
