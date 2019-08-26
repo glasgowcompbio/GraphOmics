@@ -656,7 +656,7 @@ def get_boxplot(request, analysis_id):
 
 def get_plotly_data(analysis_data, group, data_type):
     # create data, design and selection dataframes
-    data_df, design_df = get_dataframes(analysis_data)
+    data_df, design_df = get_dataframes(analysis_data, pk_cols=IDS)
     if design_df is None: # no data
         return None, None
 

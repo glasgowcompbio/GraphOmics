@@ -289,7 +289,7 @@ def save_analysis(analysis_name, analysis_desc,
 
 def get_clusters(analysis_data, data_type):
     axis = 1
-    X_std, data_df, design_df = get_standardized_df(analysis_data, axis)
+    X_std, data_df, design_df = get_standardized_df(analysis_data, axis, pk_cols=IDS)
 
     if data_type == GENOMICS:
         json_data = to_clustergrammer(X_std, design_df, run_enrichr=None, enrichrgram=True)
@@ -298,9 +298,9 @@ def get_clusters(analysis_data, data_type):
     return json_data
 
 
-def get_standardized_df(analysis_data, axis):
+def get_standardized_df(analysis_data, axis, pk_cols=PKS):
     data_type = analysis_data.data_type
-    data_df, design_df = get_dataframes(analysis_data)
+    data_df, design_df = get_dataframes(analysis_data, pk_cols)
 
     # standardise data differently for genomics vs proteomics/metabolomics
     X_std = None
@@ -799,8 +799,8 @@ def get_last_analysis_data(analysis, data_type):
     return analysis_data
 
 
-def get_dataframes(analysis_data):
-    pk_col = PKS[analysis_data.data_type]
+def get_dataframes(analysis_data, pk_cols):
+    pk_col = pk_cols[analysis_data.data_type]
     data_df = pd.DataFrame(analysis_data.json_data).set_index(pk_col)
     design_df = None
     if analysis_data.json_design:

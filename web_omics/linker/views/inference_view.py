@@ -123,7 +123,7 @@ def inference_deseq_t_test(request, analysis_id):
         if form.is_valid():
             case = form.cleaned_data['case']
             control = form.cleaned_data['control']
-            data_df, design_df = get_dataframes(analysis_data)
+            data_df, design_df = get_dataframes(analysis_data, PKS)
 
             if data_type == GENOMICS:  # run deseq2 here
                 wi = WebOmicsInference(data_df, design_df, data_type)
@@ -240,7 +240,7 @@ def inference_pca(request, analysis_id):
 
 def get_pca_proj(analysis_data, n_components):
     axis = 0
-    X_std, data_df, design_df = get_standardized_df(analysis_data, axis)
+    X_std, data_df, design_df = get_standardized_df(analysis_data, axis, pk_cols=PKS)
 
     if design_df is not None:
         X_std = X_std.transpose()
