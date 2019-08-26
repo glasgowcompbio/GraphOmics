@@ -800,7 +800,7 @@ def get_last_analysis_data(analysis, data_type):
 
 
 def get_dataframes(analysis_data):
-    pk_col = IDS[analysis_data.data_type]
+    pk_col = PKS[analysis_data.data_type]
     data_df = pd.DataFrame(analysis_data.json_data).set_index(pk_col)
     design_df = None
     if analysis_data.json_design:

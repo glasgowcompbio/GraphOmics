@@ -138,7 +138,7 @@ def inference_deseq_t_test(request, analysis_id):
             label = '%s_vs_%s' % (case, control)
             for i in range(len(json_data)):
                 item = json_data[i]
-                key = item[IDS[data_type]]
+                key = item[PKS[data_type]]
                 try:
                     padj = res['padj'][key]
                     if np.isnan(padj):
