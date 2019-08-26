@@ -100,6 +100,7 @@ function clustergrammer_setup(elementId, dataType, clusterJson, rootStore) {
         // save the original, complete set of nodes
         store.originalCgmNodes[dataType] = deepCopy(cgm.params.inst_nodes);
         store.clustergrammers[dataType] = cgm;
+        store.updated[dataType] = true;
 
         // TODO: setup enrichr. Still broken!!
         if (dataType === 'genes') {
