@@ -30,7 +30,7 @@ class GroupManager {
         this.awesomeplete = undefined;
         this.selectedSuggestion = undefined;
 
-        const numSelectedId = 'numSelectedElem';
+        const numSelectedId = 'numSelected';
         this.numSelectedElem = $(`#${numSelectedId}`);
 
         const groupId = 'groupId';
