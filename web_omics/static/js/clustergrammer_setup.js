@@ -49,8 +49,7 @@ function filter_viz_using_names(names, cgm) {
 
     });
 
-    const new_network_data = filter_network_using_new_nodes(cgm.config, new_nodes);
-    return new_network_data;
+    return new_nodes;
 };
 
 function clustergrammer_setup(elementId, dataType, clusterJson, rootStore) {
@@ -68,8 +67,9 @@ function clustergrammer_setup(elementId, dataType, clusterJson, rootStore) {
             names = selections.map(x => x.displayName);
         }
 
-        const newNetworkData = filter_viz_using_names({'row': names}, cgm);
-        store.newNetworkData[dataType] = newNetworkData;
+        const newNodes = filter_viz_using_names({'row': names}, cgm);
+        store.newNodes[dataType] = newNodes;
+        store.updated[dataType] = false;
     }
 
     if (clusterJson.hasOwnProperty(dataType) && clusterJson[dataType]) {
@@ -134,20 +134,23 @@ function clustergrammer_setup(elementId, dataType, clusterJson, rootStore) {
 
     // setup click handler when the heatmap tab is clicked
     // here we actually refresh the clustergrammer
-    $('#pills-heatmap-tab').click(function() {
-        if (store.clustergrammers.hasOwnProperty(dataType)) {
-            const cgm = store.clustergrammers[dataType];
-            const newNetworkData = store.newNetworkData[dataType];
 
+    function updateHeatmap() {
+        if (store.clustergrammers.hasOwnProperty(dataType) && !store.updated[dataType]) {
             console.log('Updating clustergrammer ' + dataType);
+            const cgm = store.clustergrammers[dataType];
+            const newNodes = store.newNodes[dataType];
+            const newNetworkData = filter_network_using_new_nodes(cgm.config, newNodes);
             update_viz_with_network(cgm, newNetworkData);
 
             // always restore the original nodes
             // this is needed for selection to work again next time
             // TODO: feels like this could be better
             cgm.params.inst_nodes = store.originalCgmNodes[dataType];
+            store.updated[dataType] = true;
         }
-    });
+    }
+    $('#pills-heatmap-tab').click(updateHeatmap);
 
 }
 

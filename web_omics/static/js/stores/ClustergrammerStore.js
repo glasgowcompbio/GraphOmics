@@ -9,7 +9,8 @@ class ClustergrammerStore extends Observable {
     @observable cgmSelections = null; // to store the selections for the last-clicked clustergrammer
 
     clustergrammers = {}; // all the clustergrammer objects
-    newNetworkData = {}; // updated network data for each clustergrammer
+    newNodes = {}; // updated new nodes for each clustergrammer
+    updated = {};
 
     constructor(rootStore) {
         super();
