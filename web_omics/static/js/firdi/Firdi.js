@@ -31,14 +31,12 @@ class Firdi {
         this.state = rootStore.firdiStore;
         this.rootStore.cgmStore.on(HEATMAP_CLICKED_EVENT, (data) => {
             console.log('Clustergrammer --> Firdi');
-            const tableName = data.cgmLastClickedName;
-            const selectedPkValues = data.cgmSelections;
-            this.resetFiRDI(true);
-            this.multipleTrClickHandlerUpdate(tableName, selectedPkValues);
+            this.resetFiRDI();
+            this.updateFiRDIForMultipleSelect(data.cgmLastClickedName);
         })
         this.rootStore.firdiStore.on(GROUP_LOADED_EVENT, (data) => {
             console.log('GroupManager --> Firdi');
-            this.resetFiRDI(false);
+            this.resetFiRDI();
             this.updateFiRDIForLoadSelection();
         })
         this.rootStore.firdiStore.on(SELECTION_UPDATE_EVENT, (data) => {
@@ -83,7 +81,7 @@ class Firdi {
         });
     }
 
-    resetFiRDI(resetState) {
+    resetFiRDI() {
         // it doesn't seem necesary to clear all SQL tables in alasql when resetting, since they will
         // never change. We only need to clear the data tables data as well as the info panels.
 
@@ -103,9 +101,9 @@ class Firdi {
         });
 
         // reset state if necessary
-        if (resetState) {
-            this.state.reset();
-        }
+        // if (resetState) {
+        //     this.state.reset();
+        // }
 
         // reset info panels
         this.infoPanelManager.clearAllInfoPanels();
@@ -305,30 +303,6 @@ class Firdi {
         }
     }
 
-    multipleTrClickHandlerUpdate(tableName, selectedPkValues) {
-        // we need to repopulate the constraints based on selectedPkValues
-        // first find rows in the datatable based on selectedPkValues
-        const tableAPI = $('#' + tableName).DataTable();
-        const pkCol = getPkCol(tableName);
-        const rows = tableAPI.rows((idx, data, node) => {
-            const pk = data[pkCol];
-            return selectedPkValues.includes(pk) ? true : false;
-        });
-        const allRowData = rows.data();
-        const allRowIndices = rows.indexes();
-
-        // add rows as multiple selections
-        // here we assume that state has been reset (resetFiRDI was called)
-        for (let i = 0; i < selectedPkValues.length; i++) {
-            const rowData = allRowData[i];
-            const rowIndex = allRowIndices[i];
-            this.state.addConstraint(tableName, rowData, rowIndex);
-        }
-
-        // refresh UI based on multiple selections
-        this.updateFiRDIForMultipleSelect(tableName);
-    }
-
     updateFiRDIForMultipleSelect(tableName) {
         // add selected class to the rows in selection
         this.addSelectionStyle(tableName);
@@ -346,11 +320,13 @@ class Firdi {
         }
 
         // update bottom panel
-        this.state.selectedIndex[tableName] = 0;
-        const selections = this.state.selections[tableName];
-        const selectedIndex = 0;
-        const updatePage = true;
-        this.infoPanelManager.updateEntityInfo(tableName, selections, selectedIndex, updatePage);
+        if (this.state.numSelected[tableName] > 0) {
+            this.state.selectedIndex[tableName] = 0;
+            const selections = this.state.selections[tableName];
+            const selectedIndex = 0;
+            const updatePage = true;
+            this.infoPanelManager.updateEntityInfo(tableName, selections, selectedIndex, updatePage);
+        }
     }
 
     updateFiRDIForLoadSelection() {

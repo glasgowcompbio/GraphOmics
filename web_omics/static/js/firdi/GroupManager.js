@@ -23,9 +23,6 @@ class GroupManager {
         this.rootStore.firdiStore.on(GROUP_LOADED_EVENT, (data) => {
             this.handleFirdiUpdate(data); // update selected item counter from Firdi
         });
-        this.rootStore.cgmStore.on(HEATMAP_CLICKED_EVENT, (data) => {
-            this.handleClustergrammerUpdate(data); // update selected item counter from cgm
-        });
 
         this.awesomeplete = undefined;
         this.selectedSuggestion = undefined;

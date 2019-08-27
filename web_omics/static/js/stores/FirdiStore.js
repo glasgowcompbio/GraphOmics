@@ -1,6 +1,12 @@
 import Observable from './Observable';
-import {GROUP_LOADED_EVENT, LAST_CLICKED_FIRDI, LAST_CLICKED_GROUP_MANAGER, SELECTION_UPDATE_EVENT} from "../common";
-import {getConstraintTablesConstraintKeyName, getDisplayName, isTableVisible} from "../firdi/Utils";
+import {
+    GROUP_LOADED_EVENT,
+    LAST_CLICKED_CLUSTERGRAMMER,
+    LAST_CLICKED_FIRDI,
+    LAST_CLICKED_GROUP_MANAGER,
+    SELECTION_UPDATE_EVENT
+} from "../common";
+import {getConstraintTablesConstraintKeyName, getDisplayName, getPkCol, isTableVisible} from "../firdi/Utils";
 import {action, autorun, computed, observable} from 'mobx';
 import SqlManager from "../firdi/SqlManager";
 
@@ -14,15 +20,15 @@ class FirdiStore extends Observable {
     dataTablesIds = undefined;
     fieldNames = undefined;
     displayNameToConstraintKey = undefined;
+    selectedIndex = {};
 
-    // private stuff
+    // private fields
     tableIdToIdColumnMap = undefined;
     lastQueryResult = null;
 
-    // reactive stuff
+    // reactive fields
     @observable selections = undefined;
     @observable whereType = null;
-    @observable selectedIndex = {};
 
     constructor(rootStore, tablesInfo, tableFields) {
         super();
@@ -118,6 +124,28 @@ class FirdiStore extends Observable {
     }
 
     @action.bound
+    addConstraintsByPkValues(tableName, selectedPkValues) {
+        // we need to repopulate the constraints based on selectedPkValues
+        // first find rows in the datatable based on selectedPkValues
+        const tableAPI = $('#' + tableName).DataTable();
+        const pkCol = getPkCol(tableName);
+        const rows = tableAPI.rows((idx, data, node) => {
+            const pk = data[pkCol];
+            return selectedPkValues.includes(pk) ? true : false;
+        });
+        const allRowData = rows.data();
+        const allRowIndices = rows.indexes();
+
+        // clear current state and add rows as multiple selections
+        this.reset();
+        for (let i = 0; i < selectedPkValues.length; i++) {
+            const rowData = allRowData[i];
+            const rowIndex = allRowIndices[i];
+            this.addConstraint(tableName, rowData, rowIndex);
+        }
+    }
+
+    @action.bound
     removeConstraint(tableName, rowData) {
         const idVal = this.getId(tableName, rowData);
         this.selections[tableName] = this.selections[tableName].filter(x => x.idVal !== idVal);
@@ -143,10 +171,13 @@ class FirdiStore extends Observable {
     }
 
     notifyUpdate(data) {
-        if (this.rootStore.lastClicked == LAST_CLICKED_FIRDI) {
+        if (this.rootStore.lastClicked === LAST_CLICKED_FIRDI) {
             this.fire(SELECTION_UPDATE_EVENT, data);
-        } else if (this.rootStore.lastClicked == LAST_CLICKED_GROUP_MANAGER) {
+        } else if (this.rootStore.lastClicked === LAST_CLICKED_GROUP_MANAGER) {
             this.fire(GROUP_LOADED_EVENT, data);
+        } else if (this.rootStore.lastClicked === LAST_CLICKED_CLUSTERGRAMMER) {
+            // selection event from autorun due to another clustergrammer update
+            this.fire(SELECTION_UPDATE_EVENT, data);
         }
     }
 

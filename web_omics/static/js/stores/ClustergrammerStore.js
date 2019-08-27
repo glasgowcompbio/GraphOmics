@@ -4,15 +4,17 @@ import {HEATMAP_CLICKED_EVENT, LAST_CLICKED_CLUSTERGRAMMER, LAST_CLICKED_FIRDI} 
 
 class ClustergrammerStore extends Observable {
 
+    // public fields
     originalCgmNodes = {}; // to restore original cgm nodes when we reset the view in clustergrammer
     cgmLastClickedName = null; // to store the table name for the last-clicked clustergrammer
-    @observable cgmSelections = null; // to store the selections for the last-clicked clustergrammer
-
     cgmData = {}; // initialised in explore_data.js
     clustergrammers = {}; // all the clustergrammer objects
     newNodes = {}; // updated new nodes for each clustergrammer
     updated = {}; // flag to tell if we need to redraw heatmap
     seenData = {}; // tooltip data caching during mouseover
+
+    // reactive fields
+    @observable cgmSelections = null; // to store the selections for the last-clicked clustergrammer
 
     constructor(rootStore) {
         super();
@@ -38,12 +40,14 @@ class ClustergrammerStore extends Observable {
         this.cgmLastClickedName = tableName;
         // convert node name to constraint key
         this.cgmSelections = nodeNames.map(d => this.rootStore.firdiStore.displayNameToConstraintKey[tableName][d]);
+        // reset firdi state and create new selections
+        this.rootStore.firdiStore.addConstraintsByPkValues(this.cgmLastClickedName, this.cgmSelections);
     }
 
     notifyUpdate(data) {
-        if (this.rootStore.lastClicked == LAST_CLICKED_CLUSTERGRAMMER) {
+        // if (this.rootStore.lastClicked == LAST_CLICKED_CLUSTERGRAMMER) {
             this.fire(HEATMAP_CLICKED_EVENT, data);
-        }
+        // }
     }
 
 }

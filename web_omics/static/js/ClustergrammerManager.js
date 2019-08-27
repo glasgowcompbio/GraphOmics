@@ -98,22 +98,33 @@ class ClustergrammerManager {
                 this.store.updated[dataType] = false;
             }
         });
+        // if last clicked was a clustergrammer, then immediately we want to redraw the heatmap
+        if (this.store.rootStore.lastClicked === LAST_CLICKED_CLUSTERGRAMMER) {
+            this.drawHeatmap(this.store.cgmLastClickedName); // except for the currently clicked clustergrammer
+        }
     }
 
-    drawHeatmap() {
+    drawHeatmap(excludeTableName) {
         Object.keys(this.store.cgmData).forEach((dataType) => {
             if (this.store.clustergrammers.hasOwnProperty(dataType) && !this.store.updated[dataType]) {
-                console.log('Updating clustergrammer ' + dataType);
-                const cgm = this.store.clustergrammers[dataType];
-                const newNodes = this.store.newNodes[dataType];
-                const newNetworkData = filter_network_using_new_nodes(cgm.config, newNodes);
-                update_viz_with_network(cgm, newNetworkData);
 
-                // always restore the original nodes
-                // this is needed for selection to work again next time
-                // TODO: feels like this could be better
-                cgm.params.inst_nodes = this.store.originalCgmNodes[dataType];
-                this.store.updated[dataType] = true;
+                const currentTableName = this.store.cgmData[dataType].tableName;
+                if (currentTableName == excludeTableName) {
+                    console.log('Not updating clustergrammer ' + dataType);
+                } else {
+                    console.log('Updating clustergrammer ' + dataType);
+                    const cgm = this.store.clustergrammers[dataType];
+                    const newNodes = this.store.newNodes[dataType];
+                    const newNetworkData = filter_network_using_new_nodes(cgm.config, newNodes);
+                    update_viz_with_network(cgm, newNetworkData);
+
+                    // always restore the original nodes
+                    // this is needed for selection to work again next time
+                    // TODO: feels like this could be better
+                    cgm.params.inst_nodes = this.store.originalCgmNodes[dataType];
+                    this.store.updated[dataType] = true;
+                }
+
             }
         });
     }
@@ -249,7 +260,7 @@ class ClustergrammerManager {
 
     // Note: clustergrammer/dendrogram/run_dendro_filter.js has been modified to call this method
     dendroFilterCallback(cgm) {
-        // console.log('dendro_filter_callback');
+        console.log('dendro_filter_callback');
 
         // set last clicked UI element
         this.rootStore.lastClicked = LAST_CLICKED_CLUSTERGRAMMER;
