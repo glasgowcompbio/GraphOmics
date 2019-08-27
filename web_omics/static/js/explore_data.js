@@ -3,13 +3,11 @@ import 'webpack-jquery-ui';
 import 'webpack-jquery-ui/css';
 import '../css/summary.css';
 import {blockFirdiTable, loadData, setupCsrfForAjax, unblockFirdiTable} from './common';
-import clustergrammer_setup from './clustergrammer_setup';
 
 import RootStore from "./stores/RootStore";
 import Firdi from "./firdi/Firdi";
-import SqlManager from "./firdi/SqlManager";
-import InfoPanesManager from "./firdi/InfoPanesManager";
 import GroupManager from './firdi/GroupManager';
+import ClustergrammerManager from "./ClustergrammerManager";
 
 $(document).ready(function () {
 
@@ -39,9 +37,31 @@ $(document).ready(function () {
 
         // init heatmap
         const heatmapData = await loadData(viewNames['get_heatmap_data']);
-        await clustergrammer_setup('#summary-vis-gene', 'genes', heatmapData, rootStore);
-        await clustergrammer_setup('#summary-vis-protein', 'proteins', heatmapData, rootStore);
-        await clustergrammer_setup('#summary-vis-compound', 'compounds', heatmapData, rootStore);
+        const cgmData = {
+            genes: {
+                elementId: '#summary-vis-gene',
+                tableName: 'genes_table',
+                idName: 'gene_id',
+                data: heatmapData['genes']
+            },
+            proteins: {
+                elementId: '#summary-vis-protein',
+                tableName: 'proteins_table',
+                idName: 'proteins_id',
+                data: heatmapData['proteins'],
+            },
+            compounds: {
+                elementId: '#summary-vis-compound',
+                tableName: 'compounds_table',
+                idName: 'compound_id',
+                data: heatmapData['compounds']
+            }
+        }
+        const cgmManager = new ClustergrammerManager(rootStore, cgmData);
+
+        // await clustergrammer_setup('#summary-vis-gene', 'genes', heatmapData, rootStore);
+        // await clustergrammer_setup('#summary-vis-protein', 'proteins', heatmapData, rootStore);
+        // await clustergrammer_setup('#summary-vis-compound', 'compounds', heatmapData, rootStore);
 
     })().catch(e => {
         console.error(e);

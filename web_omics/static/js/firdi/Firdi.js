@@ -43,7 +43,6 @@ class Firdi {
         })
         this.rootStore.firdiStore.on(SELECTION_UPDATE_EVENT, (data) => {
             console.log('Firdi --> Firdi');
-            // this.resetFiRDI(false);
             this.updateTablesForClickUpdate();
         })
 

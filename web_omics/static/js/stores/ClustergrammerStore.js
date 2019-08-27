@@ -8,9 +8,11 @@ class ClustergrammerStore extends Observable {
     cgmLastClickedName = null; // to store the table name for the last-clicked clustergrammer
     @observable cgmSelections = null; // to store the selections for the last-clicked clustergrammer
 
+    cgmData = {}; // initialised in explore_data.js
     clustergrammers = {}; // all the clustergrammer objects
     newNodes = {}; // updated new nodes for each clustergrammer
-    updated = {};
+    updated = {}; // flag to tell if we need to redraw heatmap
+    seenData = {}; // tooltip data caching during mouseover
 
     constructor(rootStore) {
         super();
@@ -29,6 +31,13 @@ class ClustergrammerStore extends Observable {
             console.log('%c ClustergrammerStore autorun ', 'background: #000; color: #c5f9f0', data);
             this.notifyUpdate(data);
         });
+    }
+
+    @action.bound
+    addCgmSelections(nodeNames, tableName) {
+        this.cgmLastClickedName = tableName;
+        // convert node name to constraint key
+        this.cgmSelections = nodeNames.map(d => this.rootStore.firdiStore.displayNameToConstraintKey[tableName][d]);
     }
 
     notifyUpdate(data) {
