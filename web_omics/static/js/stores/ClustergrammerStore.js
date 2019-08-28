@@ -28,7 +28,7 @@ class ClustergrammerStore extends Observable {
                 'cgmLastClickedName': this.cgmLastClickedName,
                 'cgmSelections': this.cgmSelections,
                 'totalSelected': totalSelected,
-                'queryResult': this.rootStore.firdiStore.lastQueryResult
+                'queryResult': this.rootStore.firdiStore.queryResult
             }
             console.log('%c ClustergrammerStore autorun ', 'background: #000; color: #c5f9f0', data);
             this.notifyUpdate(data);

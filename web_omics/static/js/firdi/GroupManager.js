@@ -147,7 +147,7 @@ class GroupManager {
             const stateCopy = {};
             stateCopy.selections = self.rootStore.firdiStore.selections;
             stateCopy.whereType = self.rootStore.firdiStore.whereType;
-            stateCopy.lastQueryResult = self.rootStore.firdiStore.lastQueryResult;
+            stateCopy.lastQueryResult = self.rootStore.firdiStore.queryResult;
             const stateJson = JSON.stringify(stateCopy);
 
             // create form data and POST it
