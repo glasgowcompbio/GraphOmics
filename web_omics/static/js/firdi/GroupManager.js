@@ -2,7 +2,7 @@ import {
     blockFirdiTable,
     blockUI,
     GROUP_LOADED_EVENT,
-    HEATMAP_CLICKED_EVENT,
+    GROUP_UPDATED_EVENT,
     LAST_CLICKED_GROUP_MANAGER,
     loadData,
     SELECTION_UPDATE_EVENT,
@@ -23,6 +23,9 @@ class GroupManager {
         this.rootStore.firdiStore.on(GROUP_LOADED_EVENT, (data) => {
             this.handleFirdiUpdate(data); // update selected item counter from Firdi
         });
+        this.rootStore.groupStore.on(GROUP_UPDATED_EVENT, (data) => {
+            this.handleGroupUpdate(data); // update group id and name
+        });
 
         this.awesomeplete = undefined;
         this.selectedSuggestion = undefined;
@@ -30,12 +33,16 @@ class GroupManager {
         const numSelectedId = 'numSelected';
         this.numSelectedElem = $(`#${numSelectedId}`);
 
+        const groupTab = 'pills-factor-tab';
         const groupId = 'groupId';
         const groupName = 'groupName';
-        const groupTab = 'pills-factor-tab';
+        const groupDesc = 'groupDesc';
+        const timestamp = 'timestamp';
+        this.groupTabElem = $(`#${groupTab}`);
         this.groupIdElem = $(`#${groupId}`);
         this.groupNameElem = $(`#${groupName}`);
-        this.groupTabElem = $(`#${groupTab}`);
+        this.groupDescElem = $(`#${groupDesc}`);
+        this.timestampElem = $(`#${timestamp}`);
 
         const numGenesId = 'numGenes';
         const numProteinsId = 'numProteins';
@@ -51,12 +58,16 @@ class GroupManager {
         const saveButtonId = 'saveGroupButton';
         this.saveUrl = viewNames['save_group'];
         this.saveButtonElem = $(`#${saveButtonId}`);
-        this.saveButtonElem.on('click', () => { this.showSaveDialog(); })
+        this.saveButtonElem.on('click', () => {
+            this.showSaveDialog();
+        })
 
         const loadButtonId = 'loadGroupButton';
         this.loadUrl = viewNames['load_group'];
         this.loadButtonElem = $(`#${loadButtonId}`);
-        this.loadButtonElem.on('click', () => { this.loadLinkerState(); })
+        this.loadButtonElem.on('click', () => {
+            this.loadLinkerState();
+        })
 
         this.selectBoxId = 'group';
         const selectBoxElem = document.getElementById(this.selectBoxId);
@@ -68,7 +79,9 @@ class GroupManager {
         const boxplotButtonId = 'getBoxplotButton';
         this.boxplotUrl = viewNames['get_boxplot'];
         this.boxplotButtonElem = $(`#${boxplotButtonId}`);
-        this.boxplotButtonElem.on('click', () => { this.getBoxplot(); })
+        this.boxplotButtonElem.on('click', () => {
+            this.getBoxplot();
+        })
 
         const boxplotResultId = 'boxplotResult';
         this.boxplotResultElem = $(`#${boxplotResultId}`);
@@ -86,7 +99,7 @@ class GroupManager {
             const selectBox = new Awesomplete(elem, {
                 list: myList,
                 minChars: 0,
-                replace: function(suggestion) {
+                replace: function (suggestion) {
                     this.input.value = suggestion.label; // https://github.com/LeaVerou/awesomplete/issues/17104
                 }
             });
@@ -112,10 +125,9 @@ class GroupManager {
         this.rootStore.groupName = this.selectedSuggestion.label;
 
         const self = this;
-        loadData(this.loadUrl, { 'groupId' : this.rootStore.groupId }).then( data => {
-            const newState = JSON.parse(data.state);
+        loadData(this.loadUrl, {'groupId': this.rootStore.groupId}).then(data => {
             self.rootStore.lastClicked = LAST_CLICKED_GROUP_MANAGER;
-            self.rootStore.firdiStore.restoreSelection(newState);
+            self.rootStore.groupStore.restoreState(data);
             unblockFirdiTable();
         })
     }
@@ -141,8 +153,11 @@ class GroupManager {
             // create form data and POST it
             const form = $('#saveGroupForm');
             const action = form.attr('action');
-            let formData = form.serializeArray();
-            formData.push({'name': 'state', 'value': stateJson});
+            let formData = form.serializeArray(); // this includes groupName and groupDesc
+            formData.push({
+                'name': 'state',
+                'value': stateJson
+            });
             $.ajax({
                 type: 'POST',
                 url: action,
@@ -150,7 +165,7 @@ class GroupManager {
                 success: function () {
                     $('#saveGroupDialog').dialog('close');
                     $('#groupSubmit').off();
-                    window.setTimeout(function() {
+                    window.setTimeout(function () {
                         alert('Group successfully saved.');
                     }, 1); // add a small delay before showing confirmation
                     self.updateList();
@@ -164,9 +179,9 @@ class GroupManager {
         const dataType = $('input[name=boxplotRadioOptions]:checked').val();
         const self = this;
         loadData(this.boxplotUrl, {
-            'groupId' : this.rootStore.groupId,
+            'groupId': this.rootStore.groupId,
             'dataType': dataType,
-        }).then( data => {
+        }).then(data => {
             // console.log(data);
             self.boxplotResultElem.html(data.div);
             unblockUI(`#${this.boxplotCardId}`);
@@ -177,39 +192,33 @@ class GroupManager {
         console.log('Firdi --> GroupManager');
         this.numSelectedElem.text(data.totalSelected);
         this.checkSaveButtonStatus(data.totalSelected);
-        this.showGroupTab(data.totalSelected, data.queryResult);
     }
 
     handleClustergrammerUpdate(data) {
         console.log('Clustergrammer --> GroupManager');
         this.numSelectedElem.text(data.totalSelected);
         this.checkSaveButtonStatus(data.totalSelected);
-        this.showGroupTab(data.totalSelected, data.queryResult);
     }
 
-    showGroupTab(totalSelected, queryResult) {
-        if (totalSelected > 0){
+    handleGroupUpdate(data) {
+        console.log('GroupStore --> GroupManager');
+        if (this.rootStore.firdiStore.totalSelected > 0) {
             this.groupTabElem.removeClass('d-none');
-            this.groupIdElem.text(this.rootStore.groupId);
-            this.groupNameElem.text(this.rootStore.groupName);
-
-            this.rootStore.observedEntities['genes'] = this.getObservedEntities(queryResult.genes_table);
-            this.rootStore.observedEntities['proteins'] = this.getObservedEntities(queryResult.proteins_table);
-            this.rootStore.observedEntities['compounds'] = this.getObservedEntities(queryResult.compounds_table);
-            this.rootStore.observedEntities['reactions'] = this.getObservedEntities(queryResult.reactions_table);
-            this.rootStore.observedEntities['pathways'] = this.getObservedEntities(queryResult.pathways_table);
-
-            this.numGenesElem.text(this.rootStore.observedEntities['genes'].length);
-            this.numProteinsElem.text(this.rootStore.observedEntities['proteins'].length);
-            this.numCompoundsElem.text(this.rootStore.observedEntities['compounds'].length);
-            this.numReactionsElem.text(this.rootStore.observedEntities['reactions'].length);
-            this.numPathwaysElem.text(this.rootStore.observedEntities['pathways'].length);
+        } else {
+            this.groupTabElem.addClass('d-none');
         }
-    }
 
-    getObservedEntities(result) {
-        // count rows where obs is either true (for genes, proteins and compounds) or null (for reactions and pathways)
-        return (result.filter(x => (x.obs == true) || (x.obs == null)))
+        this.groupIdElem.text(data.groupId);
+        this.groupNameElem.text(data.groupName);
+        this.groupDescElem.text(data.groupDesc);
+        this.timestampElem.text(data.timestamp);
+
+        const obsCount = data.numObservedEntities;
+        this.numGenesElem.text(obsCount['genes']);
+        this.numProteinsElem.text(obsCount['proteins']);
+        this.numCompoundsElem.text(obsCount['compounds']);
+        this.numReactionsElem.text(obsCount['reactions']);
+        this.numPathwaysElem.text(obsCount['pathways']);
     }
 
     checkSaveButtonStatus(totalSelected) {

@@ -1,19 +1,20 @@
-import FirdiStore from "./FirdiStore";
-import ClustergrammerStore from "./ClustergrammerStore";
+import FirdiStore from './FirdiStore';
+import ClustergrammerStore from './ClustergrammerStore';
+import GroupStore from './GroupStore';
 
 class RootStore {
 
     firdiStore = undefined;
     cgmStore = undefined;
+    groupStore = undefined;
 
+    // common UI stuff
     lastClicked = undefined;
-    groupId = undefined;
-    groupName = undefined;
-    observedEntities = {};
 
     constructor(tablesInfo, tableFields) {
         this.firdiStore = new FirdiStore(this, tablesInfo, tableFields);
         this.cgmStore = new ClustergrammerStore(this);
+        this.groupStore = new GroupStore(this);
     }
 }
 

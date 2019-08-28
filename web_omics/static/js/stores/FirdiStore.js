@@ -115,6 +115,7 @@ class FirdiStore extends Observable {
             displayName: displayName
         });
         this.sortConstraint(tableName);
+        this.rootStore.groupStore.reset(); // clear currently loaded group info
     }
 
     @action.bound
@@ -146,12 +147,14 @@ class FirdiStore extends Observable {
             });
         }
         this.sortConstraint(tableName);
+        this.rootStore.groupStore.reset(); // clear currently loaded group info
     }
 
     @action.bound
     removeConstraint(tableName, rowData) {
         const idVal = this.getId(tableName, rowData);
         this.selections[tableName] = this.selections[tableName].filter(x => x.idVal !== idVal);
+        this.rootStore.groupStore.reset(); // clear currently loaded group info
     }
 
     @action.bound

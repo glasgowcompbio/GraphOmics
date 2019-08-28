@@ -594,7 +594,13 @@ def load_group(request, analysis_id):
     group_id = int(request.GET['groupId'])
     group = AnalysisGroup.objects.get(id=group_id)
     linker_state = group.linker_state
-    data = {'state': linker_state}
+    data = {
+        'groupId': group.id,
+        'groupName': group.display_name,
+        'groupDesc': group.description,
+        'state': linker_state,
+        'timestamp': group.timestamp
+    }
     return JsonResponse(data)
 
 
