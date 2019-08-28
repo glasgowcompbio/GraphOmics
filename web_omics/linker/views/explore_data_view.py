@@ -645,31 +645,36 @@ def filter_dict(my_dict, exclude_keys):
 
 def get_boxplot(request, analysis_id):
     analysis = Analysis.objects.get(id=analysis_id)
-    group_id = int(request.GET['groupId'])
     data_type = int(request.GET['dataType'])
     assert data_type in [GENOMICS, PROTEOMICS, METABOLOMICS]
 
-    group = AnalysisGroup.objects.get(id=group_id)
-    analysis_data = get_last_data(analysis, data_type)
+    try:
+        group_id = int(request.GET['groupId'])
+        group = AnalysisGroup.objects.get(id=group_id)
+        linker_state = json.loads(group.linker_state)
+        last_query_result = linker_state['lastQueryResult']
+    except ValueError: # no group id has been provided
+        last_query_result = json.loads(request.GET['lastQueryResult'])# retrieve the lastQueryResult directly in request
 
-    x, y_df = get_plotly_data(analysis_data, group, data_type)
+    analysis_data = get_last_data(analysis, data_type)
+    data_df, design_df = get_dataframes(analysis_data, pk_cols=IDS)
+    if design_df is None: # no data
+        x, y_df = None, None
+    else:
+        # create selected data and design dataframes
+        x, y_df = get_plotly_data(design_df, last_query_result, data_type)
+
+    # make plotly figure and render as div
     fig = get_plotly_boxplot(x, y_df)
     div = fig_to_div(fig)
-
     data = {'div': div}
     return JsonResponse(data)
 
 
-def get_plotly_data(analysis_data, group, data_type):
-    # create data, design and selection dataframes
-    data_df, design_df = get_dataframes(analysis_data, pk_cols=IDS)
-    if design_df is None: # no data
-        return None, None
-
+def get_plotly_data(design_df, last_query_result, data_type):
     table_name = TABLE_IDS[data_type]
-    linker_state = json.loads(group.linker_state)
     id_col = IDS[data_type]
-    selection_df = pd.DataFrame(linker_state['lastQueryResult'][table_name]).set_index(id_col)
+    selection_df = pd.DataFrame(last_query_result[table_name]).set_index(id_col)
     try:
         selection_df = selection_df.drop(labels=NA)
     except KeyError:
@@ -687,7 +692,9 @@ def get_plotly_boxplot(x, y_df):
     fig = go.Figure()
     if y_df is not None:
         for idx, row in y_df.iterrows():
-            # print(idx, row.values)
+            # skip if all nans since nothing is observed
+            if np.isnan(row.values).all():
+                continue
             fig.add_trace(go.Box(
                 y=row.values,
                 x=x,

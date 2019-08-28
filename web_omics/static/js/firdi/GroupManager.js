@@ -121,11 +121,9 @@ class GroupManager {
 
     loadLinkerState() {
         blockFirdiTable();
-        this.rootStore.groupId = this.selectedSuggestion.value;
-        this.rootStore.groupName = this.selectedSuggestion.label;
-
+        const groupId = this.selectedSuggestion.value;
         const self = this;
-        loadData(this.loadUrl, {'groupId': this.rootStore.groupId}).then(data => {
+        loadData(this.loadUrl, {'groupId': groupId}).then(data => {
             self.rootStore.lastClicked = LAST_CLICKED_GROUP_MANAGER;
             self.rootStore.groupStore.restoreState(data);
             unblockFirdiTable();
@@ -176,13 +174,24 @@ class GroupManager {
 
     getBoxplot() {
         blockUI(`#${this.boxplotCardId}`);
-        const dataType = $('input[name=boxplotRadioOptions]:checked').val();
         const self = this;
-        loadData(this.boxplotUrl, {
-            'groupId': this.rootStore.groupId,
-            'dataType': dataType,
-        }).then(data => {
-            // console.log(data);
+
+        // construct params
+        const dataType = $('input[name=boxplotRadioOptions]:checked').val();
+        const params = {
+            groupId: this.rootStore.groupStore.groupId,
+            dataType: dataType,
+        };
+
+        // if no groupId then this selection group has not been saved
+        // in this case, we have to pass the entire data to the view
+        // this can be potentially large!!
+        if (params.groupId === null) {
+            params.lastQueryResult = JSON.stringify(this.rootStore.firdiStore.queryResult)
+        }
+
+        // pass params via GET request and set the result to HTML
+        loadData(this.boxplotUrl, params).then(data => {
             self.boxplotResultElem.html(data.div);
             unblockUI(`#${this.boxplotCardId}`);
         })
