@@ -30,9 +30,11 @@ class Firdi {
         this.rootStore = rootStore;
         this.state = rootStore.firdiStore;
         this.rootStore.cgmStore.on(HEATMAP_CLICKED_EVENT, (data) => {
-            console.log('Clustergrammer --> Firdi');
-            this.resetFiRDI();
-            this.updateFiRDIForMultipleSelect(data.cgmLastClickedName);
+            if (data.cgmLastClickedName) {
+                console.log('Clustergrammer --> Firdi');
+                this.resetFiRDI();
+                this.updateFiRDIForMultipleSelect(data.cgmLastClickedName);
+            }
         })
         this.rootStore.firdiStore.on(GROUP_LOADED_EVENT, (data) => {
             console.log('GroupManager --> Firdi');
