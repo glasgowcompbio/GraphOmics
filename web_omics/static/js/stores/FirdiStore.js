@@ -114,13 +114,7 @@ class FirdiStore extends Observable {
             rowIndex: rowIndex,
             displayName: displayName
         });
-
-        // ensure that entries are sorted by rowIndex asc
-        // this.selections[tableName].sort((a, b) => a.rowIndex - b.rowIndex);
-
-        // same as above, but using a special syntax for mobx
-        const observableArray = this.selections[tableName];
-        observableArray.replace(observableArray.slice().sort((a, b) => a.rowIndex - b.rowIndex));
+        this.sortConstraint(tableName);
     }
 
     @action.bound
@@ -141,14 +135,33 @@ class FirdiStore extends Observable {
         for (let i = 0; i < selectedPkValues.length; i++) {
             const rowData = allRowData[i];
             const rowIndex = allRowIndices[i];
-            this.addConstraint(tableName, rowData, rowIndex);
+
+            // add constraint
+            const idVal = this.getId(tableName, rowData);
+            const displayName = getDisplayName(rowData, tableName);
+            this.selections[tableName].push({
+                idVal: idVal,
+                rowIndex: rowIndex,
+                displayName: displayName
+            });
         }
+        this.sortConstraint(tableName);
     }
 
     @action.bound
     removeConstraint(tableName, rowData) {
         const idVal = this.getId(tableName, rowData);
         this.selections[tableName] = this.selections[tableName].filter(x => x.idVal !== idVal);
+    }
+
+    @action.bound
+    sortConstraint(tableName) {
+        // ensure that entries are sorted by rowIndex asc
+        // this.selections[tableName].sort((a, b) => a.rowIndex - b.rowIndex);
+
+        // same as above, but using a special syntax for mobx
+        const observableArray = this.selections[tableName];
+        observableArray.replace(observableArray.slice().sort((a, b) => a.rowIndex - b.rowIndex));
     }
 
     @action.bound
