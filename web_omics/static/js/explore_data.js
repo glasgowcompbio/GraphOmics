@@ -47,7 +47,7 @@ $(document).ready(function () {
             proteins: {
                 elementId: '#summary-vis-protein',
                 tableName: 'proteins_table',
-                idName: 'proteins_id',
+                idName: 'protein_id',
                 data: heatmapData['proteins'],
             },
             compounds: {
@@ -55,13 +55,10 @@ $(document).ready(function () {
                 tableName: 'compounds_table',
                 idName: 'compound_id',
                 data: heatmapData['compounds']
-            }
+            },
+            clustergrammerTab: 'pills-heatmap-tab'
         }
         const cgmManager = new ClustergrammerManager(rootStore, cgmData);
-
-        // await clustergrammer_setup('#summary-vis-gene', 'genes', heatmapData, rootStore);
-        // await clustergrammer_setup('#summary-vis-protein', 'proteins', heatmapData, rootStore);
-        // await clustergrammer_setup('#summary-vis-compound', 'compounds', heatmapData, rootStore);
 
     })().catch(e => {
         console.error(e);

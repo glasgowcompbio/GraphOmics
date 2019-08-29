@@ -22,7 +22,9 @@ class ClustergrammerManager {
             this.handleUpdate(data);
         })
 
-        $('#pills-heatmap-tab').click(this.drawHeatmap.bind(this));
+        // only when the tab is clicked, we refresh the clustergrammers
+        const cgmTabId = '#' + cgmData.clustergrammerTab;
+        $(cgmTabId).click(this.drawHeatmap.bind(this));
 
     }
 
@@ -36,7 +38,6 @@ class ClustergrammerManager {
             } else {
 
                 // initialise clustergrammer for each dataType
-
                 $(elementId).text('');
                 $(elementId).addClass('heatmap_container');
                 const jsonData = JSON.parse(data);
