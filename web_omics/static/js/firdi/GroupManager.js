@@ -5,6 +5,8 @@ import {
     GROUP_UPDATED_EVENT,
     LAST_CLICKED_GROUP_MANAGER,
     loadData,
+    postData,
+    setupCsrfForAjax,
     SELECTION_UPDATE_EVENT,
     unblockFirdiTable,
     unblockUI
@@ -190,8 +192,9 @@ class GroupManager {
             params.lastQueryResult = JSON.stringify(this.rootStore.firdiStore.queryResult)
         }
 
-        // pass params via GET request and set the result to HTML
-        loadData(this.boxplotUrl, params).then(data => {
+        // pass params via POST and set the result to HTML
+        setupCsrfForAjax()
+        postData(this.boxplotUrl, params).then(data => {
             self.boxplotResultElem.html(data.div);
             unblockUI(`#${this.boxplotCardId}`);
         })

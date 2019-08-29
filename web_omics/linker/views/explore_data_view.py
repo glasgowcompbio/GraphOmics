@@ -9,6 +9,7 @@ from django.shortcuts import render, get_object_or_404
 from django.urls import reverse
 from django.utils import timezone
 import plotly.graph_objects as go
+from django.views.decorators.csrf import csrf_exempt
 
 from linker.constants import *
 from linker.metadata import get_single_ensembl_metadata_online, get_single_uniprot_metadata_online, \
@@ -642,19 +643,18 @@ def filter_dict(my_dict, exclude_keys):
                      all(substring not in key for substring in exclude_keys)}
     return filtered_dict
 
-
 def get_boxplot(request, analysis_id):
     analysis = Analysis.objects.get(id=analysis_id)
-    data_type = int(request.GET['dataType'])
+    data_type = int(request.POST['dataType'])
     assert data_type in [GENOMICS, PROTEOMICS, METABOLOMICS]
 
     try:
-        group_id = int(request.GET['groupId'])
+        group_id = int(request.POST['groupId'])
         group = AnalysisGroup.objects.get(id=group_id)
         linker_state = json.loads(group.linker_state)
         last_query_result = linker_state['lastQueryResult']
     except ValueError: # no group id has been provided
-        last_query_result = json.loads(request.GET['lastQueryResult'])# retrieve the lastQueryResult directly in request
+        last_query_result = json.loads(request.POST['lastQueryResult'])# retrieve the lastQueryResult directly in request
 
     analysis_data = get_last_data(analysis, data_type)
     data_df, design_df = get_dataframes(analysis_data, pk_cols=IDS)

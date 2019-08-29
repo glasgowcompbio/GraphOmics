@@ -9,6 +9,16 @@ async function loadData(viewUrl, params) {
     }
 }
 
+async function postData(viewUrl, params) {
+    try {
+        // https://stackoverflow.com/questions/45286834/how-to-use-jquerys-post-method-with-async-await-and-typescript
+        const result = await Promise.resolve($.post(viewUrl, $.param(params)));
+        return result;
+    } catch (e) {
+        console.log(e);
+    }
+}
+
 // https://stackoverflow.com/questions/122102/what-is-the-most-efficient-way-to-deep-clone-an-object-in-javascript/5344074#5344074
 const deepCopy = obj => JSON.parse(JSON.stringify(obj));
 
@@ -88,6 +98,7 @@ const LAST_CLICKED_GROUP_MANAGER = 2;
 
 export {
     loadData,
+    postData,
     deepCopy,
     blockUI,
     unblockUI,

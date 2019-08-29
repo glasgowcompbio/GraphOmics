@@ -33,8 +33,6 @@ $(document).ready(function () {
         // init group manager
         const groupManager = new GroupManager(rootStore, viewNames);
 
-        unblockFirdiTable();
-
         // init heatmap
         const heatmapData = await loadData(viewNames['get_heatmap_data']);
         const cgmData = {
@@ -59,6 +57,7 @@ $(document).ready(function () {
             clustergrammerTab: 'pills-heatmap-tab'
         }
         const cgmManager = new ClustergrammerManager(rootStore, cgmData);
+        unblockFirdiTable();
 
     })().catch(e => {
         console.error(e);
