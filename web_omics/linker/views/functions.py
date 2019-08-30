@@ -362,6 +362,7 @@ def get_context(analysis):
         'load_group': get_reverse_url('load_group', analysis),
         'list_groups': get_reverse_url('list_groups', analysis),
         'get_boxplot': get_reverse_url('get_boxplot', analysis),
+        'get_gene_ontology': get_reverse_url('get_gene_ontology', analysis),
     }
     context = {
         'analysis_id': analysis.pk,

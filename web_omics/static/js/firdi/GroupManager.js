@@ -85,10 +85,20 @@ class GroupManager {
             this.getBoxplot();
         })
 
-        const boxplotResultId = 'boxplotResult';
+        const boxplotResultId = 'groupResult';
         this.boxplotResultElem = $(`#${boxplotResultId}`);
         this.boxplotCardId = 'groupAnalysis';
 
+        const goButtonId = 'getGoButton';
+        this.goUrl = viewNames['get_gene_ontology'];
+        this.goButtonElem = $(`#${goButtonId}`);
+        this.goButtonElem.on('click', () => {
+            this.getGeneOntology();
+        })
+
+        const goResultId = 'groupResult';
+        this.goResultElem = $(`#${goResultId}`);
+        this.goCardId = 'groupAnalysis';
     }
 
     updateList() {
@@ -179,10 +189,35 @@ class GroupManager {
         const self = this;
 
         // construct params
+        const params = this.prepareParams();
         const dataType = $('input[name=boxplotRadioOptions]:checked').val();
+        params.dataType = dataType;
+
+        // pass params via POST and set the result to HTML
+        postData(this.boxplotUrl, params).then(data => {
+            self.boxplotResultElem.html(data.div);
+            unblockUI(`#${this.boxplotCardId}`);
+        })
+    }
+
+    getGeneOntology() {
+        blockUI(`#${this.goCardId}`);
+        const self = this;
+
+        // construct params
+        const params = this.prepareParams();
+
+        // pass params via POST and set the result to HTML
+        postData(this.goUrl, params).then(data => {
+            self.goResultElem.html(data.div);
+            unblockUI(`#${this.goCardId}`);
+        })
+    }
+
+    prepareParams() {
+        setupCsrfForAjax()
         const params = {
             groupId: this.rootStore.groupStore.groupId,
-            dataType: dataType,
         };
 
         // if no groupId then this selection group has not been saved
@@ -191,13 +226,7 @@ class GroupManager {
         if (params.groupId === null) {
             params.lastQueryResult = JSON.stringify(this.rootStore.firdiStore.queryResult)
         }
-
-        // pass params via POST and set the result to HTML
-        setupCsrfForAjax()
-        postData(this.boxplotUrl, params).then(data => {
-            self.boxplotResultElem.html(data.div);
-            unblockUI(`#${this.boxplotCardId}`);
-        })
+        return params;
     }
 
     handleFirdiUpdate(data) {
