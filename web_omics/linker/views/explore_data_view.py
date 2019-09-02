@@ -1,22 +1,19 @@
 import collections
-import json
 
-import numpy as np
 import pandas as pd
 from django.core.exceptions import ObjectDoesNotExist
 from django.http import JsonResponse
 from django.shortcuts import render, get_object_or_404
 from django.urls import reverse
 from django.utils import timezone
-import plotly.graph_objects as go
 
 from linker.constants import *
 from linker.metadata import get_single_ensembl_metadata_online, get_single_uniprot_metadata_online, \
     get_single_compound_metadata_online
-from linker.models import Analysis, AnalysisAnnotation, AnalysisGroup
+from linker.models import Analysis, AnalysisAnnotation
 from linker.reactome import get_reactome_description, get_reaction_entities, pathway_to_reactions
 from linker.views.functions import change_column_order, recur_dictify, get_context, \
-    get_last_data, get_dataframes, fig_to_div
+    get_last_data
 from .harmonizomeapi import Harmonizome, Entity
 
 
@@ -29,17 +26,6 @@ def explore_data(request, analysis_id):
     analysis = get_object_or_404(Analysis, pk=analysis_id)
     context = get_context(analysis)
     return render(request, 'linker/explore_data.html', context)
-
-
-def list_groups(request, analysis_id):
-    analysis = Analysis.objects.get(id=analysis_id)
-    analysis_groups = AnalysisGroup.objects.filter(analysis=analysis).order_by('-timestamp')
-    data = { 'list' : [] }
-    for g in analysis_groups:
-        label = g.display_name
-        value = g.id
-        data['list'].append({ 'label' : label, 'value' : value })
-    return JsonResponse(data)
 
 
 def clustergrammer_demo(request):
@@ -169,7 +155,7 @@ def get_uniprot_protein_info(request, analysis_id):
     if request.is_ajax():
         uniprot_id = request.GET['id']
 
-        infos = []                                                                                                                                                                     
+        infos = []
         try:
             metadata = get_single_uniprot_metadata_online(uniprot_id)
             try:
@@ -570,40 +556,6 @@ def update_annotation(request, analysis_id, database_id, data_type):
     return JsonResponse(data)
 
 
-def save_group(request, analysis_id):
-    analysis = Analysis.objects.get(id=analysis_id)
-    group_name = request.POST.get('groupName')
-    group_desc = request.POST.get('groupDesc')
-    linker_state = request.POST.get('state')
-
-    group = AnalysisGroup.objects.create(
-        analysis=analysis,
-        display_name=group_name,
-        description=group_desc,
-        linker_state=linker_state,
-        timestamp=timezone.localtime()
-    )
-    group.save()
-
-    data = {'success': True}
-    return JsonResponse(data)
-
-
-def load_group(request, analysis_id):
-    analysis = Analysis.objects.get(id=analysis_id)
-    group_id = int(request.GET['groupId'])
-    group = AnalysisGroup.objects.get(id=group_id)
-    linker_state = group.linker_state
-    data = {
-        'groupId': group.id,
-        'groupName': group.display_name,
-        'groupDesc': group.description,
-        'state': linker_state,
-        'timestamp': group.timestamp
-    }
-    return JsonResponse(data)
-
-
 def get_grouped_measurements(analysis_id, database_id, data_type, peak_id=None):
     analysis = Analysis.objects.get(id=analysis_id)
     analysis_data = get_last_data(analysis, data_type)
@@ -618,7 +570,7 @@ def get_grouped_measurements(analysis_id, database_id, data_type, peak_id=None):
                     search = '%s_%s' % (database_id, peak_id)
                 else:
                     search = database_id
-                if row[key] == search: # if found
+                if row[key] == search:  # if found
                     # filter this row to remove exclude_colnames
                     filtered_data = filter_dict(row, exclude_colnames)
                     # check if there's some measurements (not all entries are None)
@@ -641,92 +593,3 @@ def filter_dict(my_dict, exclude_keys):
     filtered_dict = {key: my_dict[key] for key in my_dict if
                      all(substring not in key for substring in exclude_keys)}
     return filtered_dict
-
-
-def get_boxplot(request, analysis_id):
-    analysis = Analysis.objects.get(id=analysis_id)
-    data_type = int(request.POST['dataType'])
-    assert data_type in [GENOMICS, PROTEOMICS, METABOLOMICS]
-
-    last_query_result = get_last_query_result(request)
-    analysis_data = get_last_data(analysis, data_type)
-    data_df, design_df = get_dataframes(analysis_data, pk_cols=IDS)
-    if design_df is None: # no data
-        x, y_df = None, None
-    else:
-        # create selected data and design dataframes
-        x, y_df = get_plotly_data(design_df, last_query_result, data_type)
-
-    # make plotly figure and render as div
-    fig = get_plotly_boxplot(x, y_df)
-    div = fig_to_div(fig)
-    data = {'div': div}
-    return JsonResponse(data)
-
-
-def get_last_query_result(request):
-    try:
-        # try to retrieve last query result from database
-        group_id = int(request.POST['groupId'])
-        group = AnalysisGroup.objects.get(id=group_id)
-        linker_state = json.loads(group.linker_state)
-        last_query_result = linker_state['lastQueryResult']
-    except ValueError:  # no group id has been provided
-        last_query_result = json.loads(
-            request.POST['lastQueryResult'])  # retrieve the lastQueryResult directly from the request
-    return last_query_result
-
-
-def get_plotly_data(design_df, last_query_result, data_type):
-    selection_df = get_selection_df(data_type, last_query_result)
-
-    # construct x for boxplot
-    x = design_df[GROUP_COL].values
-
-    # construct y for boxplot
-    y = np.log2(selection_df[design_df.index])
-    return x, y
-
-
-def get_selection_df(data_type, last_query_result):
-    table_name = TABLE_IDS[data_type]
-    id_col = IDS[data_type]
-    selection_df = pd.DataFrame(last_query_result[table_name]).set_index(id_col)
-    try:
-        selection_df = selection_df.drop(labels=NA)
-    except KeyError:
-        pass  # do nothing
-    return selection_df
-
-
-def get_plotly_boxplot(x, y_df):
-    fig = go.Figure()
-    if y_df is not None:
-        for idx, row in y_df.iterrows():
-            # skip if all nans since nothing is observed
-            if np.isnan(row.values).all():
-                continue
-            fig.add_trace(go.Box(
-                y=row.values,
-                x=x,
-                name=idx,
-            ))
-
-    fig.update_layout(
-        yaxis_title='log2(measurement)',
-        boxmode='group' # group together boxes of the different traces for each value of x
-    )
-    return fig
-
-
-def get_gene_ontology(request, analysis_id):
-    analysis = Analysis.objects.get(id=analysis_id)
-    data_type = GENOMICS
-
-    last_query_result = get_last_query_result(request)
-    selection_df = get_selection_df(data_type, last_query_result)
-    selection_df.to_pickle('C:\\Users\\joewa\\Work\\git\\WebOmics\\web_omics\\notebooks\\gene_ontology\\selection_df.p')
-
-    go = json.dumps({})
-    data = {'div': '<p>Hello GO</p>'}
-    return JsonResponse(data)
