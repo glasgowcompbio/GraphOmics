@@ -187,3 +187,4 @@ typings/
 # FuseBox cache
 .fusebox/
 web_omics/Pipfile.lock
+web_omics/notebooks/gene_ontology/
