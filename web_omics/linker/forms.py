@@ -4,10 +4,9 @@ from django import forms
 from django_select2.forms import Select2Widget, Select2MultipleWidget
 
 from linker.constants import AddNewDataChoices, InferenceTypeChoices, CompoundDatabaseChoices, \
-    MetabolicPathwayOnlyChoices, SELECT_WIDGET_ATTRS
+    MetabolicPathwayOnlyChoices, SELECT_WIDGET_ATTRS, DEFAULT_SPECIES
 from linker.reactome import get_species_dict, get_all_pathways
 from linker.models import Analysis, AnalysisUpload
-
 
 def load_example_data(file_path):
     __location__ = os.path.realpath(
@@ -36,13 +35,7 @@ for k, v in get_species_dict().items():
         mus_musculus = (k, v,)
 
 
-default_species = [
-    'Arabidopsis thaliana',
-    'Mus musculus',
-    'Homo sapiens',
-    'Drosophila melanogaster'
-]
-default_pathways = get_all_pathways(default_species)
+default_pathways = get_all_pathways(DEFAULT_SPECIES)
 pathway_species_dict = {}
 PATHWAY_CHOICES = []
 for i, item in enumerate(default_pathways):

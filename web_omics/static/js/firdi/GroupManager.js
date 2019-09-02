@@ -206,6 +206,8 @@ class GroupManager {
 
         // construct params
         const params = this.prepareParams();
+        const namespace = $('input[name=goRadioOptions]:checked').val();
+        params.namespace = namespace;
 
         // pass params via POST and set the result to HTML
         postData(this.goUrl, params).then(data => {

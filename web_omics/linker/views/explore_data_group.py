@@ -9,6 +9,8 @@ from django.utils import timezone
 from linker.constants import *
 from linker.models import Analysis, AnalysisGroup
 from linker.views.functions import get_last_data, get_dataframes, fig_to_div
+from linker.views.gene_ontologies import GOAnalysis
+from linker.views.gene_ontologies_utils import GO_NAMESPACES
 
 
 def list_groups(request, analysis_id):
@@ -135,11 +137,30 @@ def get_plotly_boxplot(x, y_df):
 def get_gene_ontology(request, analysis_id):
     analysis = Analysis.objects.get(id=analysis_id)
     data_type = GENOMICS
+    namespace = request.POST['namespace']
+    assert namespace in GO_NAMESPACES
 
-    last_query_result = get_last_query_result(request)
-    selection_df = get_selection_df(data_type, last_query_result)
-    selection_df.to_pickle('C:\\Users\\joewa\\Work\\git\\WebOmics\\web_omics\\notebooks\\gene_ontology\\selection_df.p')
+    # TODO: can't remember why we support multiple species list per experiment ...
+    try:
+        first_species = analysis.get_species_list()[0] # take the first one always
 
-    go = json.dumps({})
-    data = {'div': '<p>Hello GO</p>'}
+        # get the list of selected gene names
+        last_query_result = get_last_query_result(request)
+        selection_df = get_selection_df(data_type, last_query_result)
+        selection_names = selection_df.index.values
+
+        # get the list of background gene names
+        analysis_data = get_last_data(analysis, data_type)
+        data_df, design_df = get_dataframes(analysis_data, pk_cols=IDS)
+        background_gene_names = data_df.index.values
+
+        # create gene ontology analysis
+        goa = GOAnalysis(first_species, namespace, background_gene_names)
+        df = goa.goea_analysis_df(selection_names)
+        html_data = df.to_html()
+
+    except KeyError: # can't find the mapping between species name to GO filename to download
+        html_data = '<p>Gene ontology analysis not available</p>'
+
+    data = {'div': html_data}
     return JsonResponse(data)

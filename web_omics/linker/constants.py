@@ -1,5 +1,42 @@
 TRUNCATE_LIMIT = 10000
 
+# list of default species for Add Pathways when creating new data integration analysis
+# now unused since Add Pathways will be removed
+
+ARABIDOPSIS_THALIANA = 'Arabidopsis thaliana'
+BOS_TAURUS = 'Bos taurus'
+CAENORHABDITIS_ELEGANS = 'Caenorhabditis elegans'
+CANIS_LUPUS_FAMILIARIS = 'Canis lupus familiaris'
+DANIO_RERIO = 'Danio rerio'
+DICTYOSTELIUM_DISCOIDEUM = 'Dictyostelium discoideum'
+DROSOPHILA_MELANOGASTER = 'Drosophila melanogaster'
+GALLUS_GALLUS = 'Gallus gallus'
+HOMO_SAPIENS = 'Homo sapiens'
+MUS_MUSCULUS = 'Mus musculus'
+ORYZA_SATIVA = 'Oryza sativa'
+RATTUS_NORVEGICUS = 'Rattus norvegicus'
+SACCHAROMYCES_CEREVISIAE = 'Saccharomyces cerevisiae'
+SUS_SCROFA = 'Sus scrofa'
+
+DEFAULT_SPECIES = [
+    ARABIDOPSIS_THALIANA,
+    BOS_TAURUS,
+    CAENORHABDITIS_ELEGANS,
+    CANIS_LUPUS_FAMILIARIS,
+    DANIO_RERIO,
+    DICTYOSTELIUM_DISCOIDEUM,
+    DROSOPHILA_MELANOGASTER,
+    GALLUS_GALLUS,
+    HOMO_SAPIENS,
+    MUS_MUSCULUS,
+    ORYZA_SATIVA,
+    RATTUS_NORVEGICUS,
+    SACCHAROMYCES_CEREVISIAE,
+    SUS_SCROFA
+]
+
+# other constants used for Firdi
+
 NA = '-'
 ALL = 'ALL'
 
@@ -54,16 +91,6 @@ MAPPING = {
     REACTIONS_TO_PATHWAYS: 'reaction_pathways'
 }
 
-T_TEST, CORRELATION, PCA, REACTOME = range(0, 4)
-InferenceTypeChoices = (
-    (None, NA),
-    (T_TEST, 'DESeq2 / t-test'),
-    (PCA, 'Principal Component Analysis'),
-    (REACTOME, 'Reactome Analysis Service')
-)
-SELECT_WIDGET_ATTRS = {'style': 'width: 300px'}
-
-T_TEST_THRESHOLD = 0.05
 PKS = {
     GENOMICS: 'gene_pk',
     PROTEOMICS: 'protein_pk',
@@ -80,15 +107,6 @@ FC_COL_PREFIX = 'FC_'
 SAMPLE_COL = 'sample'
 GROUP_COL = 'group'
 FACTOR_COL = 'factor'
-
-PIMP_PEAK_ID_COL = 'Peak id'
-PIMP_MASS_COL = 'Mass'
-PIMP_RT_COl = 'RT'
-PIMP_POLARITY_COL = 'Polarity'
-PIMP_ANNOTATION_COL = 'PiMP Annotation'
-PIMP_FRANK_ANNOTATION_COL = 'FrAnK Annotation'
-PIMP_KEGG_ID_COL = 'KEGG ID'
-
 DEFAULT_GROUP_NAME = 'default'
 
 COMPOUND_DATABASE_KEGG = 'KEGG'
@@ -101,3 +119,26 @@ MetabolicPathwayOnlyChoices = (
     (True, 'Only metabolic pathways'),
     (False, 'All pathways'),
 )
+
+# Constants used in the Inference page
+
+T_TEST, CORRELATION, PCA, REACTOME = range(0, 4)
+InferenceTypeChoices = (
+    (None, NA),
+    (T_TEST, 'DESeq2 / t-test'),
+    (PCA, 'Principal Component Analysis'),
+    (REACTOME, 'Reactome Analysis Service')
+)
+SELECT_WIDGET_ATTRS = {'style': 'width: 300px'}
+
+T_TEST_THRESHOLD = 0.05
+
+# Pimp data import constants
+
+PIMP_PEAK_ID_COL = 'Peak id'
+PIMP_MASS_COL = 'Mass'
+PIMP_RT_COl = 'RT'
+PIMP_POLARITY_COL = 'Polarity'
+PIMP_ANNOTATION_COL = 'PiMP Annotation'
+PIMP_FRANK_ANNOTATION_COL = 'FrAnK Annotation'
+PIMP_KEGG_ID_COL = 'KEGG ID'
