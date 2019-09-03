@@ -10,7 +10,6 @@ from linker.constants import *
 from linker.models import Analysis, AnalysisGroup
 from linker.views.functions import get_last_data, get_dataframes, fig_to_div
 from linker.views.gene_ontologies import GOAnalysis
-from linker.views.gene_ontologies_utils import GO_NAMESPACES
 
 
 def list_groups(request, analysis_id):

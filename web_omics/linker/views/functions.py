@@ -14,6 +14,7 @@ import plotly.offline as opy
 from django.templatetags.static import static
 from django.urls import reverse
 
+from common import load_static_data
 from linker.constants import *
 from linker.metadata import get_gene_names, get_compound_metadata, clean_label, get_species_name_to_id
 from linker.models import Analysis, AnalysisData
@@ -35,11 +36,7 @@ def reactome_mapping(request, genes_str, proteins_str, compounds_str, compound_d
     # try to convert all kegg ids to chebi ids, if possible
     print('Converting kegg ids -> chebi ids')
     observed_compound_ids = get_ids_from_dataframe(observed_compound_df)
-    rel_path = static('data/kegg_to_chebi.p')
-    pickled_url = request.build_absolute_uri(rel_path)
-    kegg_2_chebi = {}
-    with urllib.request.urlopen(pickled_url) as url:
-        kegg_2_chebi = pickle.load(url)
+    kegg_2_chebi = load_static_data('kegg_to_chebi.p')
     for cid in observed_compound_ids:
         if cid not in kegg_2_chebi:
             print('Not found: %s' % cid)
@@ -143,9 +140,8 @@ def reactome_mapping(request, genes_str, proteins_str, compounds_str, compound_d
     reaction_pk_list = [x for x in reaction_ids if x not in reaction_2_pathways.keys]
     reaction_2_pathways = add_links(reaction_2_pathways, REACTION_PK, PATHWAY_PK, reaction_pk_list, [NA])
 
-    rel_path = static('data/gene_names.p')
-    pickled_url = request.build_absolute_uri(rel_path)
-    metadata_map = get_gene_names(all_gene_ids, pickled_url)
+    gtf_dict = load_static_data(request, 'gene_names.p')
+    metadata_map = get_gene_names(all_gene_ids, gtf_dict)
     genes_json = pk_to_json(GENE_PK, 'gene_id', all_gene_ids, metadata_map, observed_gene_df,
                             observed_ids=observed_gene_ids)
     gene_2_proteins_json = json.dumps(gene_2_proteins.mapping_list)
@@ -157,9 +153,8 @@ def reactome_mapping(request, genes_str, proteins_str, compounds_str, compound_d
 
     # TODO: this feels like a very bad way to implement this
     # We need to deal with uploaded peak data from PiMP, which contains a lot of duplicate identifications per peak
-    rel_path = static('data/compound_names.json')
-    json_url = request.build_absolute_uri(rel_path)
-    metadata_map = get_compound_metadata(all_compound_ids, json_url, reaction_to_compound_id_to_names)
+    kegg_id_to_display_names = load_static_data(request, 'compound_names.json')
+    metadata_map = get_compound_metadata(all_compound_ids, kegg_id_to_display_names, reaction_to_compound_id_to_names)
     try:
         mapping = get_mapping(observed_compound_df)
     except KeyError:

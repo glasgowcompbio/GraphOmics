@@ -1,3 +1,7 @@
+import os
+
+from common import load_obj
+
 TRUNCATE_LIMIT = 10000
 
 # list of default species for Add Pathways when creating new data integration analysis
@@ -142,3 +146,28 @@ PIMP_POLARITY_COL = 'Polarity'
 PIMP_ANNOTATION_COL = 'PiMP Annotation'
 PIMP_FRANK_ANNOTATION_COL = 'FrAnK Annotation'
 PIMP_KEGG_ID_COL = 'KEGG ID'
+
+# Gene Ontology Constants
+
+BIOLOGICAL_PROCESS = 'BP'
+CELLULAR_COMPONENT = 'CC'
+MOLECULAR_FUNCTION = 'MF'
+GO_NAMESPACES = [ BIOLOGICAL_PROCESS, CELLULAR_COMPONENT, MOLECULAR_FUNCTION ]
+
+# default gene ontology files to download, see http://current.geneontology.org/products/pages/downloads.html
+SPECIES_TO_GAF_PREFIX = {
+    ARABIDOPSIS_THALIANA: 'tair',
+    BOS_TAURUS: 'goa_cow',
+    CAENORHABDITIS_ELEGANS: 'wb',
+    CANIS_LUPUS_FAMILIARIS: 'goa_dog',
+    DANIO_RERIO: 'zfin',
+    DICTYOSTELIUM_DISCOIDEUM: 'dictybase',
+    DROSOPHILA_MELANOGASTER: 'fb',
+    GALLUS_GALLUS: 'goa_chicken',
+    HOMO_SAPIENS: 'goa_human',
+    MUS_MUSCULUS: 'mgi',
+    ORYZA_SATIVA: 'gramene_oryza',
+    RATTUS_NORVEGICUS: 'rgd',
+    SACCHAROMYCES_CEREVISIAE: 'sgd',
+    SUS_SCROFA: 'goa_pig'
+}

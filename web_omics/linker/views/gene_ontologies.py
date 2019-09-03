@@ -2,7 +2,8 @@ import pandas as pd
 
 from goatools.go_enrichment import GOEnrichmentStudy
 
-from linker.views.gene_ontologies_utils import to_id, ONTOLOGIES, SPECIES_ASSOCIATIONS, GAF_NAME_TO_ID
+from django.conf import settings
+from linker.gene_ontologies_utils import to_id
 
 
 class GOAnalysis(object):
@@ -12,9 +13,9 @@ class GOAnalysis(object):
         self.background_gene_names = background_names
         self.significant = significant
 
-        self.ontologies = ONTOLOGIES
-        self.associations = SPECIES_ASSOCIATIONS[species][namespace]
-        self.names_to_id_dict = GAF_NAME_TO_ID[species]
+        self.ontologies = settings.ONTOLOGIES
+        self.associations = settings.SPECIES_ASSOCIATIONS[species][namespace]
+        self.names_to_id_dict = settings.GAF_NAME_TO_ID[species]
 
         # convert background gene names to gene ids used in the associations
         self.background_gene_ids = to_id(self.background_gene_names, self.names_to_id_dict)

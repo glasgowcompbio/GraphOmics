@@ -7,6 +7,7 @@ from bioservices import Reactome
 import json
 import urllib.request
 import pickle
+from tqdm import tqdm
 
 
 ################################################################################
@@ -52,17 +53,15 @@ def get_entrez_summary(gene_id):
     return ret.decode("utf-8")
 
 
-def get_gene_names(ensembl_ids, pickled_gene_names_url):
+def get_gene_names(ensembl_ids, gtf_dict):
     metadata_map = {}
-    with urllib.request.urlopen(pickled_gene_names_url) as url:
-        gtf_dict = pickle.load(url)
-        for ensembl_id in ensembl_ids:
-            try:
-                display_name = gtf_dict[ensembl_id]
-                display_name = clean_label(display_name)
-                metadata_map[ensembl_id] = {'display_name': display_name}
-            except KeyError:
-                metadata_map[ensembl_id] = {'display_name': ensembl_id}
+    for ensembl_id in ensembl_ids:
+        try:
+            display_name = gtf_dict[ensembl_id]
+            display_name = clean_label(display_name)
+            metadata_map[ensembl_id] = {'display_name': display_name}
+        except KeyError:
+            metadata_map[ensembl_id] = {'display_name': ensembl_id}
     return metadata_map
 
 
@@ -159,13 +158,12 @@ def kegg_to_chebi(compound_ids):
 
 
 def get_compound_metadata_online(kegg_ids):
-
     s = KEGG()
     metadata_map = {}
-    for i in range(len(kegg_ids)):
+    my_list = list(range(len(kegg_ids)))
+    failed = 0
+    for i in tqdm(my_list):
         try:
-            if i % 10 == 0:
-                print("Retrieving %d/%d KEGG records" % (i, len(kegg_ids)))
             kegg_id = kegg_ids[i]
             res = s.get(kegg_id)
             d = s.parse(res)
@@ -173,25 +171,25 @@ def get_compound_metadata_online(kegg_ids):
             first_name = first_name.replace(';', '') # strip last ';' character
             metadata_map[kegg_id] = {'display_name': first_name}
         except TypeError:
-            print('kegg_id=%s parsed_data=%s' % (kegg_id, d))
+            failed += 1
+    print('Failed = %d' % failed)
+
     return metadata_map
 
 
-def get_compound_metadata(compound_ids, json_url, id_to_names):
+def get_compound_metadata(compound_ids, kegg_id_to_display_names, id_to_names):
     metadata_map = {}
-    with urllib.request.urlopen(json_url) as url:
-        lookup = json.loads(url.read().decode())
-        for compound_id in compound_ids:
+    for compound_id in compound_ids:
+        try:
+            display_name = clean_label(kegg_id_to_display_names[compound_id]['display_name'])
+        except KeyError:
             try:
-                display_name = clean_label(lookup[compound_id]['display_name'])
+                display_name = clean_label(id_to_names[compound_id])
+                idx = display_name.find('[ChEBI') # remove [ChEBI ...]
+                display_name = display_name[0:idx].strip()
             except KeyError:
-                try:
-                    display_name = clean_label(id_to_names[compound_id])
-                    idx = display_name.find('[ChEBI') # remove [ChEBI ...]
-                    display_name = display_name[0:idx].strip()
-                except KeyError:
-                    display_name = compound_id
-            metadata_map[compound_id] = {'display_name': display_name}
+                display_name = compound_id
+        metadata_map[compound_id] = {'display_name': display_name}
     return metadata_map
 
 

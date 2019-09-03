@@ -188,3 +188,5 @@ typings/
 .fusebox/
 web_omics/Pipfile.lock
 web_omics/notebooks/gene_ontology/
+web_omics/static/data/*.p
+web_omics/static/data/old

@@ -13,6 +13,8 @@ from configurations import Configuration, values
 from django.contrib.messages import constants as message_constants
 from django.urls import reverse_lazy
 
+from common import load_obj
+
 
 class Common(Configuration):
     # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
@@ -137,6 +139,12 @@ class Common(Configuration):
 
     # to let save group function work
     DATA_UPLOAD_MAX_MEMORY_SIZE = 5242880
+
+    # load gene ontology (GO-Slim) and associations for all species above
+    GO_DATA = load_obj(os.path.join(os.getcwd(), 'static', 'data', 'go_data.p'))
+    ONTOLOGIES = GO_DATA['ontologies']
+    SPECIES_ASSOCIATIONS = GO_DATA['species_associations']
+    GAF_NAME_TO_ID = GO_DATA['gaf_name_to_id']
 
 
 class Development(Common):
