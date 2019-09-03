@@ -165,3 +165,7 @@ static/data/debugging/*
 static/bundles/*
 webpack-stats.json
 nohup.out
+Pipfile.lock
+
+.idea
+.ipynb_checkpoints
