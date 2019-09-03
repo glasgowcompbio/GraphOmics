@@ -110,13 +110,13 @@ if __name__ == '__main__':
     print('\n---------------------------------------------------')
     print('1/4 Exporting KEGG -> display names')
     print('---------------------------------------------------')
-    # kegg_id_to_display_names()
+    kegg_id_to_display_names()
 
     # Create a mapping between KEGG ID to ChEBI ID, see notebooks/mapping/kegg_to_chebi.ipynb
     print('\n---------------------------------------------------')
     print('2/4 Exporting KEGG -> ChEBI mapping')
     print('---------------------------------------------------')
-    # kegg_id_to_chebi_id()
+    kegg_id_to_chebi_id()
 
     # Create a mapping between Ensemble gene ID to gene names, see notebooks/mapping/parse_gtf.ipynb
     print('\n---------------------------------------------------')
