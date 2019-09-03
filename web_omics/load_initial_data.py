@@ -14,13 +14,13 @@ from metadata import get_compound_metadata_online
 from common import save_obj, download_file, extract_zip_file
 from GTF import lines
 from gene_ontologies_utils import download_ontologies, download_associations
+from constants import EXTERNAL_COMPOUND_NAMES, EXTERNAL_KEGG_TO_CHEBI, EXTERNAL_GENE_NAMES, EXTERNAL_GO_DATA
 
 
 def kegg_id_to_display_names():
     compound_ids = get_all_compound_ids()
     metadata = get_compound_metadata_online(compound_ids)
-    outfile = os.path.join(os.getcwd(), 'static', 'data', 'compound_names.p')
-    save_obj(metadata, outfile)
+    save_obj(metadata, EXTERNAL_COMPOUND_NAMES)
 
 
 def kegg_id_to_chebi_id():
@@ -50,8 +50,7 @@ def kegg_id_to_chebi_id():
         chebi = res.group(1)
         kegg_to_chebi[kegg] = chebi
 
-    outfile = os.path.join(os.getcwd(), 'static', 'data', 'kegg_to_chebi.p')
-    save_obj(kegg_to_chebi, outfile)
+    save_obj(kegg_to_chebi, EXTERNAL_KEGG_TO_CHEBI)
     os.remove(extracted_file)
 
 
@@ -80,7 +79,7 @@ def parse_gtf():
         except IndexError:
             continue
 
-    save_obj(gene_names, os.path.join(os.getcwd(), 'static', 'data', 'gene_names.p'))
+    save_obj(gene_names, EXTERNAL_GENE_NAMES)
     shutil.rmtree('gtf')
 
 
@@ -95,7 +94,7 @@ def download_go():
 
     # we need to do this because ontology terms are recursive, with parents/children relationships
     sys.setrecursionlimit(100000)
-    save_obj(go_data, os.path.join(os.getcwd(), 'static', 'data', 'go_data.p'))
+    save_obj(go_data, EXTERNAL_GO_DATA)
     delete_by_pattern('*.obo')
     delete_by_pattern('*.gaf')
 

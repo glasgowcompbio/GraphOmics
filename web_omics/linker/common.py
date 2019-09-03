@@ -46,15 +46,6 @@ def load_obj(filename):
         return None
 
 
-def load_static_data(request, filename):
-    rel_path = static('data/%s' % filename)
-    pickled_url = request.build_absolute_uri(rel_path)
-    data = None
-    with urllib.request.urlopen(pickled_url) as url:
-        data = load_obj(url)
-    return data
-
-
 def download_file(url, out_file=None):
     r = requests.get(url, stream=True)
     total_size = int(r.headers.get('content-length', 0));

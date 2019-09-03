@@ -4,6 +4,11 @@ from common import load_obj
 
 TRUNCATE_LIMIT = 10000
 
+EXTERNAL_COMPOUND_NAMES = os.path.join(os.getcwd(), 'static', 'data', 'compound_names.p')
+EXTERNAL_KEGG_TO_CHEBI = os.path.join(os.getcwd(), 'static', 'data', 'kegg_to_chebi.p')
+EXTERNAL_GENE_NAMES = os.path.join(os.getcwd(), 'static', 'data', 'gene_names.p')
+EXTERNAL_GO_DATA = os.path.join(os.getcwd(), 'static', 'data', 'go_data.p')
+
 # list of default species for Add Pathways when creating new data integration analysis
 # now unused since Add Pathways will be removed
 

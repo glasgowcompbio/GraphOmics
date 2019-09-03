@@ -13,8 +13,8 @@ from clustergrammer import Network
 import plotly.offline as opy
 from django.templatetags.static import static
 from django.urls import reverse
+from django.conf import settings
 
-from common import load_static_data
 from linker.constants import *
 from linker.metadata import get_gene_names, get_compound_metadata, clean_label, get_species_name_to_id
 from linker.models import Analysis, AnalysisData
@@ -36,16 +36,15 @@ def reactome_mapping(request, genes_str, proteins_str, compounds_str, compound_d
     # try to convert all kegg ids to chebi ids, if possible
     print('Converting kegg ids -> chebi ids')
     observed_compound_ids = get_ids_from_dataframe(observed_compound_df)
-    kegg_2_chebi = load_static_data('kegg_to_chebi.p')
     for cid in observed_compound_ids:
-        if cid not in kegg_2_chebi:
+        if cid not in settings.KEGG_2_CHEBI:
             print('Not found: %s' % cid)
-            kegg_2_chebi[cid] = cid
+            settings.KEGG_2_CHEBI[cid] = cid
 
     if observed_compound_df is not None:
         if compound_database_str == COMPOUND_DATABASE_CHEBI:
             observed_compound_df.iloc[:, 0] = observed_compound_df.iloc[:, 0].map(
-                kegg_2_chebi)  # assume 1st column is id
+                settings.KEGG_2_CHEBI)  # assume 1st column is id
         observed_compound_ids = get_ids_from_dataframe(observed_compound_df)
 
     ### map genes -> proteins ###
@@ -140,8 +139,7 @@ def reactome_mapping(request, genes_str, proteins_str, compounds_str, compound_d
     reaction_pk_list = [x for x in reaction_ids if x not in reaction_2_pathways.keys]
     reaction_2_pathways = add_links(reaction_2_pathways, REACTION_PK, PATHWAY_PK, reaction_pk_list, [NA])
 
-    gtf_dict = load_static_data(request, 'gene_names.p')
-    metadata_map = get_gene_names(all_gene_ids, gtf_dict)
+    metadata_map = get_gene_names(all_gene_ids, settings.GTF_DICT)
     genes_json = pk_to_json(GENE_PK, 'gene_id', all_gene_ids, metadata_map, observed_gene_df,
                             observed_ids=observed_gene_ids)
     gene_2_proteins_json = json.dumps(gene_2_proteins.mapping_list)
@@ -153,8 +151,7 @@ def reactome_mapping(request, genes_str, proteins_str, compounds_str, compound_d
 
     # TODO: this feels like a very bad way to implement this
     # We need to deal with uploaded peak data from PiMP, which contains a lot of duplicate identifications per peak
-    kegg_id_to_display_names = load_static_data(request, 'compound_names.json')
-    metadata_map = get_compound_metadata(all_compound_ids, kegg_id_to_display_names, reaction_to_compound_id_to_names)
+    metadata_map = get_compound_metadata(all_compound_ids, settings.KEGG_ID_2_DISPLAY_NAMES, reaction_to_compound_id_to_names)
     try:
         mapping = get_mapping(observed_compound_df)
     except KeyError:

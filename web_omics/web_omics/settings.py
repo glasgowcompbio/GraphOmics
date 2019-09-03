@@ -14,6 +14,7 @@ from django.contrib.messages import constants as message_constants
 from django.urls import reverse_lazy
 
 from common import load_obj
+from constants import EXTERNAL_GO_DATA, EXTERNAL_KEGG_TO_CHEBI, EXTERNAL_GENE_NAMES, EXTERNAL_COMPOUND_NAMES
 
 
 class Common(Configuration):
@@ -140,8 +141,13 @@ class Common(Configuration):
     # to let save group function work
     DATA_UPLOAD_MAX_MEMORY_SIZE = 5242880
 
+    # load external mapping files
+    KEGG_2_CHEBI = load_obj(EXTERNAL_KEGG_TO_CHEBI)
+    GTF_DICT = load_obj(EXTERNAL_GENE_NAMES)
+    KEGG_ID_2_DISPLAY_NAMES = load_obj(EXTERNAL_COMPOUND_NAMES)
+
     # load gene ontology (GO-Slim) and associations for all species above
-    GO_DATA = load_obj(os.path.join(os.getcwd(), 'static', 'data', 'go_data.p'))
+    GO_DATA = load_obj(EXTERNAL_GO_DATA)
     ONTOLOGIES = GO_DATA['ontologies']
     SPECIES_ASSOCIATIONS = GO_DATA['species_associations']
     GAF_NAME_TO_ID = GO_DATA['gaf_name_to_id']
