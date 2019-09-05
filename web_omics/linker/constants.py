@@ -1,7 +1,5 @@
 import os
 
-from common import load_obj
-
 TRUNCATE_LIMIT = 10000
 
 EXTERNAL_COMPOUND_NAMES = os.path.join(os.getcwd(), 'static', 'data', 'compound_names.p')
