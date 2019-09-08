@@ -1,19 +1,20 @@
 <div class="tab-pane fade show active" id="pills-browser" role="tabpanel" aria-labelledby="pills-browser-tab">
     <div class="">
         <form>
-            <div class="row">
-                <div class="col-6">
+
+            <div class="row mt-1">
+                <div class="col-9">
                     <input class="form-control" type="search" placeholder="Search" aria-label="Search"
                            id="global_filter">
                 </div>
-                <div class="col-6  text-right">
+                <div class="col-3 text-right">
                     <div class="form-check-inline border p-1">
                         <input class="form-check-input" type="checkbox" value="" id="showDataCheck">
                         <label class="form-check-label" for="showDataCheck">
                             Show data columns
                         </label>&nbsp;&nbsp;&nbsp;&nbsp;
                     </div>
-                    <div class="form-check-inline border p-1">
+                    <!-- div class="form-check-inline border p-1">
                         <label class="form-check-label">
                             Filter significant items in
                         </label>&nbsp;&nbsp;&nbsp;&nbsp;
@@ -35,6 +36,17 @@
                                    value="" checked="checked">
                             <label class="form-check-label" for="inlineRadio3">none</label>
                         </div>
+                    </div -->
+                </div>
+            </div>
+
+            <div class="row mt-1">
+                <div class="col-12">
+                    <div id="builder"></div>
+                    <div class="btn-group">
+                        <input type="button" id="builder-reset" name="builder-reset" value="Reset" class="btn btn-primary"/>
+                        <input type="button" id="builder-set" name="builder-set" value="Set" class="btn btn-primary"/>
+                        <input type="button" id="builder-get" name="builder-get" value="Get" class="btn btn-primary"/>
                     </div>
                 </div>
             </div>

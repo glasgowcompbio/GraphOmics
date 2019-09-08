@@ -10,7 +10,8 @@ import 'datatables.net-scroller-dt/css/scroller.dataTables.min.css';
 import 'datatables.net-select';
 import 'datatables.net-select-dt/css/select.dataTables.min.css';
 
-import alasql from 'alasql';
+import "jQuery-QueryBuilder/dist/js/query-builder.standalone.js";
+import "jQuery-QueryBuilder/dist/css/query-builder.default.css";
 
 import {
     blockFirdiTable,
@@ -74,6 +75,101 @@ class Firdi {
             }, 1); // we need a small delay to allow blockFirdiTable to be rendered correctly
         };
         $('input[type=radio][name=inlineRadioOptions]').change(filterTableFunc);
+
+        // query builder
+        const rules_basic = {
+            condition: 'AND',
+            rules: [{
+                id: 'price',
+                operator: 'less',
+                value: 10.25
+            }, {
+                id: 'category',
+                operator: 'equal',
+                value: 2
+            }, {
+                id: 'category',
+                operator: 'equal',
+                value: 1
+            }]
+        };
+        const builderWidth = '75%';
+
+        $('#builder').queryBuilder({
+            filters: [{
+                id: 'name',
+                label: 'Name',
+                type: 'string'
+            }, {
+                id: 'category',
+                label: 'Category',
+                type: 'integer',
+                input: 'select',
+                values: {
+                    1: 'Books',
+                    2: 'Movies',
+                    3: 'Music',
+                    4: 'Tools',
+                    5: 'Goodies',
+                    6: 'Clothes'
+                },
+                operators: ['equal', 'not_equal', 'in', 'not_in', 'is_null', 'is_not_null']
+            }, {
+                id: 'in_stock',
+                label: 'In stock',
+                type: 'integer',
+                input: 'radio',
+                values: {
+                    1: 'Yes',
+                    0: 'No'
+                },
+                operators: ['equal']
+            }, {
+                id: 'price',
+                label: 'Price',
+                type: 'double',
+                validation: {
+                    min: 0,
+                    step: 0.01
+                }
+            }, {
+                id: 'id',
+                label: 'Identifier',
+                type: 'string',
+                placeholder: '____-____-____',
+                operators: ['equal', 'not_equal'],
+                validation: {
+                    format: /^.{4}-.{4}-.{4}$/
+                }
+            }], // end filters
+
+            // rules: rules_basic,
+
+            // https://github.com/mistic100/jQuery-QueryBuilder/issues/689
+            default_group_flags: {
+                condition_readonly: true,
+                no_add_group: true
+            },
+
+        });
+        $('#builder_group_0').css('width', builderWidth);
+
+        $('#builder-reset').on('click', function () {
+            $('#builder').queryBuilder('reset');
+            $('#builder_group_0').css('width', builderWidth);
+        });
+
+        $('#builder-set').on('click', function () {
+            $('#builder').queryBuilder('setRules', rules_basic);
+            $('#builder_group_0').css('width', builderWidth);
+        });
+
+        $('#builder-get').on('click', function () {
+            const result = $('#builder').queryBuilder('getRules');
+            if (!$.isEmptyObject(result)) {
+                alert(JSON.stringify(result, null, 2));
+            }
+        });
     }
 
     initSearchBox() {
