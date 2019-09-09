@@ -18,7 +18,8 @@ import {
     HEATMAP_CLICKED_EVENT,
     deepCopy,
     GROUP_LOADED_EVENT,
-    unblockFirdiTable, SELECTION_UPDATE_EVENT, LAST_CLICKED_FIRDI
+    unblockFirdiTable, SELECTION_UPDATE_EVENT, LAST_CLICKED_FIRDI,
+    QUERY_BUILDER_WIDTH
 } from '../common';
 import DataTablesManager from './DataTablesManager';
 import {getPkCol, getPkValue, getRowObj, isTableVisible} from "./Utils";
@@ -62,114 +63,89 @@ class Firdi {
     }
 
     initSignificantFilters() {
-        const self = this;
-        const filterTableFunc = function () {
-            blockFirdiTable();
-            // set last clicked UI element
-            self.rootStore.lastClicked = LAST_CLICKED_FIRDI;
-            const selectedValue = this.value;
-            window.setTimeout(function () {
-                let filterColumnName = selectedValue.length > 0 ? selectedValue : null;
-                self.state.setWhereType(filterColumnName);
-                unblockFirdiTable();
-            }, 1); // we need a small delay to allow blockFirdiTable to be rendered correctly
-        };
-        $('input[type=radio][name=inlineRadioOptions]').change(filterTableFunc);
+        this.setupQueryBuilder();
 
-        // query builder
-        const rules_basic = {
-            condition: 'AND',
-            rules: [{
-                id: 'price',
-                operator: 'less',
-                value: 10.25
-            }, {
-                id: 'category',
-                operator: 'equal',
-                value: 2
-            }, {
-                id: 'category',
-                operator: 'equal',
-                value: 1
-            }]
-        };
-        const builderWidth = '50%';
+        // unused codes
+        // const self = this;
+        // const filterTableFunc = function () {
+        //     blockFirdiTable();
+        //     // set last clicked UI element
+        //     self.rootStore.lastClicked = LAST_CLICKED_FIRDI;
+        //     const selectedValue = this.value;
+        //     window.setTimeout(function () {
+        //         let filterColumnName = selectedValue.length > 0 ? selectedValue : null;
+        //         self.state.setWhereType(filterColumnName);
+        //         unblockFirdiTable();
+        //     }, 1); // we need a small delay to allow blockFirdiTable to be rendered correctly
+        // };
+        // $('input[type=radio][name=inlineRadioOptions]').change(filterTableFunc);
 
-        $('#builder').queryBuilder({
-            filters: [{
-                id: 'name',
-                label: 'Name',
-                type: 'string'
-            }, {
-                id: 'category',
-                label: 'Category',
-                type: 'integer',
-                input: 'select',
-                values: {
-                    1: 'Books',
-                    2: 'Movies',
-                    3: 'Music',
-                    4: 'Tools',
-                    5: 'Goodies',
-                    6: 'Clothes'
-                },
-                operators: ['equal', 'not_equal', 'in', 'not_in', 'is_null', 'is_not_null']
-            }, {
-                id: 'in_stock',
-                label: 'In stock',
-                type: 'integer',
-                input: 'radio',
-                values: {
-                    1: 'Yes',
-                    0: 'No'
-                },
-                operators: ['equal']
-            }, {
-                id: 'price',
-                label: 'Price',
-                type: 'double',
-                validation: {
-                    min: 0,
-                    step: 0.01
-                }
-            }, {
-                id: 'id',
-                label: 'Identifier',
-                type: 'string',
-                placeholder: '____-____-____',
-                operators: ['equal', 'not_equal'],
-                validation: {
-                    format: /^.{4}-.{4}-.{4}$/
-                }
-            }], // end filters
-
-            // rules: rules_basic,
-
-            // https://github.com/mistic100/jQuery-QueryBuilder/issues/689
-            default_group_flags: {
-                condition_readonly: true,
-                no_add_group: true
-            },
-
-        });
-        $('#builder_group_0').css('width', builderWidth);
-
+        // button handlers
         $('#builder-reset').on('click', function () {
             $('#builder').queryBuilder('reset');
-            $('#builder_group_0').css('width', builderWidth);
-        });
-
-        $('#builder-set').on('click', function () {
-            $('#builder').queryBuilder('setRules', rules_basic);
             $('#builder_group_0').css('width', builderWidth);
         });
 
         $('#builder-get').on('click', function () {
             const result = $('#builder').queryBuilder('getRules');
             if (!$.isEmptyObject(result)) {
-                alert(JSON.stringify(result, null, 2));
+                alert(JSON.stringify(result, null, 4));
             }
         });
+    }
+
+    setupQueryBuilder() {
+        const builderFilters = [
+            {
+                id: 'padj_HK_vs_UN_gene',
+                label: 'padj_HK_vs_UN (gene)',
+                type: 'boolean',
+                input: 'select',
+                values: {
+                    true: 'Significant'
+                },
+                operators: ['equal']
+            },
+            {
+                id: 'fc_HK_vs_UN_gene',
+                label: 'FC_HK_vs_UN (gene)',
+                type: 'double',
+                validation: {
+                    min: 0,
+                    step: 0.1
+                },
+                operators: ['less_or_equal', 'greater_or_equal', 'between']
+            },
+        ];
+
+        $('#builder').queryBuilder({
+            filters: builderFilters,
+            // rules: loadedRules,
+            default_group_flags: {
+                no_add_group: true
+            },
+            conditions: ['AND']
+        });
+        $('#builder_group_0').css('width', QUERY_BUILDER_WIDTH);
+
+        // example how to load rules
+        const loadedRules = {
+            condition: 'AND',
+            rules: [
+                {
+                    id: 'padj_HK_vs_UN_gene',
+                    operator: 'equal',
+                    value: 'true'
+                },
+                {
+                    id: 'fc_HK_vs_UN_gene',
+                    operator: 'less_or_equal',
+                    value: 2
+                }
+            ]
+        };
+        $('#builder').queryBuilder('setRules', loadedRules);
+        $('#builder_group_0').css('width', QUERY_BUILDER_WIDTH);
     }
 
     initSearchBox() {

@@ -7,7 +7,7 @@
                     <h5 class="mb-0">
                         <button class="btn btn-link" data-toggle="collapse" data-target="#collapseFilter"
                                 aria-expanded="true" aria-controls="collapseFilter">
-                            Filtering Options
+                            Define Filtering Options
                         </button>
                     </h5>
                 </div>
@@ -15,49 +15,14 @@
                      data-parent="#accordionDataBrowser">
                     <div class="card-body">
                         <p class="m-0">
-                            Define rules for filtering of data tables here. Rules will be concatenated using an AND condition.
+                            Define rules for filtering of data tables here. Rules will be concatenated using an AND
+                            logical operator.
                         </p>
                         <div id="builder"></div>
-                        <div class="btn-group">
-                            <input type="button" id="builder-reset" name="builder-reset" value="Reset"
-                                   class="btn btn-primary"/>
-                            <input type="button" id="builder-set" name="builder-set" value="Set"
-                                   class="btn btn-primary"/>
-                            <input type="button" id="builder-get" name="builder-get" value="Get"
-                                   class="btn btn-primary"/>
-                        </div>
-                        <form class="mt-2">
-                            <div class="form-check-inline">
-                                <input class="form-check-input" type="checkbox" value="" id="showDataCheck">
-                                <label class="form-check-label" for="showDataCheck">
-                                    Show data columns
-                                </label>&nbsp;&nbsp;&nbsp;&nbsp;
-                            </div>
-                            <div class="form-check-inline">
-                                <label class="form-check-label">
-                                    Filter significant items in
-                                </label>&nbsp;&nbsp;&nbsp;&nbsp;
-                                <div class="form-check form-check-inline">
-                                    <input class="form-check-input" type="radio" name="inlineRadioOptions"
-                                           id="inlineRadio1"
-                                           value="significant_all">
-                                    <label class="form-check-label" for="inlineRadio1">all tests</label>
-                                </div>
-                                <div class="form-check form-check-inline">
-                                    <input class="form-check-input" type="radio" name="inlineRadioOptions"
-                                           id="inlineRadio2"
-                                           value="significant_any">
-                                    <label class="form-check-label" for="inlineRadio2">any test</label>
-                                </div>
-                                <div class="form-check form-check-inline">
-                                    <input class="form-check-input" type="radio" name="inlineRadioOptions"
-                                           id="inlineRadio3"
-                                           value="" checked="checked">
-                                    <label class="form-check-label" for="inlineRadio3">none</label>
-                                </div>
-                            </div>
-                        </form>
-
+                        <input type="button" id="builder-get" name="builder-get" value="Apply Filters"
+                               class="btn btn-primary"/>
+                        <input type="button" id="builder-reset" name="builder-reset" value="Reset Filters"
+                               class="btn btn-danger"/>
                     </div>
                 </div>
             </div>
@@ -67,28 +32,67 @@
                     <h5 class="mb-0">
                         <button class="btn btn-link collapsed" data-toggle="collapse" data-target="#collapseFirdi"
                                 aria-expanded="false" aria-controls="collapseFirdi">
-                            Explore Data
+                            Show Data Tables
                         </button>
                     </h5>
                 </div>
                 <div id="collapseFirdi" class="collapse show" aria-labelledby="headingFirdi"
                      data-parent="#accordionDataBrowser">
                     <div class="card-body">
-                        <p class="m-0">
-                            The provided omics data are shown here in different data tables. Clicking an entity in one table
-                            will display connected entities in other tables and additional information for that entity in the
-                            bottom panel. A blue circle next to the entity name indicates
-                            an observed entity (has a measurement in the uploaded data) while a white circle next to the
-                            entity name indicates an inferred entity (connected according to Reactome database).
-                            To create a comparison between different experimental conditions, please go to the
-                            <strong>Inference</strong> tab. The resulting comparison will be shown as a column in the data table,
-                            and entries are colour-coded according to the fold change. Highlighting a mouse will display the p-value.
-                        </p>
-
-                        <form class="mt-1 mb-1">
-                            <input class="form-control" type="search" placeholder="Search" aria-label="Search"
-                                   id="global_filter">
+                        <form class="mt-0">
+                            <div>
+                                <input class="form-control" type="search"
+                                       placeholder="Type here to search across all data tables"
+                                       aria-label="Search" id="global_filter">
+                            </div>
+                            <div class="form-check-inline mt-1 mb-2">
+                                <strong>Show or hide:</strong>&nbsp;&nbsp;
+                                <input class="form-check-input" type="checkbox" value="" id="showGeneTable">
+                                <label class="form-check-label" for="showGeneTable">
+                                    Gene Data
+                                </label>&nbsp;&nbsp;&nbsp;&nbsp;
+                                <input class="form-check-input" type="checkbox" value="" id="showProteinTable">
+                                <label class="form-check-label" for="showProteinTable">
+                                    Protein Data
+                                </label>&nbsp;&nbsp;&nbsp;&nbsp;
+                                <input class="form-check-input" type="checkbox" value="" id="showCompoundTable">
+                                <label class="form-check-label" for="showCompoundTable">
+                                    Compound Data
+                                </label>&nbsp;&nbsp;&nbsp;&nbsp;
+                                <input class="form-check-input" type="checkbox" value="" id="showCompoundTable">
+                                <label class="form-check-label" for="showCompoundTable">
+                                    Reaction Data
+                                </label>&nbsp;&nbsp;&nbsp;&nbsp;
+                                <input class="form-check-input" type="checkbox" value="" id="showCompoundTable">
+                                <label class="form-check-label" for="showCompoundTable">
+                                    Pathway Data
+                                </label>&nbsp;&nbsp;&nbsp;&nbsp;
+                                <input class="form-check-input" type="checkbox" value="" id="showDataCheck">
+                                <label class="form-check-label" for="showDataCheck">
+                                    Data columns
+                                </label>&nbsp;&nbsp;
+                                <a data-toggle="collapse" href="#collapseHelp"
+                                   aria-expanded="false" aria-controls="collapseHelp">
+                                    ℹ️
+                                </a>
+                            </div>
                         </form>
+
+                        <div class="collapse" id="collapseHelp">
+                            <div class="alert alert-primary mt-2 mb-0" role="alert">
+                                The provided omics data are shown in different data tables. Clicking an entity in one
+                                table will display connected entities in other tables, while the additional information
+                                for that entity will be shown in the bottom panel. A blue circle 🔵 next to the entity
+                                name indicates an observed entity (has a measurement in the uploaded data) while a white
+                                circle ⚪ next to the entity name indicates an inferred entity (connected according to
+                                Reactome database but no measurement is provided). To create a comparison between
+                                different experimental conditions, please go to the <a
+                                    href="{% url 'inference' analysis_id=analysis_id %}">📊 Inference</a>tab. The
+                                resulting comparisons will be shown as columns in the data table, where entries in the
+                                table table are colour-coded according to their fold changes. Hovering over an entity
+                                will display its p-value for that comparison.
+                            </div>
+                        </div>
 
                         <div class="card-group">
 
@@ -168,7 +172,7 @@
                             <!-- Reaction card -->
                             <div class="card border-light">
                                 <div class="card-block">
-                                    <div class="card-header bg-light m-0"><strong>Reactions Data
+                                    <div class="card-header bg-light m-0"><strong>Reaction Data
                                         {% if data_display_name.4 %}(
                                             {{ data_display_name.4 }}){% endif %}</strong></div>
                                     <div class="card-table style-2 p-1">
