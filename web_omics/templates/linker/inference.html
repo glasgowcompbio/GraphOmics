@@ -13,7 +13,7 @@
 
     <div class="container-fluid mt-2">
 
-        {% include 'linker/navbar.html' %}
+        {% include 'linker/navbar.html' with show_selection_group=False active='inference' %}
 
         {% if list_data %}
             <div class="m-1 mb-3">
