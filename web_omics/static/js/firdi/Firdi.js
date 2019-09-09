@@ -10,7 +10,7 @@ import 'datatables.net-scroller-dt/css/scroller.dataTables.min.css';
 import 'datatables.net-select';
 import 'datatables.net-select-dt/css/select.dataTables.min.css';
 
-import "jQuery-QueryBuilder/dist/js/query-builder.standalone.js";
+import "jQuery-QueryBuilder/dist/js/query-builder.js";
 import "jQuery-QueryBuilder/dist/css/query-builder.default.css";
 
 import {
@@ -93,7 +93,7 @@ class Firdi {
                 value: 1
             }]
         };
-        const builderWidth = '75%';
+        const builderWidth = '50%';
 
         $('#builder').queryBuilder({
             filters: [{
