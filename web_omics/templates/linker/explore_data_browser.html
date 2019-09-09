@@ -47,24 +47,29 @@
                             </div>
                             <div class="form-check-inline mt-1 mb-2">
                                 <strong>Show or hide:</strong>&nbsp;&nbsp;
-                                <input class="form-check-input" type="checkbox" value="" id="showGeneTable">
+                                <input class="form-check-input" type="checkbox" value="" id="showGeneTable"
+                                       {% if show_gene_data %}checked{% endif %}>
                                 <label class="form-check-label" for="showGeneTable">
                                     Gene Data
                                 </label>&nbsp;&nbsp;&nbsp;&nbsp;
-                                <input class="form-check-input" type="checkbox" value="" id="showProteinTable">
+                                <input class="form-check-input" type="checkbox" value="" id="showProteinTable"
+                                       {% if show_protein_data %}checked{% endif %}>
                                 <label class="form-check-label" for="showProteinTable">
                                     Protein Data
                                 </label>&nbsp;&nbsp;&nbsp;&nbsp;
-                                <input class="form-check-input" type="checkbox" value="" id="showCompoundTable">
+                                <input class="form-check-input" type="checkbox" value="" id="showCompoundTable"
+                                       {% if show_compound_data %}checked{% endif %}>
                                 <label class="form-check-label" for="showCompoundTable">
                                     Compound Data
                                 </label>&nbsp;&nbsp;&nbsp;&nbsp;
-                                <input class="form-check-input" type="checkbox" value="" id="showCompoundTable">
-                                <label class="form-check-label" for="showCompoundTable">
+                                <input class="form-check-input" type="checkbox" value="" id="showReactionTable"
+                                       checked>
+                                <label class="form-check-label" for="showReactionTable">
                                     Reaction Data
                                 </label>&nbsp;&nbsp;&nbsp;&nbsp;
-                                <input class="form-check-input" type="checkbox" value="" id="showCompoundTable">
-                                <label class="form-check-label" for="showCompoundTable">
+                                <input class="form-check-input" type="checkbox" value="" id="showPathwayTable"
+                                       checked>
+                                <label class="form-check-label" for="showPathwayTable">
                                     Pathway Data
                                 </label>&nbsp;&nbsp;&nbsp;&nbsp;
                                 <input class="form-check-input" type="checkbox" value="" id="showDataCheck">
@@ -97,7 +102,8 @@
                         <div class="card-group">
 
                             <!-- Gene card -->
-                            <div class="card border-light">
+                            <div id="collapseGene"
+                                 class="card border-light collapse {% if show_gene_data %} show {% endif %}">
                                 <div class="card-block">
                                     <div class="card-header bg-light m-0"><strong>Gene Data {% if data_display_name.0 %}
                                         (
@@ -121,7 +127,8 @@
                             </div>
 
                             <!-- Protein card -->
-                            <div class="card border-light">
+                            <div id="collapseProtein"
+                                 class="card border-light collapse {% if show_protein_data %} show {% endif %}">
                                 <div class="card-block">
                                     <div class="card-header bg-light m-0"><strong>Protein Data
                                         {% if data.display_name.2 %}(
@@ -145,7 +152,8 @@
                             </div>
 
                             <!-- Compound card -->
-                            <div class="card border-light">
+                            <div id="collapseCompound"
+                                 class="card border-light collapse {% if show_compound_data %} show {% endif %}">
                                 <div class="card-block">
                                     <div class="card-header bg-light m-0"><strong>Compound Data
                                         {% if data_display_name.3 %}
@@ -170,7 +178,7 @@
                             </div>
 
                             <!-- Reaction card -->
-                            <div class="card border-light">
+                            <div id="collapseReaction" class="card border-light collapse show">
                                 <div class="card-block">
                                     <div class="card-header bg-light m-0"><strong>Reaction Data
                                         {% if data_display_name.4 %}(
@@ -194,7 +202,7 @@
                             </div>
 
                             <!-- Pathway card -->
-                            <div class="card border-light" style="flex-grow:2">
+                            <div id="collapsePathway" class="card border-light collapse show" style="flex-grow:2">
                                 <div class="card-block">
                                     <div class="card-header bg-light m-0"><strong>Pathway Data
                                         {% if data_display_name.5 %}(

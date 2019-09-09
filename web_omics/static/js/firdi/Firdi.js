@@ -153,6 +153,11 @@ class Firdi {
             const val = $('#global_filter').val();
             $.fn.dataTable.tables({api: true}).search(val).draw();
         });
+        $('#showGeneTable').on('change', () => $('#collapseGene').collapse('toggle'));
+        $('#showProteinTable').on('change', () => $('#collapseProtein').collapse('toggle'));
+        $('#showCompoundTable').on('change', () => $('#collapseCompound').collapse('toggle'));
+        $('#showReactionTable').on('change', () => $('#collapseReaction').collapse('toggle'));
+        $('#showPathwayTable').on('change', () => $('#collapsePathway').collapse('toggle'));
     }
 
     resetFiRDI() {

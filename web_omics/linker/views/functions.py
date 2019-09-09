@@ -362,8 +362,17 @@ def get_context(analysis):
         'analysis_description': analysis.description,
         'analysis_species': analysis.get_species_str(),
         'view_names': json.dumps(view_names),
+        'show_gene_data': show_data_table(analysis, GENOMICS),
+        'show_protein_data': show_data_table(analysis, PROTEOMICS),
+        'show_compound_data': show_data_table(analysis, METABOLOMICS)
     }
     return context
+
+
+def show_data_table(analysis, data_type):
+    analysis_data = get_last_analysis_data(analysis, data_type)
+    data_df, design_df = get_dataframes(analysis_data, IDS)
+    return design_df is not None # if design df is None, no data is provided
 
 
 def get_reverse_url(viewname, analysis):
