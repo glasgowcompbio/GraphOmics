@@ -83,7 +83,6 @@ class Firdi {
         // button handlers
         $('#builder-reset').on('click', function () {
             $('#builder').queryBuilder('reset');
-            $('#builder_group_0').css('width', builderWidth);
         });
 
         $('#builder-get').on('click', function () {
@@ -95,29 +94,41 @@ class Firdi {
     }
 
     setupQueryBuilder() {
-        const builderFilters = [
-            {
-                id: 'padj_HK_vs_UN_gene',
-                label: 'padj_HK_vs_UN (gene)',
-                type: 'boolean',
-                input: 'select',
-                values: {
-                    true: 'Significant'
-                },
-                operators: ['equal']
-            },
-            {
-                id: 'fc_HK_vs_UN_gene',
-                label: 'FC_HK_vs_UN (gene)',
-                type: 'double',
-                validation: {
-                    min: 0,
-                    step: 0.1
-                },
-                operators: ['less_or_equal', 'greater_or_equal', 'between']
-            },
-        ];
+        // create list of filters for each adjusted p-value and fold-change column across all tables
+        const builderFilters = [];
+        const tableNames = Object.keys(this.state.filterNames)
+        for (const tableName of tableNames) {
+            const values = this.state.filterNames[tableName];
+            const padjColumns = values.padj;
+            const fcColumns = values.FC;
+            for (const padjCol of padjColumns) {
+                builderFilters.push(
+                {
+                    id: `${tableName}.${padjCol}`,
+                    label: `${tableName}: ${padjCol}`,
+                    type: 'boolean',
+                    input: 'select',
+                    values: {
+                        true: 'Significant'
+                    },
+                    operators: ['equal']
+                });
+            }
+            for (const fcCol of fcColumns) {
+                builderFilters.push(
+                {
+                    id: `${tableName}.${fcCol}`,
+                    label: `${tableName}: ${fcCol}`,
+                    type: 'double',
+                    validation: {
+                        step: 0.1
+                    },
+                    operators: ['less_or_equal', 'greater_or_equal', 'between']
+                });
+            }
+        }
 
+        // init query builder
         $('#builder').queryBuilder({
             filters: builderFilters,
             // rules: loadedRules,
@@ -129,23 +140,23 @@ class Firdi {
         $('#builder_group_0').css('width', QUERY_BUILDER_WIDTH);
 
         // example how to load rules
-        const loadedRules = {
-            condition: 'AND',
-            rules: [
-                {
-                    id: 'padj_HK_vs_UN_gene',
-                    operator: 'equal',
-                    value: 'true'
-                },
-                {
-                    id: 'fc_HK_vs_UN_gene',
-                    operator: 'less_or_equal',
-                    value: 2
-                }
-            ]
-        };
-        $('#builder').queryBuilder('setRules', loadedRules);
-        $('#builder_group_0').css('width', QUERY_BUILDER_WIDTH);
+        // const loadedRules = {
+        //     condition: 'AND',
+        //     rules: [
+        //         {
+        //             id: 'padj_HK_vs_UN_gene',
+        //             operator: 'equal',
+        //             value: 'true'
+        //         },
+        //         {
+        //             id: 'FC_HK_vs_UN_gene',
+        //             operator: 'less_or_equal',
+        //             value: 2
+        //         }
+        //     ]
+        // };
+        // $('#builder').queryBuilder('setRules', loadedRules);
+        // $('#builder_group_0').css('width', QUERY_BUILDER_WIDTH);
     }
 
     initSearchBox() {

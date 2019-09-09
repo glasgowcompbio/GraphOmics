@@ -81,6 +81,21 @@ class FirdiStore extends Observable {
         return this.makeConstraints();
     }
 
+    @computed get filterNames() {
+        const fieldNames = this.fieldNames;
+        const filtered = {};
+        for (let i = 0; i < fieldNames.length; i++) {
+            const tableFieldNames = fieldNames[i];
+            const tableName = tableFieldNames['tableName'];
+            const fields = tableFieldNames['fieldNames'];
+            filtered[tableName] = {
+                'padj': fields.filter(x => x.indexOf('padj') > -1), // find columns containing 'padj'
+                'FC': fields.filter(x => x.indexOf('FC') > -1) // find columns containing 'FC'
+            }
+        }
+        return filtered;
+    }
+
     @computed get queryResult() {
         // console.trace('queryResult');
 
