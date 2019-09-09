@@ -128,3 +128,10 @@ button.dt-button {
     content: '❗';
     padding-right: 5px;
 }
+
+/* https://stackoverflow.com/questions/13119912/disable-bootstraps-collapse-open-close-animation */
+.collapsing {
+    -webkit-transition: none;
+    transition: none;
+    display: none;
+}
