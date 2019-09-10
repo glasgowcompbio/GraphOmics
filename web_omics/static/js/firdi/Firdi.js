@@ -87,7 +87,7 @@ class Firdi {
             }, 1); // we need a small delay to allow blockFirdiTable to be rendered correctly
         }
 
-        $('#builder-reset').on('click', function () {
+        $('#builderReset').on('click', function () {
             $('#builder').queryBuilder('reset');
             setWhereType(null);
         });
