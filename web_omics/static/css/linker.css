@@ -135,3 +135,8 @@ button.dt-button {
     transition: none;
     display: none;
 }
+
+/* https://github.com/mistic100/jQuery-QueryBuilder/issues/816 */
+.hide {
+  display: none !important;
+}
