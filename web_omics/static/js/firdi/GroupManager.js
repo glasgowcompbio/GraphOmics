@@ -259,7 +259,9 @@ class GroupManager {
         this.timestampElem.text(data.timestamp);
         if (data.groupId === null) {
             this.selectedSuggestion = null;
-            this.selectedTarget.value = null;
+            if (this.selectedTarget !== undefined) { // no group has been selected yet
+                this.selectedTarget.value = null;
+            }
         }
 
         const obsCount = data.numObservedEntities;
