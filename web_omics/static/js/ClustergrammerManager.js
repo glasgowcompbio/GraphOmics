@@ -2,7 +2,7 @@ import {
     deepCopy,
     GROUP_LOADED_EVENT,
     LAST_CLICKED_CLUSTERGRAMMER,
-    QUERY_CHANGED_EVENT,
+    QUERY_FILTER_EVENT,
     SELECTION_UPDATE_EVENT
 } from "./common";
 import Clustergrammer from "./clustergrammer/main";
@@ -27,7 +27,7 @@ class ClustergrammerManager {
             console.log('GroupManager --> Clustergrammer');
             this.handleUpdate(data);
         })
-        this.rootStore.firdiStore.on(QUERY_CHANGED_EVENT, (data) => {
+        this.rootStore.firdiStore.on(QUERY_FILTER_EVENT, (data) => {
             console.log('QueryBuilder --> Clustergrammer');
             this.handleUpdate(data);
         })

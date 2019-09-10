@@ -136,28 +136,54 @@ class SqlManager {
     }
 
     makeWhereClause(tablesInfo, skipConstraints, whereType) {
+        // add WHERE condition based on selected pks
         const whereSubClauses = this.makeWhereSubClauses();
         let selectedWhereSubClauses = [];
         whereSubClauses.forEach(function (value, i) {
             if (!skipConstraints[i]) {
-                selectedWhereSubClauses.push(whereSubClauses[i] + " IN @(?)");
+                selectedWhereSubClauses.push(whereSubClauses[i] + ' IN @(?)');
             }
         });
-        const whereSubClauses2 = this.constraintTableConstraintKeyNames
-            .map(t => t['tableName'] + "." + whereType + "=TRUE").join(" OR ");
 
+        // add WHERE condition based on query builder for significant items
+        // const whereSubClauses2 = this.constraintTableConstraintKeyNames
+        //     .map(t => t['tableName'] + "." + whereType + "=TRUE").join(" OR ");
+        let whereSubClauses2 = null;
+        if (whereType) {
+            // padjRules: the selected column is significant (above > 0.05)
+            const padjRules = whereType.rules.filter(rule => rule.type === 'boolean' && rule.operator === 'equal')
+
+            // fcRules: the selected column has a fold change value between the specified range
+            const fcRules = whereType.rules.filter(rule => rule.type === 'double' && rule.operator === 'between')
+
+            // convert rules to SQL conditions
+            const padjConditions = padjRules.map(rule => `${rule.id} < 0.05`);
+            const fcConditions = fcRules.map(rule => `${rule.id} BETWEEN ${rule.value[0]} AND ${rule.value[1]}`)
+
+            // generate the SQL statement
+            if (padjRules.length > 0 && fcRules.length > 0) { // both
+                whereSubClauses2 = padjConditions.join(' AND ') + ' AND ' + fcConditions.join(' AND ');
+            } else if (padjRules.length > 0) { // only padj
+                whereSubClauses2 = padjConditions.join(' AND ');
+            } else if (fcRules.length > 0) { // only FC
+                whereSubClauses2 = fcConditions.join(' AND ');
+            }
+
+        }
+
+        // combine whereSubClauses1 and whereSubClauses2
         if (selectedWhereSubClauses.length > 0) {
-            const whereSubClauses1 = selectedWhereSubClauses.join(" AND ");
+            const whereSubClauses1 = selectedWhereSubClauses.join(' AND ');
             if (whereType) {
-                return "WHERE (" + whereSubClauses1 + ") AND (" + whereSubClauses2 + ")";
+                return 'WHERE (' + whereSubClauses1 + ') AND (' + whereSubClauses2 + ')';
             } else {
-                return "WHERE " + whereSubClauses1;
+                return 'WHERE ' + whereSubClauses1;
             }
         } else {
             if (whereType) {
-                return "WHERE " + whereSubClauses2;
+                return 'WHERE ' + whereSubClauses2;
             } else {
-                return "";
+                return '';
             }
         }
     }
@@ -209,7 +235,6 @@ class SqlManager {
             // console.log('%d. skip %s (%s)', i, sc, uc);
         });
 
-        // debugger;
         const sqlQuery = this.makeSQLquery(tablesInfo, skipConstraints, whereType);
         console.log(sqlQuery);
         const compiledSQLQuery = alasql.compile(sqlQuery);

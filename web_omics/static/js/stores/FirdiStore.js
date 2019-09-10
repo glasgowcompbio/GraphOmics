@@ -5,7 +5,7 @@ import {
     LAST_CLICKED_FIRDI,
     LAST_CLICKED_GROUP_MANAGER,
     LAST_CLICKED_QUERY_BUILDER,
-    QUERY_CHANGED_EVENT,
+    QUERY_FILTER_EVENT,
     SELECTION_UPDATE_EVENT,
 } from "../common";
 import {getConstraintTablesConstraintKeyName, getDisplayName, getPkCol, isTableVisible} from "../firdi/Utils";
@@ -196,11 +196,8 @@ class FirdiStore extends Observable {
 
     @action.bound
     setWhereType(newType) {
-        if (newType === null) {
-            this.reset();
-        } else {
-            this.whereType = newType;
-        }
+        this.reset(); // clear current firdi selection
+        this.whereType = newType;
         this.rootStore.groupStore.reset(); // clear currently loaded group info
     }
 
@@ -216,7 +213,7 @@ class FirdiStore extends Observable {
             this.fire(SELECTION_UPDATE_EVENT, data);
         } else if (this.rootStore.lastClicked = LAST_CLICKED_QUERY_BUILDER) {
             // filtering rules have been changed in query builder
-            this.fire(QUERY_CHANGED_EVENT, data)
+            this.fire(QUERY_FILTER_EVENT, data)
         }
     }
 

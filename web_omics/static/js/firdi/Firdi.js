@@ -20,7 +20,7 @@ import {
     LAST_CLICKED_FIRDI,
     LAST_CLICKED_QUERY_BUILDER,
     QUERY_BUILDER_WIDTH,
-    QUERY_CHANGED_EVENT,
+    QUERY_FILTER_EVENT,
     SELECTION_UPDATE_EVENT,
     unblockFirdiTable
 } from '../common';
@@ -50,7 +50,7 @@ class Firdi {
             console.log('Firdi --> Firdi');
             this.updateTablesForClickUpdate();
         })
-        this.rootStore.firdiStore.on(QUERY_CHANGED_EVENT, (data) => {
+        this.rootStore.firdiStore.on(QUERY_FILTER_EVENT, (data) => {
             console.log('QueryBuilder --> Firdi');
             this.resetFiRDI();
             this.updateTablesForQueryBuilder();
@@ -92,13 +92,14 @@ class Firdi {
             setWhereType(null);
         });
 
-        $('#builder-get').on('click', function () {
+        $('#builderApply').on('click', function () {
             const result = $('#builder').queryBuilder('getRules');
             if (!$.isEmptyObject(result)) {
-                console.log(JSON.stringify(result, null, 4));
+                // console.log(JSON.stringify(result, null, 4));
                 setWhereType(result);
             }
         });
+
     }
 
     setupQueryBuilder() {
@@ -131,7 +132,7 @@ class Firdi {
                         validation: {
                             step: 0.1
                         },
-                        operators: ['less_or_equal', 'greater_or_equal', 'between']
+                        operators: ['between']
                     });
             }
         }
