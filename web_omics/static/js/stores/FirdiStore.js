@@ -4,7 +4,9 @@ import {
     LAST_CLICKED_CLUSTERGRAMMER,
     LAST_CLICKED_FIRDI,
     LAST_CLICKED_GROUP_MANAGER,
-    SELECTION_UPDATE_EVENT
+    LAST_CLICKED_QUERY_BUILDER,
+    QUERY_CHANGED_EVENT,
+    SELECTION_UPDATE_EVENT,
 } from "../common";
 import {getConstraintTablesConstraintKeyName, getDisplayName, getPkCol, isTableVisible} from "../firdi/Utils";
 import {action, autorun, computed, observable} from 'mobx';
@@ -194,17 +196,26 @@ class FirdiStore extends Observable {
 
     @action.bound
     setWhereType(newType) {
-        this.whereType = newType;
+        if (newType === null) {
+            this.reset();
+        } else {
+            this.whereType = newType;
+        }
     }
 
     notifyUpdate(data) {
         if (this.rootStore.lastClicked === LAST_CLICKED_FIRDI) {
+            // a row in data tables is clicked
             this.fire(SELECTION_UPDATE_EVENT, data);
         } else if (this.rootStore.lastClicked === LAST_CLICKED_GROUP_MANAGER) {
+            // a selection group is loaded
             this.fire(GROUP_LOADED_EVENT, data);
         } else if (this.rootStore.lastClicked === LAST_CLICKED_CLUSTERGRAMMER) {
-            // selection event from autorun due to another clustergrammer update
+            // a cluster is selected in the clustergrammer heatmap
             this.fire(SELECTION_UPDATE_EVENT, data);
+        } else if (this.rootStore.lastClicked = LAST_CLICKED_QUERY_BUILDER) {
+            // filtering rules have been changed in query builder
+            this.fire(QUERY_CHANGED_EVENT, data)
         }
     }
 

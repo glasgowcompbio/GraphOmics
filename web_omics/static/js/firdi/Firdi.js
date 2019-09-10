@@ -15,14 +15,17 @@ import "jQuery-QueryBuilder/dist/css/query-builder.default.css";
 
 import {
     blockFirdiTable,
-    HEATMAP_CLICKED_EVENT,
-    deepCopy,
     GROUP_LOADED_EVENT,
-    unblockFirdiTable, SELECTION_UPDATE_EVENT, LAST_CLICKED_FIRDI,
-    QUERY_BUILDER_WIDTH
+    HEATMAP_CLICKED_EVENT,
+    LAST_CLICKED_FIRDI,
+    LAST_CLICKED_QUERY_BUILDER,
+    QUERY_BUILDER_WIDTH,
+    QUERY_CHANGED_EVENT,
+    SELECTION_UPDATE_EVENT,
+    unblockFirdiTable
 } from '../common';
 import DataTablesManager from './DataTablesManager';
-import {getPkCol, getPkValue, getRowObj, isTableVisible} from "./Utils";
+import {getPkValue, getRowObj} from "./Utils";
 import InfoPanesManager from "./InfoPanesManager";
 
 
@@ -47,6 +50,11 @@ class Firdi {
             console.log('Firdi --> Firdi');
             this.updateTablesForClickUpdate();
         })
+        this.rootStore.firdiStore.on(QUERY_CHANGED_EVENT, (data) => {
+            console.log('QueryBuilder --> Firdi');
+            this.resetFiRDI();
+            this.updateTablesForQueryBuilder();
+        })
 
         this.dataTablesManager = new DataTablesManager(this.state);
         this.infoPanelManager = new InfoPanesManager(this.state, viewNames);
@@ -65,30 +73,30 @@ class Firdi {
     initSignificantFilters() {
         this.setupQueryBuilder();
 
-        // unused codes
-        // const self = this;
-        // const filterTableFunc = function () {
-        //     blockFirdiTable();
-        //     // set last clicked UI element
-        //     self.rootStore.lastClicked = LAST_CLICKED_FIRDI;
-        //     const selectedValue = this.value;
-        //     window.setTimeout(function () {
-        //         let filterColumnName = selectedValue.length > 0 ? selectedValue : null;
-        //         self.state.setWhereType(filterColumnName);
-        //         unblockFirdiTable();
-        //     }, 1); // we need a small delay to allow blockFirdiTable to be rendered correctly
-        // };
-        // $('input[type=radio][name=inlineRadioOptions]').change(filterTableFunc);
-
         // button handlers
+        const self = this;
+
+        function setWhereType(result) {
+            blockFirdiTable();
+            // set last clicked UI element
+            self.rootStore.lastClicked = LAST_CLICKED_QUERY_BUILDER;
+            // set filtering value
+            window.setTimeout(function () {
+                self.state.setWhereType(result);
+                unblockFirdiTable();
+            }, 1); // we need a small delay to allow blockFirdiTable to be rendered correctly
+        }
+
         $('#builder-reset').on('click', function () {
             $('#builder').queryBuilder('reset');
+            setWhereType(null);
         });
 
         $('#builder-get').on('click', function () {
             const result = $('#builder').queryBuilder('getRules');
             if (!$.isEmptyObject(result)) {
-                alert(JSON.stringify(result, null, 4));
+                console.log(JSON.stringify(result, null, 4));
+                setWhereType(result);
             }
         });
     }
@@ -103,28 +111,28 @@ class Firdi {
             const fcColumns = values.FC;
             for (const padjCol of padjColumns) {
                 builderFilters.push(
-                {
-                    id: `${tableName}.${padjCol}`,
-                    label: `${tableName}: ${padjCol}`,
-                    type: 'boolean',
-                    input: 'select',
-                    values: {
-                        true: 'Significant'
-                    },
-                    operators: ['equal']
-                });
+                    {
+                        id: `${tableName}.${padjCol}`,
+                        label: `${tableName}: ${padjCol}`,
+                        type: 'boolean',
+                        input: 'select',
+                        values: {
+                            true: 'Significant'
+                        },
+                        operators: ['equal']
+                    });
             }
             for (const fcCol of fcColumns) {
                 builderFilters.push(
-                {
-                    id: `${tableName}.${fcCol}`,
-                    label: `${tableName}: ${fcCol}`,
-                    type: 'double',
-                    validation: {
-                        step: 0.1
-                    },
-                    operators: ['less_or_equal', 'greater_or_equal', 'between']
-                });
+                    {
+                        id: `${tableName}.${fcCol}`,
+                        label: `${tableName}: ${fcCol}`,
+                        type: 'double',
+                        validation: {
+                            step: 0.1
+                        },
+                        operators: ['less_or_equal', 'greater_or_equal', 'between']
+                    });
             }
         }
 
@@ -138,25 +146,6 @@ class Firdi {
             conditions: ['AND']
         });
         $('#builder_group_0').css('width', QUERY_BUILDER_WIDTH);
-
-        // example how to load rules
-        // const loadedRules = {
-        //     condition: 'AND',
-        //     rules: [
-        //         {
-        //             id: 'padj_HK_vs_UN_gene',
-        //             operator: 'equal',
-        //             value: 'true'
-        //         },
-        //         {
-        //             id: 'FC_HK_vs_UN_gene',
-        //             operator: 'less_or_equal',
-        //             value: 2
-        //         }
-        //     ]
-        // };
-        // $('#builder').queryBuilder('setRules', loadedRules);
-        // $('#builder_group_0').css('width', QUERY_BUILDER_WIDTH);
     }
 
     initSearchBox() {
@@ -229,6 +218,16 @@ class Firdi {
             this.resetTables();
         }
         // this.state.notifyUpdate();
+    }
+
+    updateTablesForQueryBuilder() {
+        const fieldNames = this.state.fieldNames;
+        const queryResult = this.state.queryResult;
+        for (let i = 0; i < fieldNames.length; i++) { // update all the tables
+            const tableFieldName = fieldNames[i];
+            const tableName = tableFieldName['tableName'];
+            this.updateSingleTable(tableFieldName, queryResult);
+        }
     }
 
     updateSingleTable(tableFieldName, queryResult) {

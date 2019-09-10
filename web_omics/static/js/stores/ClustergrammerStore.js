@@ -42,6 +42,7 @@ class ClustergrammerStore extends Observable {
         this.cgmSelections = nodeNames.map(d => this.rootStore.firdiStore.displayNameToConstraintKey[tableName][d]);
         // reset firdi state and create new selections
         this.rootStore.firdiStore.addConstraintsByPkValues(this.cgmLastClickedName, this.cgmSelections);
+        this.rootStore.groupStore.reset(); // clear currently loaded group info
     }
 
     notifyUpdate(data) {
