@@ -201,6 +201,7 @@ class FirdiStore extends Observable {
         } else {
             this.whereType = newType;
         }
+        this.rootStore.groupStore.reset(); // clear currently loaded group info
     }
 
     notifyUpdate(data) {
