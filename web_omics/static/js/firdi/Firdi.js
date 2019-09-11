@@ -111,10 +111,11 @@ class Firdi {
             const padjColumns = values.padj;
             const fcColumns = values.FC;
             for (const padjCol of padjColumns) {
+                const shortTableName = tableName.replace('_table','');
                 builderFilters.push(
                     {
                         id: `${tableName}.${padjCol}`,
-                        label: `${tableName}: ${padjCol}`,
+                        label: `${shortTableName}: ${padjCol}`,
                         type: 'boolean',
                         input: 'select',
                         values: {
@@ -124,10 +125,11 @@ class Firdi {
                     });
             }
             for (const fcCol of fcColumns) {
+                const shortTableName = tableName.replace('_table','');
                 builderFilters.push(
                     {
                         id: `${tableName}.${fcCol}`,
-                        label: `${tableName}: ${fcCol}`,
+                        label: `${shortTableName}: ${fcCol}`,
                         type: 'double',
                         validation: {
                             step: 0.1
