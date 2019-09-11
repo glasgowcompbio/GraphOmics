@@ -10,17 +10,23 @@ import 'datatables.net-scroller-dt/css/scroller.dataTables.min.css';
 import 'datatables.net-select';
 import 'datatables.net-select-dt/css/select.dataTables.min.css';
 
-import alasql from 'alasql';
+import "jQuery-QueryBuilder/dist/js/query-builder.js";
+import "jQuery-QueryBuilder/dist/css/query-builder.default.css";
 
 import {
     blockFirdiTable,
-    HEATMAP_CLICKED_EVENT,
-    deepCopy,
     GROUP_LOADED_EVENT,
-    unblockFirdiTable, SELECTION_UPDATE_EVENT, LAST_CLICKED_FIRDI
+    HEATMAP_CLICKED_EVENT,
+    LAST_CLICKED_FIRDI,
+    LAST_CLICKED_QUERY_BUILDER,
+    QUERY_BUILDER_WIDTH,
+    QUERY_FILTER_EVENT,
+    SELECT_ALL_EVENT,
+    SELECTION_UPDATE_EVENT,
+    unblockFirdiTable
 } from '../common';
 import DataTablesManager from './DataTablesManager';
-import {getPkCol, getPkValue, getRowObj, isTableVisible} from "./Utils";
+import {getPkValue, getRowObj} from "./Utils";
 import InfoPanesManager from "./InfoPanesManager";
 
 
@@ -42,8 +48,17 @@ class Firdi {
             this.updateFiRDIForLoadSelection();
         })
         this.rootStore.firdiStore.on(SELECTION_UPDATE_EVENT, (data) => {
-            console.log('Firdi --> Firdi');
+            console.log('Firdi Row Selection --> Firdi');
             this.updateTablesForClickUpdate();
+        })
+        this.rootStore.firdiStore.on(QUERY_FILTER_EVENT, (data) => {
+            console.log('QueryBuilder --> Firdi');
+            this.resetFiRDI();
+            this.updateTablesForQueryBuilder();
+        })
+        this.rootStore.firdiStore.on(SELECT_ALL_EVENT, (data) => {
+            console.log('Firdi Select All --> Firdi');
+            this.updateTablesForSelectAll();
         })
 
         this.dataTablesManager = new DataTablesManager(this.state);
@@ -61,19 +76,84 @@ class Firdi {
     }
 
     initSignificantFilters() {
+        this.setupQueryBuilder();
+
+        // button handlers
         const self = this;
-        const filterTableFunc = function () {
+
+        function setWhereType(result) {
             blockFirdiTable();
             // set last clicked UI element
-            self.rootStore.lastClicked = LAST_CLICKED_FIRDI;
-            const selectedValue = this.value;
+            self.rootStore.lastClicked = LAST_CLICKED_QUERY_BUILDER;
+            // set filtering value
             window.setTimeout(function () {
-                let filterColumnName = selectedValue.length > 0 ? selectedValue : null;
-                self.state.setWhereType(filterColumnName);
+                self.state.setWhereType(result);
                 unblockFirdiTable();
             }, 1); // we need a small delay to allow blockFirdiTable to be rendered correctly
-        };
-        $('input[type=radio][name=inlineRadioOptions]').change(filterTableFunc);
+        }
+
+        $('#builderReset').on('click', function () {
+            $('#builder').queryBuilder('reset');
+            setWhereType(null);
+        });
+
+        $('#builderApply').on('click', function () {
+            const result = $('#builder').queryBuilder('getRules');
+            if (!$.isEmptyObject(result)) {
+                // console.log(JSON.stringify(result, null, 4));
+                setWhereType(result);
+            }
+        });
+
+    }
+
+    setupQueryBuilder() {
+        // create list of filters for each adjusted p-value and fold-change column across all tables
+        const builderFilters = [];
+        const tableNames = Object.keys(this.state.filterNames)
+        for (const tableName of tableNames) {
+            const values = this.state.filterNames[tableName];
+            const padjColumns = values.padj;
+            const fcColumns = values.FC;
+            for (const padjCol of padjColumns) {
+                const shortTableName = tableName.replace('_table','');
+                builderFilters.push(
+                    {
+                        id: `${tableName}.${padjCol}`,
+                        label: `${shortTableName}: ${padjCol}`,
+                        type: 'boolean',
+                        input: 'select',
+                        values: {
+                            true: 'Significant'
+                        },
+                        operators: ['equal']
+                    });
+            }
+            for (const fcCol of fcColumns) {
+                const shortTableName = tableName.replace('_table','');
+                builderFilters.push(
+                    {
+                        id: `${tableName}.${fcCol}`,
+                        label: `${shortTableName}: ${fcCol}`,
+                        type: 'double',
+                        validation: {
+                            step: 0.1
+                        },
+                        operators: ['between']
+                    });
+            }
+        }
+
+        // init query builder
+        $('#builder').queryBuilder({
+            filters: builderFilters,
+            // rules: loadedRules,
+            default_group_flags: {
+                no_add_group: true
+            },
+            conditions: ['AND']
+        });
+        $('#builder_group_0').css('width', QUERY_BUILDER_WIDTH);
     }
 
     initSearchBox() {
@@ -81,6 +161,11 @@ class Firdi {
             const val = $('#global_filter').val();
             $.fn.dataTable.tables({api: true}).search(val).draw();
         });
+        $('#showGeneTable').on('change', () => $('#collapseGene').collapse('toggle'));
+        $('#showProteinTable').on('change', () => $('#collapseProtein').collapse('toggle'));
+        $('#showCompoundTable').on('change', () => $('#collapseCompound').collapse('toggle'));
+        $('#showReactionTable').on('change', () => $('#collapseReaction').collapse('toggle'));
+        $('#showPathwayTable').on('change', () => $('#collapsePathway').collapse('toggle'));
     }
 
     resetFiRDI() {
@@ -141,6 +226,33 @@ class Firdi {
             this.resetTables();
         }
         // this.state.notifyUpdate();
+    }
+
+    updateTablesForQueryBuilder() {
+        const fieldNames = this.state.fieldNames;
+        const queryResult = this.state.queryResult;
+        for (let i = 0; i < fieldNames.length; i++) { // update all the tables
+            const tableFieldName = fieldNames[i];
+            const tableName = tableFieldName['tableName'];
+            this.updateSingleTable(tableFieldName, queryResult);
+        }
+    }
+
+    updateTablesForSelectAll() {
+        // update all tables
+        this.updateTablesForClickUpdate();
+
+        // update bottom panel for the current table
+        const tableName = this.state.rootStore.lastClickedTableName;
+        if (this.state.numSelected[tableName] > 0) {
+            this.state.selectedIndex[tableName] = 0;
+            const selections = this.state.selections[tableName];
+            const selectedIndex = 0;
+            const updatePage = true;
+            this.infoPanelManager.updateEntityInfo(tableName, selections, selectedIndex, updatePage);
+        } else {
+            this.infoPanelManager.clearInfoPanel(tableName);
+        }
     }
 
     updateSingleTable(tableFieldName, queryResult) {
@@ -289,6 +401,7 @@ class Firdi {
 
     trClickHandlerUpdate(tableName, targetTr, rowData, rowIndex, anyRowSelected) {
         // if some rows are already selected in the table
+        this.state.rootStore.lastClickedTableName = tableName;
         if (anyRowSelected) {
             // if the current row is already selected then unselect it
             if (targetTr.hasClass('selected')) {

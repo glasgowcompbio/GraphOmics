@@ -1,19 +1,23 @@
 <div>
     <ul class="nav nav-tabs">
         <li class="nav-item">
-            <a class="nav-link" href="{% url 'explore_data' analysis_id=analysis_id %}">🔍 Explore Data</a>
+            <a class="nav-link {% if active == "explore_data" %}active{% endif %}"
+               href="{% url 'explore_data' analysis_id=analysis_id %}">🔍 Explore Data</a>
         </li>
         {% if user.is_authenticated %}
             <li class="nav-item">
-                <a class="nav-link" href="{% url 'inference' analysis_id=analysis_id %}">📊 Inference</a>
+                <a class="nav-link {% if active == "inference" %}active{% endif %}"
+                   href="{% url 'inference' analysis_id=analysis_id %}">📊 Inference</a>
             </li>
         {% endif %}
         <li class="nav-item">
-            <a class="nav-link" href="{% url 'summary' analysis_id=analysis_id %}">📘 Summary</a>
+            <a class="nav-link {% if active == "summary" %}active{% endif %}"
+               href="{% url 'summary' analysis_id=analysis_id %}">📘 Summary</a>
         </li>
         {% if user.is_authenticated %}
             <li class="nav-item">
-                <a class="nav-link" href="{% url 'settings' analysis_id=analysis_id %}">⚙️ Settings</a>
+                <a class="nav-link {% if active == "settings" %}active{% endif %}"
+                   href="{% url 'settings' analysis_id=analysis_id %}">⚙️ Settings</a>
             </li>
         {% endif %}
         {% if show_selection_group %}

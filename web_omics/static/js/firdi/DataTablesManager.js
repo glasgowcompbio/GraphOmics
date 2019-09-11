@@ -1,9 +1,11 @@
 import alasql from "alasql";
 import {isTableVisible} from "./Utils";
+import {LAST_CLICKED_FIRDI_SELECT_ALL} from "../common";
 
 class DataTablesManager {
 
     constructor(state) {
+        this.state = state;
         const tablesInfo = state.tablesInfo;
         const tableFields = state.tableFields;
 
@@ -58,6 +60,7 @@ class DataTablesManager {
     getDefaultTablesSettings() {
         const self = this;
         const MAX_STRING_LEN = 50;
+
         const defaultDataTablesSettings = {
             // "dom": "Brftip",
             "dom": "Brtip",
@@ -100,8 +103,41 @@ class DataTablesManager {
             'buttons': [
                 {
                     extend: 'colvis',
-                    columns: ':gt(1)'
-                }
+                    columns: ':gt(1)',
+                    titleAttr: 'Column Visibility',
+                },
+                {
+                    text: '☑️ Select All',
+                    action: function (e, dt, node, config) {
+                        // toggle button text
+                        const tableName = dt.settings()[0].sTableId;
+                        self.state.rootStore.selectAllToggles[tableName] = !self.state.rootStore.selectAllToggles[tableName];
+                        const selectAllToggle = self.state.rootStore.selectAllToggles[tableName];
+                        const newText = selectAllToggle ? '☒ Unselect All' : '☑️ Select All';
+                        this.text(newText);
+
+                        self.state.rootStore.lastClicked = LAST_CLICKED_FIRDI_SELECT_ALL;
+                        self.state.rootStore.lastClickedTableName = tableName;
+
+                        if (selectAllToggle === true) {
+                            // get all observed row data and indices
+                            const allRowData = [];
+                            const allRowIndices = [];
+                            dt.rows().every(function (rowIdx, tableLoop, rowLoop) {
+                                const rowData = this.data();
+                                if (rowData.obs === true) {
+                                    allRowData.push(rowData);
+                                    allRowIndices.push(rowIdx);
+                                }
+                            });
+
+                            // add all the selections at once
+                            self.state.addConstraints(tableName, allRowData, allRowIndices);
+                        } else {
+                            self.state.removeConstraints(tableName);
+                        }
+                    }
+                },
             ],
             'rowCallback': function (row, data, index) {
                 // set tooltip
@@ -190,8 +226,16 @@ class DataTablesManager {
 
 
     initialiseDataTables(dataTablesSettingsObjects) {
-        dataTablesSettingsObjects.forEach(function (x) {
-            $('#' + x['tableName']).DataTable(x['tableSettings']);
+        const self = this;
+        dataTablesSettingsObjects.forEach(function (settings) {
+            const tableName = settings['tableName'];
+            const tableAPI = $('#' + tableName).DataTable(settings['tableSettings']);
+            // TODO: quick hack to hide the Select All buttons from reactions and pathways tables
+            if (tableName.includes('reactions') || tableName.includes('pathways')) {
+                tableAPI.buttons(1).remove();
+            } else { // set toggle button state for tables that have the Select ALl buttons
+                self.state.rootStore.selectAllToggles[tableName] = false;
+            }
         });
         // change button to arrows
         const buttons = $(".buttons-colvis");
@@ -199,6 +243,7 @@ class DataTablesManager {
             const btn = $(button);
             btn.text('▼');
         }
+        // disable animation
         $.fx.off = true;
     }
 

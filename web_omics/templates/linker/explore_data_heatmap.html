@@ -1,67 +1,59 @@
 <div class="tab-pane fade" id="pills-heatmap" role="tabpanel" aria-labelledby="pills-heatmap-tab">
+    <div id="accordionHeatmap">
 
-    <div>
-        <div class="card">
-            <div class="card-body">
-                <div id="accordion">
-
-                    <div class="card">
-                        <div class="card-header" id="headingOne">
-                            <h5 class="mb-0">
-                                <button class="btn btn-link collapsed" data-toggle="collapse"
-                                        data-target="#collapseOne" aria-expanded="false"
-                                        aria-controls="collapseOne">
-                                    Show Gene Data
-                                </button>
-                            </h5>
-                        </div>
-                        <div id="collapseOne" class="collapse" aria-labelledby="headingOne"
-                             data-parent="#accordion">
-                            <div id="summary-vis-gene" class="card-body">
-                                No data is available.
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="card">
-                        <div class="card-header" id="headingTwo">
-                            <h5 class="mb-0">
-                                <button class="btn btn-link collapsed" data-toggle="collapse"
-                                        data-target="#collapseTwo" aria-expanded="false"
-                                        aria-controls="collapseTwo">
-                                    Show Protein Data
-                                </button>
-                            </h5>
-                        </div>
-                        <div id="collapseTwo" class="collapse" aria-labelledby="headingTwo"
-                             data-parent="#accordion">
-                            <div id="summary-vis-protein" class="card-body">
-                                No data is available.
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="card">
-                        <div class="card-header" id="headingThree">
-                            <h5 class="mb-0">
-                                <button class="btn btn-link collapsed" data-toggle="collapse"
-                                        data-target="#collapseThree" aria-expanded="false"
-                                        aria-controls="collapseThree">
-                                    Show Compound Data
-                                </button>
-                            </h5>
-                        </div>
-                        <div id="collapseThree" class="collapse" aria-labelledby="headingThree"
-                             data-parent="#accordion">
-                            <div id="summary-vis-compound" class="card-body">
-                                No data is available.
-                            </div>
-                        </div>
-                    </div>
-
+        <div class="card border-0">
+            <div class="card-header" id="headingGeneHeatmap">
+                <h5 class="mb-0">
+                    <button class="btn btn-link collapsed" data-toggle="collapse"
+                            data-target="#collapseGeneHeatmap" aria-expanded="false"
+                            aria-controls="collapseGeneHeatmap">
+                        Show Gene Heatmap
+                    </button>
+                </h5>
+            </div>
+            <div id="collapseGeneHeatmap" class="collapse" aria-labelledby="headingGeneHeatmap"
+                 data-parent="#accordionHeatmap">
+                <div id="summary-vis-gene" class="card-body">
+                    No data is available.
                 </div>
             </div>
         </div>
-    </div>
 
+        <div class="card border-0">
+            <div class="card-header" id="headingProteinHeatmap">
+                <h5 class="mb-0">
+                    <button class="btn btn-link collapsed" data-toggle="collapse"
+                            data-target="#collapseProteinHeatmap" aria-expanded="false"
+                            aria-controls="collapseProteinHeatmap">
+                        Show Protein Heatmap
+                    </button>
+                </h5>
+            </div>
+            <div id="collapseProteinHeatmap" class="collapse" aria-labelledby="headingProteinHeatmap"
+                 data-parent="#accordionHeatmap">
+                <div id="summary-vis-protein" class="card-body">
+                    No data is available.
+                </div>
+            </div>
+        </div>
+
+        <div class="card border-0">
+            <div class="card-header" id="headingCompoundHeatmap">
+                <h5 class="mb-0">
+                    <button class="btn btn-link collapsed" data-toggle="collapse"
+                            data-target="#collapseCompoundHeatmap" aria-expanded="false"
+                            aria-controls="collapseCompoundHeatmap">
+                        Show Compound Heatmap
+                    </button>
+                </h5>
+            </div>
+            <div id="collapseCompoundHeatmap" class="collapse" aria-labelledby="headingCompoundHeatmap"
+                 data-parent="#accordionHeatmap">
+                <div id="summary-vis-compound" class="card-body">
+                    No data is available.
+                </div>
+            </div>
+        </div>
+
+    </div>
 </div>

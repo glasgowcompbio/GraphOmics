@@ -5,9 +5,9 @@ import {
     GROUP_UPDATED_EVENT,
     LAST_CLICKED_GROUP_MANAGER,
     loadData,
-    postData,
-    setupCsrfForAjax,
+    postData, QUERY_FILTER_EVENT, SELECT_ALL_EVENT,
     SELECTION_UPDATE_EVENT,
+    setupCsrfForAjax,
     unblockFirdiTable,
     unblockUI
 } from "../common";
@@ -20,17 +20,24 @@ class GroupManager {
 
         // set an initial linker state to be updated later
         this.rootStore.firdiStore.on(SELECTION_UPDATE_EVENT, (data) => {
-            this.handleFirdiUpdate(data); // update selected item counter from Firdi
+            this.handleFirdiUpdate(data); // a new item is selected from Firdi
         });
         this.rootStore.firdiStore.on(GROUP_LOADED_EVENT, (data) => {
-            this.handleFirdiUpdate(data); // update selected item counter from Firdi
+            this.handleFirdiUpdate(data); // a new group is loaded by clicking 'Load Group'
         });
         this.rootStore.groupStore.on(GROUP_UPDATED_EVENT, (data) => {
-            this.handleGroupUpdate(data); // update group id and name
+            this.handleGroupUpdate(data); // group information has been reset by calling GroupStore.reset()
+        });
+        this.rootStore.firdiStore.on(QUERY_FILTER_EVENT, (data) => {
+            this.handleFirdiUpdate(data); // a new item is selected from Firdi
+        });
+        this.rootStore.firdiStore.on(SELECT_ALL_EVENT, (data) => {
+            this.handleFirdiUpdate(data); // a new item is selected from Firdi
         });
 
-        this.awesomeplete = undefined;
-        this.selectedSuggestion = undefined;
+        this.awesomeplete = undefined; // drop down for group selection
+        this.selectedSuggestion = undefined; // currently selected Suggestion object from awesomeplete
+        this.selectedTarget = undefined; // currently selected target DOM that generates the Suggestion above
 
         const numSelectedId = 'numSelected';
         this.numSelectedElem = $(`#${numSelectedId}`);
@@ -125,6 +132,7 @@ class GroupManager {
             $(elem).on("awesomplete-selectcomplete", (e) => {
                 const originalEvent = e.originalEvent;
                 this.selectedSuggestion = originalEvent.selectedSuggestion;
+                this.selectedTarget = e.target;
                 this.checkLoadButtonStatus(elem);
             });
             this.awesomeplete = selectBox;
@@ -255,6 +263,12 @@ class GroupManager {
         this.groupNameElem.text(data.groupName);
         this.groupDescElem.text(data.groupDesc);
         this.timestampElem.text(data.timestamp);
+        if (data.groupId === null) {
+            this.selectedSuggestion = null;
+            if (this.selectedTarget !== undefined) { // no group has been selected yet
+                this.selectedTarget.value = null;
+            }
+        }
 
         const obsCount = data.numObservedEntities;
         this.numGenesElem.text(obsCount['genes']);

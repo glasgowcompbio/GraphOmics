@@ -3,7 +3,11 @@ import {
     GROUP_LOADED_EVENT,
     LAST_CLICKED_CLUSTERGRAMMER,
     LAST_CLICKED_FIRDI,
+    LAST_CLICKED_FIRDI_SELECT_ALL,
     LAST_CLICKED_GROUP_MANAGER,
+    LAST_CLICKED_QUERY_BUILDER,
+    QUERY_FILTER_EVENT,
+    SELECT_ALL_EVENT,
     SELECTION_UPDATE_EVENT
 } from "../common";
 import {getConstraintTablesConstraintKeyName, getDisplayName, getPkCol, isTableVisible} from "../firdi/Utils";
@@ -81,6 +85,21 @@ class FirdiStore extends Observable {
         return this.makeConstraints();
     }
 
+    @computed get filterNames() {
+        const fieldNames = this.fieldNames;
+        const filtered = {};
+        for (let i = 0; i < fieldNames.length; i++) {
+            const tableFieldNames = fieldNames[i];
+            const tableName = tableFieldNames['tableName'];
+            const fields = tableFieldNames['fieldNames'];
+            filtered[tableName] = {
+                'padj': fields.filter(x => x.indexOf('padj') > -1), // find columns containing 'padj'
+                'FC': fields.filter(x => x.indexOf('FC') > -1) // find columns containing 'FC'
+            }
+        }
+        return filtered;
+    }
+
     @computed get queryResult() {
         // console.trace('queryResult');
 
@@ -112,6 +131,26 @@ class FirdiStore extends Observable {
             rowIndex: rowIndex,
             displayName: displayName
         });
+        this.sortConstraint(tableName);
+        this.rootStore.groupStore.reset(); // clear currently loaded group info
+    }
+
+    @action.bound
+    addConstraints(tableName, allRowData, allRowIndices) {
+        // clear selections for the current table
+        this.selections[tableName] = []
+        // add all the selections at once
+        for (let i = 0; i < allRowData.length; i++) {
+            const rowData = allRowData[i];
+            const rowIndex = allRowIndices[i];
+            const idVal = this.getId(tableName, rowData);
+            const displayName = getDisplayName(rowData, tableName);
+            this.selections[tableName].push({
+                idVal: idVal,
+                rowIndex: rowIndex,
+                displayName: displayName
+            });
+        }
         this.sortConstraint(tableName);
         this.rootStore.groupStore.reset(); // clear currently loaded group info
     }
@@ -156,6 +195,12 @@ class FirdiStore extends Observable {
     }
 
     @action.bound
+    removeConstraints(tableName) {
+        this.selections[tableName] = []
+        this.rootStore.groupStore.reset(); // clear currently loaded group info
+    }
+
+    @action.bound
     sortConstraint(tableName) {
         // ensure that entries are sorted by rowIndex asc
         // this.selections[tableName].sort((a, b) => a.rowIndex - b.rowIndex);
@@ -179,17 +224,27 @@ class FirdiStore extends Observable {
 
     @action.bound
     setWhereType(newType) {
+        this.reset(); // clear current firdi selection
         this.whereType = newType;
+        this.rootStore.groupStore.reset(); // clear currently loaded group info
     }
 
     notifyUpdate(data) {
         if (this.rootStore.lastClicked === LAST_CLICKED_FIRDI) {
+            // a row in data tables is clicked
             this.fire(SELECTION_UPDATE_EVENT, data);
         } else if (this.rootStore.lastClicked === LAST_CLICKED_GROUP_MANAGER) {
+            // a selection group is loaded
             this.fire(GROUP_LOADED_EVENT, data);
         } else if (this.rootStore.lastClicked === LAST_CLICKED_CLUSTERGRAMMER) {
-            // selection event from autorun due to another clustergrammer update
+            // a cluster is selected in the clustergrammer heatmap
             this.fire(SELECTION_UPDATE_EVENT, data);
+        } else if (this.rootStore.lastClicked === LAST_CLICKED_QUERY_BUILDER) {
+            // filtering rules have been changed in query builder
+            this.fire(QUERY_FILTER_EVENT, data)
+        } else if (this.rootStore.lastClicked === LAST_CLICKED_FIRDI_SELECT_ALL) {
+            // the Select All button is clicked
+            this.fire(SELECT_ALL_EVENT, data);
         }
     }
 

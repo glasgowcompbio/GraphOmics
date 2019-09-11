@@ -8,8 +8,13 @@ class RootStore {
     cgmStore = undefined;
     groupStore = undefined;
 
-    // common UI stuff
+    // last clicked UI element
     lastClicked = undefined;
+
+    // last clicked Firdi table name
+    lastClickedTableName = undefined;
+
+    selectAllToggles = {};
 
     constructor(tablesInfo, tableFields) {
         this.firdiStore = new FirdiStore(this, tablesInfo, tableFields);

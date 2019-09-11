@@ -1,4 +1,10 @@
-import {deepCopy, GROUP_LOADED_EVENT, LAST_CLICKED_CLUSTERGRAMMER, SELECTION_UPDATE_EVENT} from "./common";
+import {
+    deepCopy,
+    GROUP_LOADED_EVENT,
+    LAST_CLICKED_CLUSTERGRAMMER,
+    QUERY_FILTER_EVENT,
+    SELECTION_UPDATE_EVENT
+} from "./common";
 import Clustergrammer from "./clustergrammer/main";
 import check_setup_enrichr from "./enrichrgram";
 import filter_network_using_new_nodes from "./clustergrammer/network/filter_network_using_new_nodes";
@@ -19,6 +25,10 @@ class ClustergrammerManager {
         })
         this.rootStore.firdiStore.on(GROUP_LOADED_EVENT, (data) => {
             console.log('GroupManager --> Clustergrammer');
+            this.handleUpdate(data);
+        })
+        this.rootStore.firdiStore.on(QUERY_FILTER_EVENT, (data) => {
+            console.log('QueryBuilder --> Clustergrammer');
             this.handleUpdate(data);
         })
 
@@ -60,7 +70,8 @@ class ClustergrammerManager {
                     sidebar_width: 200
                 };
                 const cgm = Clustergrammer(args);
-                cgm.tableName = this.store.cgmData[dataType].tableName;;
+                cgm.tableName = this.store.cgmData[dataType].tableName;
+                ;
 
                 // save the original, complete set of nodes
                 this.store.originalCgmNodes[dataType] = deepCopy(cgm.params.inst_nodes);
