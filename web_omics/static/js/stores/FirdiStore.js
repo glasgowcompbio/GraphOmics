@@ -3,10 +3,12 @@ import {
     GROUP_LOADED_EVENT,
     LAST_CLICKED_CLUSTERGRAMMER,
     LAST_CLICKED_FIRDI,
+    LAST_CLICKED_FIRDI_SELECT_ALL,
     LAST_CLICKED_GROUP_MANAGER,
     LAST_CLICKED_QUERY_BUILDER,
     QUERY_FILTER_EVENT,
-    SELECTION_UPDATE_EVENT,
+    SELECT_ALL_EVENT,
+    SELECTION_UPDATE_EVENT
 } from "../common";
 import {getConstraintTablesConstraintKeyName, getDisplayName, getPkCol, isTableVisible} from "../firdi/Utils";
 import {action, autorun, computed, observable} from 'mobx';
@@ -134,6 +136,26 @@ class FirdiStore extends Observable {
     }
 
     @action.bound
+    addConstraints(tableName, allRowData, allRowIndices) {
+        // clear selections for the current table
+        this.selections[tableName] = []
+        // add all the selections at once
+        for (let i = 0; i < allRowData.length; i++) {
+            const rowData = allRowData[i];
+            const rowIndex = allRowIndices[i];
+            const idVal = this.getId(tableName, rowData);
+            const displayName = getDisplayName(rowData, tableName);
+            this.selections[tableName].push({
+                idVal: idVal,
+                rowIndex: rowIndex,
+                displayName: displayName
+            });
+        }
+        this.sortConstraint(tableName);
+        this.rootStore.groupStore.reset(); // clear currently loaded group info
+    }
+
+    @action.bound
     addConstraintsByPkValues(tableName, selectedPkValues) {
         // we need to repopulate the constraints based on selectedPkValues
         // first find rows in the datatable based on selectedPkValues
@@ -169,6 +191,12 @@ class FirdiStore extends Observable {
     removeConstraint(tableName, rowData) {
         const idVal = this.getId(tableName, rowData);
         this.selections[tableName] = this.selections[tableName].filter(x => x.idVal !== idVal);
+        this.rootStore.groupStore.reset(); // clear currently loaded group info
+    }
+
+    @action.bound
+    removeConstraints(tableName) {
+        this.selections[tableName] = []
         this.rootStore.groupStore.reset(); // clear currently loaded group info
     }
 
@@ -211,9 +239,12 @@ class FirdiStore extends Observable {
         } else if (this.rootStore.lastClicked === LAST_CLICKED_CLUSTERGRAMMER) {
             // a cluster is selected in the clustergrammer heatmap
             this.fire(SELECTION_UPDATE_EVENT, data);
-        } else if (this.rootStore.lastClicked = LAST_CLICKED_QUERY_BUILDER) {
+        } else if (this.rootStore.lastClicked === LAST_CLICKED_QUERY_BUILDER) {
             // filtering rules have been changed in query builder
             this.fire(QUERY_FILTER_EVENT, data)
+        } else if (this.rootStore.lastClicked === LAST_CLICKED_FIRDI_SELECT_ALL) {
+            // the Select All button is clicked
+            this.fire(SELECT_ALL_EVENT, data);
         }
     }
 

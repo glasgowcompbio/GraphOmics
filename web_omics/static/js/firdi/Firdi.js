@@ -21,6 +21,7 @@ import {
     LAST_CLICKED_QUERY_BUILDER,
     QUERY_BUILDER_WIDTH,
     QUERY_FILTER_EVENT,
+    SELECT_ALL_EVENT,
     SELECTION_UPDATE_EVENT,
     unblockFirdiTable
 } from '../common';
@@ -47,13 +48,17 @@ class Firdi {
             this.updateFiRDIForLoadSelection();
         })
         this.rootStore.firdiStore.on(SELECTION_UPDATE_EVENT, (data) => {
-            console.log('Firdi --> Firdi');
+            console.log('Firdi Row Selection --> Firdi');
             this.updateTablesForClickUpdate();
         })
         this.rootStore.firdiStore.on(QUERY_FILTER_EVENT, (data) => {
             console.log('QueryBuilder --> Firdi');
             this.resetFiRDI();
             this.updateTablesForQueryBuilder();
+        })
+        this.rootStore.firdiStore.on(SELECT_ALL_EVENT, (data) => {
+            console.log('Firdi Select All --> Firdi');
+            this.updateTablesForSelectAll();
         })
 
         this.dataTablesManager = new DataTablesManager(this.state);
@@ -233,6 +238,23 @@ class Firdi {
         }
     }
 
+    updateTablesForSelectAll() {
+        // update all tables
+        this.updateTablesForClickUpdate();
+
+        // update bottom panel for the current table
+        const tableName = this.state.rootStore.lastClickedTableName;
+        if (this.state.numSelected[tableName] > 0) {
+            this.state.selectedIndex[tableName] = 0;
+            const selections = this.state.selections[tableName];
+            const selectedIndex = 0;
+            const updatePage = true;
+            this.infoPanelManager.updateEntityInfo(tableName, selections, selectedIndex, updatePage);
+        } else {
+            this.infoPanelManager.clearInfoPanel(tableName);
+        }
+    }
+
     updateSingleTable(tableFieldName, queryResult) {
         const dataTablesIds = this.state.dataTablesIds;
         const tableName = tableFieldName['tableName'];
@@ -379,6 +401,7 @@ class Firdi {
 
     trClickHandlerUpdate(tableName, targetTr, rowData, rowIndex, anyRowSelected) {
         // if some rows are already selected in the table
+        this.state.rootStore.lastClickedTableName = tableName;
         if (anyRowSelected) {
             // if the current row is already selected then unselect it
             if (targetTr.hasClass('selected')) {

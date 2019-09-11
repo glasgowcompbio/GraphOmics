@@ -5,7 +5,7 @@ import {
     GROUP_UPDATED_EVENT,
     LAST_CLICKED_GROUP_MANAGER,
     loadData,
-    postData,
+    postData, QUERY_FILTER_EVENT, SELECT_ALL_EVENT,
     SELECTION_UPDATE_EVENT,
     setupCsrfForAjax,
     unblockFirdiTable,
@@ -27,6 +27,12 @@ class GroupManager {
         });
         this.rootStore.groupStore.on(GROUP_UPDATED_EVENT, (data) => {
             this.handleGroupUpdate(data); // group information has been reset by calling GroupStore.reset()
+        });
+        this.rootStore.firdiStore.on(QUERY_FILTER_EVENT, (data) => {
+            this.handleFirdiUpdate(data); // a new item is selected from Firdi
+        });
+        this.rootStore.firdiStore.on(SELECT_ALL_EVENT, (data) => {
+            this.handleFirdiUpdate(data); // a new item is selected from Firdi
         });
 
         this.awesomeplete = undefined; // drop down for group selection
