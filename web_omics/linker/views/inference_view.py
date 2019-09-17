@@ -154,16 +154,6 @@ def inference_deseq_t_test(request, analysis_id):
                 item['padj_%s' % label] = padj
                 item['FC_%s' % label] = lfc
 
-                # check if item is statistically significant
-                padj_values = np.array([item[k] for k in item.keys() if 'padj' in k and item[k] is not None])
-                check = (padj_values > 0) & (padj_values < T_TEST_THRESHOLD)
-                if len(check) == 0:
-                    item['significant_all'] = False
-                    item['significant_any'] = False
-                else:
-                    item['significant_all'] = np.all(check)
-                    item['significant_any'] = np.any(check)
-
             # create a new analysis data
             if data_type == GENOMICS:
                 display_name = 'DESeq2: %s (case) vs %s (control)' % (case, control)

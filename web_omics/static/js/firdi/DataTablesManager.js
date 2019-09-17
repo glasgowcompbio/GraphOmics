@@ -27,17 +27,17 @@ class DataTablesManager {
 
         // Hide certain columns
         const columnsToHidePerTable = [
-            {"tableName": "genes_table", "columnNames": ["obs", "gene_pk", "significant_all", "significant_any"]},
-            {"tableName": "proteins_table", "columnNames": ["obs", "protein_pk", "significant_all", "significant_any"]},
+            {"tableName": "genes_table", "columnNames": ["obs", "gene_pk"]},
+            {"tableName": "proteins_table", "columnNames": ["obs", "protein_pk"]},
             {
                 "tableName": "compounds_table",
-                "columnNames": ["obs", "compound_pk", "significant_all", "significant_any"]
+                "columnNames": ["obs", "compound_pk"]
             },
             {
                 "tableName": "reactions_table",
-                "columnNames": ["obs", "reaction_pk", "significant_all", "significant_any"]
+                "columnNames": ["obs", "reaction_pk"]
             },
-            {"tableName": "pathways_table", "columnNames": ["obs", "pathway_pk", "significant_all", "significant_any"]}
+            {"tableName": "pathways_table", "columnNames": ["obs", "pathway_pk"]}
         ];
         this.initHideColumnClicks(columnsToHidePerTable);
         this.hideColumns(columnsToHidePerTable, tableFields);

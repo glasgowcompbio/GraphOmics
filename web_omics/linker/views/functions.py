@@ -529,26 +529,6 @@ def csv_to_dataframe(csv_str):
         group_df = group_df.drop(group_df[group_df[SAMPLE_COL] == PIMP_PEAK_ID_COL].index)
     except AttributeError:
         pass
-
-    # if there are columns containing 'padj'
-    if data_df is not None:
-        padj_col_count = len(list(filter(lambda x: x.startswith(PADJ_COL_PREFIX), data_df.columns)))
-        if padj_col_count > 0:
-            for index, row in data_df.iterrows():  # TODO: very slow!!
-                filter_col = [col for col in row.index if col.startswith(PADJ_COL_PREFIX)]
-                padj_values = row[filter_col].values
-                significant_all = False
-                significant_any = False
-                try:
-                    check = (padj_values > 0) & (padj_values < T_TEST_THRESHOLD)
-                    if len(check) > 0:
-                        significant_all = np.all(check)
-                        significant_any = np.any(check)
-                except RuntimeWarning:
-                    print(row)
-                data_df.loc[index, 'significant_all'] = bool(significant_all)
-                data_df.loc[index, 'significant_any'] = bool(significant_any)
-
     return data_df, group_df, id_list
 
 
