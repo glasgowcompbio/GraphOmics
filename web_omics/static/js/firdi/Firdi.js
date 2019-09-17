@@ -145,15 +145,19 @@ class Firdi {
         }
 
         // init query builder
-        $('#builder').queryBuilder({
-            filters: builderFilters,
-            // rules: loadedRules,
-            default_group_flags: {
-                no_add_group: true
-            },
-            conditions: ['AND']
-        });
-        $('#builder_group_0').css('width', QUERY_BUILDER_WIDTH);
+        if (builderFilters.length > 0) {
+            $('#builder').queryBuilder({
+                filters: builderFilters,
+                // rules: loadedRules,
+                default_group_flags: {
+                    no_add_group: true
+                },
+                conditions: ['AND']
+            });
+            $('#builder_group_0').css('width', QUERY_BUILDER_WIDTH);
+        } else {
+            $('#cardFilter').hide();
+        }
     }
 
     initSearchBox() {
