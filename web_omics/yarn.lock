@@ -2062,6 +2062,11 @@ datatables.net-dt@^1.10.15, datatables.net-dt@^1.10.16:
     datatables.net "1.10.19"
     jquery ">=1.7"
 
+datatables.net-plugins@^1.10.19:
+  version "1.10.19"
+  resolved "https://registry.yarnpkg.com/datatables.net-plugins/-/datatables.net-plugins-1.10.19.tgz#b3767a9a90f9f4ffa3a0c66702a15fd45619d39a"
+  integrity sha512-sVqvp7AP3fiBQi59k2iacLQBP5bOS91+OttAViE2j8g6h/L4mOxZyjiLgWtEnBd6g1yRcdDtsST3kAGC6S6TYg==
+
 datatables.net-responsive-dt@^2.2.1:
   version "2.2.3"
   resolved "https://registry.yarnpkg.com/datatables.net-responsive-dt/-/datatables.net-responsive-dt-2.2.3.tgz#dbba47b61945ab35580a9266debc7fd3c56241f6"

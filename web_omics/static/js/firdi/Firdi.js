@@ -9,6 +9,7 @@ import 'datatables.net-scroller';
 import 'datatables.net-scroller-dt/css/scroller.dataTables.min.css';
 import 'datatables.net-select';
 import 'datatables.net-select-dt/css/select.dataTables.min.css';
+import 'datatables.net-plugins/sorting/absolute.js';
 
 import "jQuery-QueryBuilder/dist/js/query-builder.js";
 import "jQuery-QueryBuilder/dist/css/query-builder.default.css";

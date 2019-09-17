@@ -61,6 +61,10 @@ class DataTablesManager {
         const self = this;
         const MAX_STRING_LEN = 50;
 
+        const dashType = $.fn.dataTable.absoluteOrder( {
+            value: '-', position: 'bottom'
+        } );
+
         const defaultDataTablesSettings = {
             // "dom": "Brftip",
             "dom": "Brtip",
@@ -87,6 +91,7 @@ class DataTablesManager {
             }, {
                 "targets": '_all',
                 defaultContent: '-',
+                type: dashType,
                 render: function (data, type, row) {
                     if (typeof (data) == 'number') {
                         return data.toFixed(2);
