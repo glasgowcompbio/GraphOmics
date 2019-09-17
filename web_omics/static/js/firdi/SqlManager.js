@@ -153,12 +153,22 @@ class SqlManager {
             // padjRules: the selected column is significant (above > 0.05)
             const padjRules = whereType.rules.filter(rule => rule.type === 'boolean' && rule.operator === 'equal')
 
-            // fcRules: the selected column has a fold change value between the specified range
-            const fcRules = whereType.rules.filter(rule => rule.type === 'double' && rule.operator === 'between')
+            // fcRules: the selected column has a fold change value in the range
+            const validOperators = ['greater_or_equal', 'between', 'less_or_equal'];
+            const fcRules = whereType.rules.filter(rule => rule.type === 'double' && validOperators.includes(rule.operator));
 
             // convert rules to SQL conditions
             const padjConditions = padjRules.map(rule => `${rule.id} < 0.05`);
-            const fcConditions = fcRules.map(rule => `${rule.id} BETWEEN ${rule.value[0]} AND ${rule.value[1]}`)
+            const fcConditions = fcRules.map(rule => {
+                if (rule.operator === 'less_or_equal') {
+                    return `${rule.id} <= ${rule.value}`;
+                } else if (rule.operator === 'greater_or_equal') {
+                    return `${rule.id} >= ${rule.value}`;
+                } else if (rule.operator === 'between') {
+                    return `${rule.id} BETWEEN ${rule.value[0]} AND ${rule.value[1]}`;
+                }
+                return '';
+            });
 
             // generate the SQL statement
             if (padjRules.length > 0 && fcRules.length > 0) { // both
