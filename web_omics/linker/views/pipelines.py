@@ -57,10 +57,17 @@ class WebOmicsInference(object):
         if data_df.empty:
             return data_df
         data_df = data_df.copy()
-        scaled_data = np.array(data_df)
-        if log:
-            scaled_data = np.log(np.array(data_df))
-        scaled_data = preprocessing.scale(scaled_data, axis)
+
+        # log only if all the values are positive
+        # assume if there's a negative value, the data has been pre-processed, so don't do it again
+        data_arr = np.array(data_df)
+        if np.all(data_arr >= 0) and log:
+            data_arr = np.log(data_arr)
+
+        # center data to have 0 mean and unit variance for heatmap and pca
+        scaled_data = preprocessing.scale(data_arr, axis)
+
+        # set the values back to the dataframe
         sample_names = data_df.columns
         data_df[sample_names] = scaled_data
         return data_df
