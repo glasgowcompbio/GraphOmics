@@ -1,6 +1,6 @@
-import alasql from "alasql";
-import {isTableVisible} from "./Utils";
-import {LAST_CLICKED_FIRDI_SELECT_ALL} from "../common";
+import alasql from 'alasql';
+import {isTableVisible} from './Utils';
+import {LAST_CLICKED_FIRDI_SELECT_ALL} from '../common';
 
 class DataTablesManager {
 
@@ -27,17 +27,17 @@ class DataTablesManager {
 
         // Hide certain columns
         const columnsToHidePerTable = [
-            {"tableName": "genes_table", "columnNames": ["obs", "gene_pk"]},
-            {"tableName": "proteins_table", "columnNames": ["obs", "protein_pk"]},
+            {'tableName': 'genes_table', 'columnNames': ['obs', 'gene_pk']},
+            {'tableName': 'proteins_table', 'columnNames': ['obs', 'protein_pk']},
             {
-                "tableName": "compounds_table",
-                "columnNames": ["obs", "compound_pk"]
+                'tableName': 'compounds_table',
+                'columnNames': ['obs', 'compound_pk']
             },
             {
-                "tableName": "reactions_table",
-                "columnNames": ["obs", "reaction_pk"]
+                'tableName': 'reactions_table',
+                'columnNames': ['obs', 'reaction_pk']
             },
-            {"tableName": "pathways_table", "columnNames": ["obs", "pathway_pk"]}
+            {'tableName': 'pathways_table', 'columnNames': ['obs', 'pathway_pk']}
         ];
         this.initHideColumnClicks(columnsToHidePerTable);
         this.hideColumns(columnsToHidePerTable, tableFields);
@@ -45,14 +45,14 @@ class DataTablesManager {
 
     getMinTablesSettings() {
         const minDataTablesSettings = {
-            "dom": "rpt",
-            "select": { // Needed for row selection i.e. the user-select event and limiting to selecting one row at a time. Don't change the select settings.
-                "items": "row",
-                "style": "single"
+            'dom': 'rpt',
+            'select': { // Needed for row selection i.e. the user-select event and limiting to selecting one row at a time. Don't change the select settings.
+                'items': 'row',
+                'style': 'single'
             },
-            "deferRender": true, // needed for speed with large datasets
-            "orderClasses": false, // needed for speed with large datasets
-            "paging": true // used with deferRender for speed. Paginiation is used explicitly in code elsewhere: it must be left on!
+            'deferRender': true, // needed for speed with large datasets
+            'orderClasses': false, // needed for speed with large datasets
+            'paging': true // used with deferRender for speed. Paginiation is used explicitly in code elsewhere: it must be left on!
         };
         return minDataTablesSettings;
     }
@@ -176,7 +176,7 @@ class DataTablesManager {
                     // const padj = data['padj_fdr'];
                     // if (pathway_id !== '-' && padj !== null) {
                     //     const colorScale = d3.scaleLinear()
-                    //         .range(["red", "green"])
+                    //         .range(['red', 'green'])
                     //         .domain([1, 0]);
                     //     const colour = colorScale(padj);
                     //     const idx = 2;
@@ -193,7 +193,7 @@ class DataTablesManager {
                     });
                     const filtered_logfc = filtered.map(x => data[x]);
                     const colorScale = d3.scale.linear()
-                        .range(["red", "green"])
+                        .range(['red', 'green'])
                         .domain([-2, 2]);
                     const filteredColours = filtered_logfc.map(x => colorScale(x));
                     for (let i = 0; i < filteredIdx.length; i++) {
@@ -247,7 +247,7 @@ class DataTablesManager {
             }
         });
         // change button to arrows
-        const buttons = $(".buttons-colvis");
+        const buttons = $('.buttons-colvis');
         for (let button of buttons) {
             const btn = $(button);
             btn.text('▼');
@@ -260,7 +260,7 @@ class DataTablesManager {
         // Gets the distinct entries for the tableData for datatables initialisation
         return tablesInfo.filter(isTableVisible)
             .map(tableInfo => {
-                tableInfo['tableData'] = alasql("SELECT DISTINCT " + Object.keys(tableInfo['tableData'][0]).join(", ") + " FROM ?", [tableInfo['tableData']]);
+                tableInfo['tableData'] = alasql('SELECT DISTINCT ' + Object.keys(tableInfo['tableData'][0]).join(', ') + ' FROM ?', [tableInfo['tableData']]);
                 return tableInfo;
             });
     }
@@ -319,7 +319,7 @@ class DataTablesManager {
                 const tableAPI = $('#' + tableInfo['tableName']).DataTable();
                 if (tableInfo['colData']) {
                     tableAPI
-                        .columns(tableInfo['colData'].map(columnName => columnName + ":name")) // append ":name" to each columnName for the selector
+                        .columns(tableInfo['colData'].map(columnName => columnName + ':name')) // append ':name' to each columnName for the selector
                         .visible(visible);
                 }
             });
@@ -338,12 +338,12 @@ class DataTablesManager {
             if (colData) {
                 tableInfo['colData'] = colData;
                 tableAPI
-                    .columns(tableInfo['colData'].map(columnName => columnName + ":name")) // append ":name" to each columnName for the selector
+                    .columns(tableInfo['colData'].map(columnName => columnName + ':name')) // append ':name' to each columnName for the selector
                     .visible(false);
             }
             // do the hiding here
             tableAPI
-                .columns(tableInfo['columnNames'].map(columnName => columnName + ":name")) // append ":name" to each columnName for the selector
+                .columns(tableInfo['columnNames'].map(columnName => columnName + ':name')) // append ':name' to each columnName for the selector
                 .visible(false);
 
         });
