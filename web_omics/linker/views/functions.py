@@ -372,7 +372,7 @@ def get_context(analysis):
 def show_data_table(analysis, data_type):
     analysis_data = get_last_analysis_data(analysis, data_type)
     data_df, design_df = get_dataframes(analysis_data, IDS)
-    return design_df is not None # if design df is None, no data is provided
+    return np.any(data_df['obs'] == True) # show table if there's any observation
 
 
 def get_reverse_url(viewname, analysis):
