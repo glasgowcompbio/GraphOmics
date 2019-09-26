@@ -61,50 +61,54 @@ class DataTablesManager {
         const self = this;
         const MAX_STRING_LEN = 50;
 
-        const dashType = $.fn.dataTable.absoluteOrder( {
+        const dashType = $.fn.dataTable.absoluteOrderNumber({
             value: '-', position: 'bottom'
-        } );
+        });
 
         const defaultDataTablesSettings = {
-            // "dom": "Brftip",
-            "dom": "Brtip",
-            "pageLength": 10,
-            // "scrollY": "800px",
-            // "scrollCollapse": true,
-            "pagingType": "simple",
-            "searching": true,
-            "select": true,
-            "columnDefs": [{
-                targets: 2,
-                createdCell: function (td, cellData, rowData, row, col) {
-                    if (rowData.obs === '-' || rowData.obs === null) {
-                        // do nothing
-                    } else if (rowData['significant_' + $('input[type=radio][name=inlineRadioOptions]:checked').val()]) {
-                        $(td).addClass('significant');
-                    } else if (rowData.obs) {
-                        $(td).addClass('observed');
-                    } else {
-                        $(td).addClass('inferred');
+            // 'dom': 'Brftip',
+            'dom': 'Brtip',
+            'pageLength': 10,
+            // 'scrollY': '800px',
+            // 'scrollCollapse': true,
+            'pagingType': 'simple',
+            'searching': true,
+            'select': true,
+            'columnDefs': [
+                {
+                    'targets': 2,
+                    'createdCell': function (td, cellData, rowData, row, col) {
+                        if (rowData.obs === '-' || rowData.obs === null) {
+                            // do nothing
+                        } else if (rowData['significant_' + $('input[type=radio][name=inlineRadioOptions]:checked').val()]) {
+                            $(td).addClass('significant');
+                        } else if (rowData.obs) {
+                            $(td).addClass('observed');
+                        } else {
+                            $(td).addClass('inferred');
+                        }
+                    },
+                    'type': 'html'
+                    // render: $.fn.dataTable.render.ellipsis(50, false)
+                },
+                {
+                    'targets': '_all',
+                    'defaultContent': '-',
+                    'type': dashType,
+                    'render': function (data, type, row) {
+                        if (typeof (data) == 'number') {
+                            return data.toFixed(2);
+                        } else if (typeof (data) == 'string') {
+                            return self.truncateString(data, MAX_STRING_LEN);
+                            // } else if (data === null) {
+                            //     return '-'
+                        } else {
+                            return data;
+                        }
                     }
                 }
-                // render: $.fn.dataTable.render.ellipsis(50, false)
-            }, {
-                "targets": '_all',
-                defaultContent: '-',
-                type: dashType,
-                render: function (data, type, row) {
-                    if (typeof (data) == 'number') {
-                        return data.toFixed(2);
-                    } else if (typeof (data) == 'string') {
-                        return self.truncateString(data, MAX_STRING_LEN);
-                        // } else if (data === null) {
-                        //     return '-'
-                    } else {
-                        return data;
-                    }
-                }
-            }],
-            "order": [[2, "asc"]],
+            ],
+            'order': [[2, 'asc']],
             'buttons': [
                 {
                     extend: 'colvis',
