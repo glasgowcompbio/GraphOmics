@@ -123,6 +123,10 @@ class WebOmicsInference(object):
         pvalues = []
         lfcs = []
         indices = []
+
+        # if there's a negative number, assume the data has been logged, so don't do it again
+        log = True if np.all(count_data.values >= 0) else False
+
         for i in range(nrow):
 
             case = case_data.iloc[i, :].values
@@ -133,9 +137,15 @@ class WebOmicsInference(object):
             case = case[case != 0]
             control = control[control != 0]
 
+            # log the data if it isn't already logged
+            if log:
+                case_log = np.log2(case)
+                control_log = np.log2(control)
+            else:
+                case_log = case
+                control_log = control
+
             # T-test for the means of two independent samples
-            case_log = np.log2(case)
-            control_log = np.log2(control)
             statistics, pvalue = stats.ttest_ind(case_log, control_log)
             if not np.isnan(pvalue):
                 lfc = np.mean(case_log) - np.mean(control_log)
