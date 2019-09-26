@@ -509,26 +509,30 @@ def csv_to_dataframe(csv_str):
     group_df = None
     if data_df is not None:
         sample_data = data_df.columns.values
-        # filter sample data to remove non-measurement columns
-        sample_data = list(filter(lambda x: not x == IDENTIFIER_COL and
-                                            not x.startswith(PADJ_COL_PREFIX) and
-                                            not x.startswith(FC_COL_PREFIX),
-                                  sample_data))
-        if len(sample_data) > 0:
-            if group_str is not None:
-                group_data = group_str.split(',')[1:]
-            else:
-                num_samples = len(sample_data[1:])
-                group_data = [DEFAULT_GROUP_NAME for x in
-                              range(num_samples)]  # assigns a default group if nothing specified
-            # group_df = pd.DataFrame(list(zip(sample_data[1:], group_data)), columns=[SAMPLE_COL, GROUP_COL])
-            group_df = pd.DataFrame(list(zip(sample_data, group_data)), columns=[SAMPLE_COL, GROUP_COL])
+        if group_str is not None:
+            group_data = group_str.split(',')
+        else:
+            num_samples = len(sample_data)
+            group_data = [DEFAULT_GROUP_NAME for x in
+                          range(num_samples)]  # assigns a default group if nothing specified
 
-    # drop peak id column if present
-    try:
-        group_df = group_df.drop(group_df[group_df[SAMPLE_COL] == PIMP_PEAK_ID_COL].index)
-    except AttributeError:
-        pass
+        # skip non-measurement columns
+        filtered_sample_data = []
+        filtered_group_data = []
+        for i in range(len(sample_data)):
+            sample_name = sample_data[i]
+            if sample_name == IDENTIFIER_COL or \
+                sample_name == PIMP_PEAK_ID_COL or \
+                sample_name.startswith(PADJ_COL_PREFIX) or \
+                sample_name.startswith(FC_COL_PREFIX):
+                continue
+            filtered_sample_data.append(sample_data[i])
+            filtered_group_data.append(group_data[i])
+
+        # convert to dataframe
+        if len(filtered_group_data) > 0:
+            group_df = pd.DataFrame(list(zip(filtered_sample_data, filtered_group_data)), columns=[SAMPLE_COL, GROUP_COL])
+
     return data_df, group_df, id_list
 
 
