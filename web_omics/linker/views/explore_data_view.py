@@ -94,7 +94,7 @@ def get_ensembl_gene_info(request, analysis_id):
     if request.is_ajax():
         ensembl_id = request.GET['id']
         metadata = get_single_ensembl_metadata_online(ensembl_id)
-        display_name = metadata['display_name'] if metadata is not None else ''
+        display_name = metadata['display_name'] if metadata is not None and 'display_name' in metadata else ''
 
         infos = []
         if metadata is not None:
