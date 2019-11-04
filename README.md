@@ -192,5 +192,23 @@ $ jupyter notebook
 
 You might need to do the following configurations to make the notebook work properly:
 1. Add the environmental variables `DJANGO_CONFIGURATION=Development` and `DJANGO_SETTINGS_MODULE=web_omics.settings`
-2. Make sure that django-configuration is setup properly when launched from notebook, see https://django-configurations.readthedocs.io/en/latest/cookbook/#ipython-notebooks
+2. Make sure that django-configuration is setup properly when launched from notebook, see https://django-configurations.readthedocs.io/en/latest/cookbook/#ipython-notebooks.
+This is used to let Jupyter notebook load Django objects directly. Specifically. I had to add the following syspath and also chdir statements
+to `[venv]\Lib\site-packages\django\conf\__init__.py`:
+```
+class Settings:
+    def __init__(self, settings_module):
+        ...
+        # store the settings module in case someone later cares
+        self.SETTINGS_MODULE = settings_module
+
+        # -- ADD THESE CODES --
+        import sys, os
+        wd = 'C:\\Users\\joewa\\Work\\git\\WebOmics\\web_omics'
+        sys.path.append(wd)
+        os.chdir(wd)
+        # -- END ADD THESE CODES --
+        
+        mod = importlib.import_module(self.SETTINGS_MODULE)
+        ...
 ```
