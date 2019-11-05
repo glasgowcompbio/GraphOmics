@@ -35,6 +35,7 @@ plotly = "*"
 tqdm = "*"
 xml2dict = "*"
 loguru = "*"
+pals-pathway = "*"
 
 [dev-packages]
 
