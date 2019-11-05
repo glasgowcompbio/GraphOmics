@@ -14,6 +14,7 @@ from linker.forms import BaseInferenceForm
 from linker.models import Analysis, AnalysisData
 from linker.views.functions import get_last_analysis_data, get_groups, get_dataframes, get_standardized_df, \
     get_group_members, fig_to_div
+from linker.views.pals import get_pals_data_source, run_pals, update_pathway_analysis_data
 from linker.views.pipelines import WebOmicsInference
 
 
@@ -30,7 +31,7 @@ def inference(request, analysis_id):
             inference_type = int(form.cleaned_data['inference_type'])
 
             # run t-test analysis
-            if inference_type == T_TEST:
+            if inference_type == INFERENCE_T_TEST:
                 analysis_data = get_last_analysis_data(analysis, data_type)
                 groups = get_groups(analysis_data)
                 action_url = reverse('inference_deseq_t_test', kwargs={
@@ -45,7 +46,7 @@ def inference(request, analysis_id):
                                                                     widget=Select2Widget(SELECT_WIDGET_ATTRS))
 
             # do PCA
-            elif inference_type == PCA:
+            elif inference_type == INFERENCE_PCA:
                 analysis_data = get_last_analysis_data(analysis, data_type)
                 action_url = reverse('inference_pca', kwargs={
                     'analysis_id': analysis_id,
@@ -92,13 +93,13 @@ def get_list_data(analysis_id, analysis_data_list):
 
         # when clicked, go to the Explore Data page
         click_url = None
-        if inference_type == T_TEST or inference_type == REACTOME:
+        if inference_type == INFERENCE_T_TEST or inference_type == INFERENCE_PALS:
             click_url = reverse('explore_data', kwargs={
                 'analysis_id': analysis_id,
             })
 
         # when clicked, show the Explore Analysis Data page
-        elif inference_type == PCA:
+        elif inference_type == INFERENCE_PCA:
             click_url = reverse('pca_result', kwargs={
                 'analysis_id': analysis_id,
                 'analysis_data_id': analysis_data.id
@@ -164,7 +165,19 @@ def inference_deseq_t_test(request, analysis_id):
             elif data_type == PROTEOMICS or data_type == METABOLOMICS:
                 display_name = 't-test: %s (case) vs %s (control)' % (case, control)
                 metadata = {}
-            copy_analysis_data(analysis_data, json_data, display_name, metadata, T_TEST)
+            copy_analysis_data(analysis_data, json_data, display_name, metadata, INFERENCE_T_TEST)
+
+            # if we just run a metabolomics analysis, then run PALS as well
+            if data_type == METABOLOMICS:
+                # run pals
+                pals_data_source = get_pals_data_source(analysis, analysis_data)
+                pals_df = run_pals(pals_data_source)
+                # update PALS results to database
+                pathway_analysis_data = get_last_analysis_data(analysis, PATHWAYS)
+                new_json_data = update_pathway_analysis_data(pathway_analysis_data, pals_df)
+                new_display_name = 'PALS %s: %s' % (pals_data_source.database_name, display_name)
+                copy_analysis_data(pathway_analysis_data, new_json_data, new_display_name, None,
+                                   INFERENCE_PALS)
 
             messages.success(request, 'Add new inference successful.', extra_tags='primary')
             return inference(request, analysis_id)
@@ -183,9 +196,9 @@ def copy_analysis_data(analysis_data, new_json_data, new_display_name, new_metad
     analysis_data.inference_type = inference_type
     analysis_data.timestamp = timezone.localtime()
     analysis_data.display_name = new_display_name
-    analysis_data.metadata.update(new_metadata)
+    if analysis_data.metadata is not None:
+        analysis_data.metadata.update(new_metadata)
     analysis_data.save()
-    return analysis_data
 
 
 def inference_pca(request, analysis_id):
@@ -216,7 +229,7 @@ def inference_pca(request, analysis_id):
                     'pca_var_exp': jsonpickle.dumps(var_exp)
                 }
                 display_name = 'PCA: %s components' % n_components
-                copy_analysis_data(analysis_data, analysis_data.json_data, display_name, metadata, PCA)
+                copy_analysis_data(analysis_data, analysis_data.json_data, display_name, metadata, INFERENCE_PCA)
                 messages.success(request, 'Add new inference successful.', extra_tags='primary')
             else:
                 messages.warning(request, 'Add new inference failed. No data found.')

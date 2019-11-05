@@ -129,12 +129,11 @@ MetabolicPathwayOnlyChoices = (
 
 # Constants used in the Inference page
 
-T_TEST, CORRELATION, PCA, REACTOME = range(0, 4)
+INFERENCE_T_TEST, INFERENCE_CORRELATION, INFERENCE_PCA, INFERENCE_PALS = range(0, 4)
 InferenceTypeChoices = (
     (None, NA),
-    (T_TEST, 'DESeq2 / t-test'),
-    (PCA, 'Principal Component Analysis'),
-    (REACTOME, 'Reactome Analysis Service')
+    (INFERENCE_T_TEST, 'DESeq2 / t-test'),
+    (INFERENCE_PCA, 'Principal Component Analysis')
 )
 SELECT_WIDGET_ATTRS = {'style': 'width: 300px'}
 

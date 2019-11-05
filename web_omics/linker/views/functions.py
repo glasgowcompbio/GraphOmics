@@ -221,13 +221,14 @@ def get_mapping(observed_compound_df):
 
 def save_analysis(analysis_name, analysis_desc,
                   genes_str, proteins_str, compounds_str, compound_database_str,
-                  results, species_list, current_user):
+                  results, species_list, current_user, metabolic_pathway_only):
     metadata = {
         'genes_str': genes_str,
         'proteins_str': proteins_str,
         'compounds_str': compounds_str,
         'compound_database_str': compound_database_str,
-        'species_list': species_list
+        'species_list': species_list,
+        'metabolic_pathway_only': metabolic_pathway_only
     }
     analysis = Analysis.objects.create(name=analysis_name,
                                        description=analysis_desc,
@@ -256,7 +257,7 @@ def save_analysis(analysis_name, analysis_desc,
         json_design = json.loads(group_info.to_json()) if group_info is not None else None
         keys = json_data[0].keys()
         padj_col_count = len(list(filter(lambda x: x.startswith(PADJ_COL_PREFIX), keys)))
-        inference_type = T_TEST if padj_col_count > 0 else None
+        inference_type = INFERENCE_T_TEST if padj_col_count > 0 else None
         display_name = 'Loaded data' if padj_col_count > 0 else None
         analysis_data = AnalysisData(analysis=analysis,
                                      json_data=json_data,

@@ -121,7 +121,7 @@ def get_data(request, analysis_desc, analysis_name, compounds_str, compound_data
                                compound_database_str, species_list, metabolic_pathway_only)
     analysis = save_analysis(analysis_name, analysis_desc,
                                    genes_str, proteins_str, compounds_str, compound_database_str,
-                                   results, species_list, current_user)
+                                   results, species_list, current_user, metabolic_pathway_only)
     return analysis
 
 
