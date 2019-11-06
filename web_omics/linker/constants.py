@@ -133,7 +133,8 @@ INFERENCE_T_TEST, INFERENCE_CORRELATION, INFERENCE_PCA, INFERENCE_PALS = range(0
 InferenceTypeChoices = (
     (None, NA),
     (INFERENCE_T_TEST, 'DESeq2 / t-test'),
-    (INFERENCE_PCA, 'Principal Component Analysis')
+    (INFERENCE_PCA, 'Principal Component Analysis'),
+    (INFERENCE_PALS, 'Pathway Analysis')
 )
 SELECT_WIDGET_ATTRS = {'style': 'width: 300px'}
 

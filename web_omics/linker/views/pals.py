@@ -10,6 +10,8 @@ from pals.pathway_analysis import PALS
 def get_pals_data_source(analysis, analysis_data):
     axis = 1
     X_std, data_df, design_df = get_standardized_df(analysis_data, axis, pk_cols=PKS)
+    if design_df is None:
+        return None
 
     # retrieve experimental design information
     experimental_design = {
@@ -21,12 +23,12 @@ def get_pals_data_source(analysis, analysis_data):
     comparison_cols = list(filter(lambda x: x.lower().startswith('padj_'), data_df.columns))
     for comparison_col in comparison_cols:
         tokens = comparison_col.split('_')
-        case = tokens[1]
-        control = tokens[3]
+        comparison_case = tokens[1]
+        comparison_control = tokens[3]
         experimental_design['comparisons'].append({
-            'case': case,
-            'control': control,
-            'name': '%s_vs_%s' % (case, control)
+            'case': comparison_case,
+            'control': comparison_control,
+            'name': '%s_vs_%s' % (comparison_case, comparison_control)
         })
 
     assert len(experimental_design['comparisons']) > 0

@@ -59,6 +59,16 @@ def inference(request, analysis_id):
                                                                              widget=Select2Widget(SELECT_WIDGET_ATTRS),
                                                                              label='PCA components')
 
+            # do PALS
+            elif inference_type == INFERENCE_PALS:
+                analysis_data = get_last_analysis_data(analysis, data_type)
+                action_url = reverse('inference_pals', kwargs={
+                    'analysis_id': analysis_id,
+                })
+                selected_form = BaseInferenceForm()
+                selected_form.fields['data_type'].initial = data_type
+                selected_form.fields['inference_type'].initial = inference_type
+
             else:  # default
                 action_url = reverse('inference', kwargs={
                     'analysis_id': analysis_id,
@@ -166,19 +176,6 @@ def inference_deseq_t_test(request, analysis_id):
                 display_name = 't-test: %s (case) vs %s (control)' % (case, control)
                 metadata = {}
             copy_analysis_data(analysis_data, json_data, display_name, metadata, INFERENCE_T_TEST)
-
-            # if we just run a metabolomics analysis, then run PALS as well
-            if data_type == METABOLOMICS:
-                # run pals
-                pals_data_source = get_pals_data_source(analysis, analysis_data)
-                pals_df = run_pals(pals_data_source)
-                # update PALS results to database
-                pathway_analysis_data = get_last_analysis_data(analysis, PATHWAYS)
-                new_json_data = update_pathway_analysis_data(pathway_analysis_data, pals_df)
-                new_display_name = 'PALS %s: %s' % (pals_data_source.database_name, display_name)
-                copy_analysis_data(pathway_analysis_data, new_json_data, new_display_name, None,
-                                   INFERENCE_PALS)
-
             messages.success(request, 'Add new inference successful.', extra_tags='primary')
             return inference(request, analysis_id)
         else:
@@ -353,3 +350,36 @@ class PCAResult(TemplateView):
         )
         fig = dict(data=data, layout=layout)
         return fig
+
+
+def inference_pals(request, analysis_id):
+    if request.method == 'POST':
+
+        analysis = get_object_or_404(Analysis, pk=analysis_id)
+        form = BaseInferenceForm(request.POST)
+        data_type = int(request.POST['data_type'])
+        analysis_data = get_last_analysis_data(analysis, data_type)
+
+        if form.is_valid():
+            if data_type != METABOLOMICS: # TODO: add support for gene and protein data
+                messages.warning(request, 'Add new inference failed. Unsupported data type.')
+
+            # get pals data source from the current analysis_data
+            pals_data_source = get_pals_data_source(analysis, analysis_data)
+            if pals_data_source is not None:
+                # run pals
+                pals_df = run_pals(pals_data_source)
+                # update PALS results to database
+                pathway_analysis_data = get_last_analysis_data(analysis, PATHWAYS)
+                new_json_data = update_pathway_analysis_data(pathway_analysis_data, pals_df)
+                new_display_name = 'PALS: %s' % pals_data_source.database_name
+                copy_analysis_data(pathway_analysis_data, new_json_data, new_display_name, None,
+                                   INFERENCE_PALS)
+                messages.success(request, 'Add new inference successful.', extra_tags='primary')
+            else:
+                messages.warning(request, 'Add new inference failed. No data found.')
+            return inference(request, analysis_id)
+        else:
+            messages.warning(request, 'Add new inference failed.')
+
+    return inference(request, analysis_id)
