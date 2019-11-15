@@ -364,10 +364,6 @@ def inference_pals(request, analysis_id):
             messages.warning(request, 'Add new inference failed.')
             return inference(request, analysis_id)
 
-        if data_type != METABOLOMICS: # TODO: add support for gene and protein data
-            messages.warning(request, 'Add new inference failed. Unsupported data type.')
-            return inference(request, analysis_id)
-
         # get pals data source from the current analysis_data
         pals_data_source = get_pals_data_source(analysis, analysis_data)
         if pals_data_source is None:
