@@ -62,12 +62,17 @@ def inference(request, analysis_id):
             # do PALS
             elif inference_type == INFERENCE_PALS:
                 analysis_data = get_last_analysis_data(analysis, data_type)
+                groups = get_groups(analysis_data)
                 action_url = reverse('inference_pals', kwargs={
                     'analysis_id': analysis_id,
                 })
                 selected_form = BaseInferenceForm()
                 selected_form.fields['data_type'].initial = data_type
                 selected_form.fields['inference_type'].initial = inference_type
+                selected_form.fields['case'] = forms.ChoiceField(choices=groups,
+                                                                 widget=Select2Widget(SELECT_WIDGET_ATTRS))
+                selected_form.fields['control'] = forms.ChoiceField(choices=groups,
+                                                                    widget=Select2Widget(SELECT_WIDGET_ATTRS))
 
             else:  # default
                 action_url = reverse('inference', kwargs={
@@ -359,26 +364,32 @@ def inference_pals(request, analysis_id):
         form = BaseInferenceForm(request.POST)
         data_type = int(request.POST['data_type'])
         analysis_data = get_last_analysis_data(analysis, data_type)
+        groups = get_groups(analysis_data)
+        form.fields['case'] = forms.ChoiceField(choices=groups, widget=Select2Widget())
+        form.fields['control'] = forms.ChoiceField(choices=groups, widget=Select2Widget())
 
-        if not form.is_valid():
+        if form.is_valid():
+            case = form.cleaned_data['case']
+            control = form.cleaned_data['control']
+
+            # get pals data source from the current analysis_data
+            pals_data_source = get_pals_data_source(analysis, analysis_data, case, control)
+            if pals_data_source is None:
+                messages.warning(request, 'Add new inference failed. No data found.')
+                return inference(request, analysis_id)
+
+            # run pals
+            pals_df = run_pals(pals_data_source)
+            # update PALS results to database
+            pathway_analysis_data = get_last_analysis_data(analysis, PATHWAYS)
+            new_json_data = update_pathway_analysis_data(pathway_analysis_data, pals_df)
+            new_display_name = 'PALS %s: %s (case) vs %s (control)' % (pals_data_source.database_name, case, control)
+            copy_analysis_data(pathway_analysis_data, new_json_data, new_display_name, None,
+                               INFERENCE_PALS)
+            messages.success(request, 'Add new inference successful.', extra_tags='primary')
+            return inference(request, analysis_id)
+
+        else:
             messages.warning(request, 'Add new inference failed.')
-            return inference(request, analysis_id)
-
-        # get pals data source from the current analysis_data
-        pals_data_source = get_pals_data_source(analysis, analysis_data)
-        if pals_data_source is None:
-            messages.warning(request, 'Add new inference failed. No data found.')
-            return inference(request, analysis_id)
-
-        # run pals
-        pals_df = run_pals(pals_data_source)
-        # update PALS results to database
-        pathway_analysis_data = get_last_analysis_data(analysis, PATHWAYS)
-        new_json_data = update_pathway_analysis_data(pathway_analysis_data, pals_df)
-        new_display_name = 'PALS: %s' % pals_data_source.database_name
-        copy_analysis_data(pathway_analysis_data, new_json_data, new_display_name, None,
-                           INFERENCE_PALS)
-        messages.success(request, 'Add new inference successful.', extra_tags='primary')
-        return inference(request, analysis_id)
 
     return inference(request, analysis_id)

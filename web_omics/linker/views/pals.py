@@ -9,7 +9,7 @@ from pals.feature_extraction import DataSource
 from pals.pathway_analysis import PALS
 
 
-def get_pals_data_source(analysis, analysis_data):
+def get_pals_data_source(analysis, analysis_data, case, control):
     axis = 1
     X_std, data_df, design_df = get_standardized_df(analysis_data, axis, pk_cols=PKS)
     if design_df is None:
@@ -17,23 +17,9 @@ def get_pals_data_source(analysis, analysis_data):
 
     # retrieve experimental design information
     experimental_design = {
-        'comparisons': [],
+        'comparisons': [get_comparison(case, control)],
         'groups': get_group_members(analysis_data)
     }
-
-    # populate comparison values in the experimental design
-    comparison_cols = list(filter(lambda x: x.lower().startswith('padj_'), data_df.columns))
-    for comparison_col in comparison_cols:
-        tokens = comparison_col.split('_')
-        comparison_case = tokens[1].lower()
-        comparison_control = tokens[3].lower()
-        experimental_design['comparisons'].append({
-            'case': comparison_case,
-            'control': comparison_control,
-            'name': '%s_vs_%s' % (comparison_case, comparison_control)
-        })
-
-    assert len(experimental_design['comparisons']) > 0
 
     # retrieve annotation df
     annotation_df = pd.DataFrame()
@@ -71,6 +57,14 @@ def get_pals_data_source(analysis, analysis_data):
     return ds
 
 
+def get_comparison(case, control):
+    return {
+        'case': case.lower(),
+        'control': control.lower(),
+        'name': '%s_vs_%s' % (case, control)
+    }
+
+
 def run_pals(ds):
     pals = PALS(ds)
     pathway_df = pals.get_pathway_df(standardize=False)
@@ -87,23 +81,33 @@ def update_pathway_analysis_data(analysis_data, pathway_df):
         col: '_'.join(col.split(' ')[0:-1]).strip() for col in pals_df.columns
     })
     pals_dict = pals_df.to_dict()
+    new_json_data = analysis_data.json_data
+
+    #  remove the previous PALS if exists
+    for pathway_dict in new_json_data:
+        for comparison in pals_dict:
+            key = comparison_to_key(comparison)
+            if key in pathway_dict:
+                del pathway_dict[key]
 
     # get pathway analysis data and modify its json_data to include the PALS results
-    # TODO: should remove the previous results first here, if exists
-    new_json_data = analysis_data.json_data
     for pathway_dict in new_json_data:
         pathway_pk = pathway_dict[PATHWAY_PK]
         for comparison in pals_dict:
-            pals_results = pals_dict[comparison]
-            # remove space and last underscore from the comparison name if comparison ends with '_'
-            if comparison.endswith('_'):
-                key = comparison.strip().rsplit('_', 1)[0]
-            else:
-                key = comparison
-            # key = 'PALS_%s' % key
-            if key not in pathway_dict:
-                try:
-                    pathway_dict[key] = pals_results[pathway_pk]
-                except KeyError:  # pathway is not present in dataset, so it isn't included in PALS results
-                    pathway_dict[key] = NA
+            key = comparison_to_key(comparison)
+            try:
+                pals_results = pals_dict[comparison]
+                pathway_dict[key] = pals_results[pathway_pk]
+            except KeyError:  # pathway is not present in dataset, so it isn't included in PALS results
+                pathway_dict[key] = NA
     return new_json_data
+
+
+def comparison_to_key(comparison):
+    # remove space and last underscore from the comparison name if comparison ends with '_'
+    if comparison.endswith('_'):
+        key = comparison.strip().rsplit('_', 1)[0]
+    else:
+        key = comparison
+    # key = 'PALS_%s' % key
+    return key
