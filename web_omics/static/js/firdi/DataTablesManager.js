@@ -97,7 +97,11 @@ class DataTablesManager {
                     'type': dashType,
                     'render': function (data, type, row) {
                         if (typeof (data) == 'number') {
-                            return data.toFixed(3);
+                            if (row.hasOwnProperty('pathway_pk')) {
+                                return data.toFixed(4);
+                            } else {
+                                return data.toFixed(2);
+                            }
                         } else if (typeof (data) == 'string') {
                             return self.truncateString(data, MAX_STRING_LEN);
                             // } else if (data === null) {
