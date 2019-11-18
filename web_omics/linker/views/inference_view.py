@@ -7,6 +7,7 @@ from django.urls import reverse
 from django.utils import timezone
 from django.views.generic import TemplateView
 from django_select2.forms import Select2Widget
+from pals.common import PLAGE_WEIGHT, HG_WEIGHT
 from sklearn.decomposition import PCA as skPCA
 
 from linker.constants import *
@@ -73,6 +74,10 @@ def inference(request, analysis_id):
                                                                  widget=Select2Widget(SELECT_WIDGET_ATTRS))
                 selected_form.fields['control'] = forms.ChoiceField(choices=groups,
                                                                     widget=Select2Widget(SELECT_WIDGET_ATTRS))
+                selected_form.fields['plage_weight'] = forms.IntegerField(min_value=1, initial=PLAGE_WEIGHT,
+                                                                          label='Measurement weight')
+                selected_form.fields['hg_weight'] = forms.IntegerField(min_value=1, initial=HG_WEIGHT,
+                                                                       label='Coverage weight')
 
             else:  # default
                 action_url = reverse('inference', kwargs={
@@ -172,13 +177,13 @@ def inference_deseq_t_test(request, analysis_id):
 
             # create a new analysis data
             if data_type == GENOMICS:
-                display_name = 'DESeq2: %s (case) vs %s (control)' % (case, control)
+                display_name = 'DESeq2: %s_vs_%s' % (case, control)
                 metadata = {
                     'rld_df': rld_df.to_json(),
                     'res_ordered': jsonpickle.encode(res_ordered)
                 }
             elif data_type == PROTEOMICS or data_type == METABOLOMICS:
-                display_name = 't-test: %s (case) vs %s (control)' % (case, control)
+                display_name = 't-test: %s_vs_%s' % (case, control)
                 metadata = {}
             copy_analysis_data(analysis_data, json_data, display_name, metadata, INFERENCE_T_TEST)
             messages.success(request, 'Add new inference successful.', extra_tags='primary')
@@ -367,10 +372,14 @@ def inference_pals(request, analysis_id):
         groups = get_groups(analysis_data)
         form.fields['case'] = forms.ChoiceField(choices=groups, widget=Select2Widget())
         form.fields['control'] = forms.ChoiceField(choices=groups, widget=Select2Widget())
+        form.fields['plage_weight'] = forms.IntegerField(min_value=1, initial=PLAGE_WEIGHT, label='Measurement weight')
+        form.fields['hg_weight'] = forms.IntegerField(min_value=1, initial=HG_WEIGHT, label='Coverage weight')
 
         if form.is_valid():
             case = form.cleaned_data['case']
             control = form.cleaned_data['control']
+            plage_weight = form.cleaned_data['plage_weight']
+            hg_weight = form.cleaned_data['hg_weight']
 
             # get pals data source from the current analysis_data
             pals_data_source = get_pals_data_source(analysis, analysis_data, case, control)
@@ -379,11 +388,13 @@ def inference_pals(request, analysis_id):
                 return inference(request, analysis_id)
 
             # run pals
-            pals_df = run_pals(pals_data_source)
+            pals_df = run_pals(pals_data_source, plage_weight, hg_weight)
             # update PALS results to database
             pathway_analysis_data = get_last_analysis_data(analysis, PATHWAYS)
             new_json_data = update_pathway_analysis_data(pathway_analysis_data, pals_df)
-            new_display_name = 'PALS %s: %s (case) vs %s (control)' % (pals_data_source.database_name, case, control)
+            new_display_name = 'PALS %s (%d:%d): %s_vs_%s' % (pals_data_source.database_name,
+                                                              plage_weight, hg_weight,
+                                                              case, control)
             copy_analysis_data(pathway_analysis_data, new_json_data, new_display_name, None,
                                INFERENCE_PALS)
             messages.success(request, 'Add new inference successful.', extra_tags='primary')

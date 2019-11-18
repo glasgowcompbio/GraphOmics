@@ -1,12 +1,13 @@
 import pandas as pd
-
-from linker.constants import PKS, COMPOUND_DATABASE_KEGG, COMPOUND_DATABASE_CHEBI, PATHWAY_PK, NA, METABOLOMICS, \
-    PROTEOMICS, GENOMICS
-from linker.views.functions import get_group_members, get_standardized_df
+from loguru import logger
 from pals.common import DATABASE_REACTOME_KEGG, DATABASE_REACTOME_CHEBI, DATABASE_REACTOME_UNIPROT, \
     DATABASE_REACTOME_ENSEMBL
 from pals.feature_extraction import DataSource
 from pals.pathway_analysis import PALS
+
+from linker.constants import PKS, COMPOUND_DATABASE_KEGG, COMPOUND_DATABASE_CHEBI, PATHWAY_PK, NA, METABOLOMICS, \
+    PROTEOMICS, GENOMICS
+from linker.views.functions import get_group_members, get_standardized_df
 
 
 def get_pals_data_source(analysis, analysis_data, case, control):
@@ -65,8 +66,9 @@ def get_comparison(case, control):
     }
 
 
-def run_pals(ds):
-    pals = PALS(ds)
+def run_pals(ds, plage_weight, hg_weight):
+    logger.info('Running PALS with plage_weight=%d hg_weight=%d' % (plage_weight, hg_weight))
+    pals = PALS(ds, plage_weight=plage_weight, hg_weight=hg_weight)
     pathway_df = pals.get_pathway_df(standardize=False)
     return pathway_df
 
