@@ -29,4 +29,4 @@ class ExperimentListView(LoginRequired, ListView):
         return context
 
     def get_queryset(self):
-        return Analysis.objects.filter(user=self.request.user)
+        return Analysis.objects.filter(user=self.request.user).order_by('-timestamp')

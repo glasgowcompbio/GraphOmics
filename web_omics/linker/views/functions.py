@@ -777,7 +777,7 @@ def recur_dictify(frame):
         if frame.values.size == 1: return frame.values[0][0]
         return frame.values.squeeze()
     grouped = frame.groupby(frame.columns[0])
-    d = {k: recur_dictify(g.ix[:, 1:]) for k, g in grouped}
+    d = {k: recur_dictify(g.iloc[:, 1:]) for k, g in grouped}
     return d
 
 
