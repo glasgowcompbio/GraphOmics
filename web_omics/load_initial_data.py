@@ -5,16 +5,17 @@ import shutil
 import sys
 from pathlib import Path
 
+import loguru as logger
 from tqdm import tqdm
 
-sys.path.append('linker')
+sys.path.append('.')
 
-from reactome import get_all_compound_ids
-from metadata import get_compound_metadata_online
-from common import save_obj, download_file, extract_zip_file
-from GTF import lines
-from gene_ontologies_utils import download_ontologies, download_associations
-from constants import EXTERNAL_COMPOUND_NAMES, EXTERNAL_KEGG_TO_CHEBI, EXTERNAL_GENE_NAMES, EXTERNAL_GO_DATA
+from linker.reactome import get_all_compound_ids
+from linker.metadata import get_compound_metadata_online
+from linker.common import save_obj, download_file, extract_zip_file
+from linker.GTF import lines
+from linker.gene_ontologies_utils import download_ontologies, download_associations
+from linker.constants import EXTERNAL_COMPOUND_NAMES, EXTERNAL_KEGG_TO_CHEBI, EXTERNAL_GENE_NAMES, EXTERNAL_GO_DATA
 
 
 def kegg_id_to_display_names():
@@ -106,26 +107,26 @@ def delete_by_pattern(extension):
 
 if __name__ == '__main__':
     # Create the mapping between KEGG to display names, see notebooks/mapping/get_all_compounds.ipynb
-    print('\n---------------------------------------------------')
-    print('1/4 Exporting KEGG -> display names')
-    print('---------------------------------------------------')
+    logger.debug('\n---------------------------------------------------')
+    logger.debug('1/4 Exporting KEGG -> display names')
+    logger.debug('---------------------------------------------------')
     kegg_id_to_display_names()
 
     # Create a mapping between KEGG ID to ChEBI ID, see notebooks/mapping/kegg_to_chebi.ipynb
-    print('\n---------------------------------------------------')
-    print('2/4 Exporting KEGG -> ChEBI mapping')
-    print('---------------------------------------------------')
+    logger.debug('\n---------------------------------------------------')
+    logger.debug('2/4 Exporting KEGG -> ChEBI mapping')
+    logger.debug('---------------------------------------------------')
     kegg_id_to_chebi_id()
 
     # Create a mapping between Ensemble gene ID to gene names, see notebooks/mapping/parse_gtf.ipynb
-    print('\n---------------------------------------------------')
-    print('3/4 Exporting gene ID -> gene name')
-    print('---------------------------------------------------')
+    logger.debug('\n---------------------------------------------------')
+    logger.debug('3/4 Exporting gene ID -> gene name')
+    logger.debug('---------------------------------------------------')
     parse_gtf()
 
     # Download gene ontology and association files
-    print('\n---------------------------------------------------')
-    print('4/4 Downloading gene ontology and association files')
-    print('---------------------------------------------------')
+    logger.debug('\n---------------------------------------------------')
+    logger.debug('4/4 Downloading gene ontology and association files')
+    logger.debug('---------------------------------------------------')
     download_go()
 

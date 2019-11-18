@@ -1,13 +1,10 @@
 from collections import defaultdict
-import time
 
-from neo4j.v1 import GraphDatabase, basic_auth
-
-import xmltodict
 import pandas as pd
+import xmltodict
 from bioservices.kegg import KEGG
-from bioservices.reactome import Reactome
-
+from loguru import logger
+from neo4j.v1 import GraphDatabase, basic_auth
 
 NEO4J_SERVER='bolt://localhost:7687'
 NEO4J_USER='neo4j'
@@ -32,7 +29,7 @@ def get_species_list():
         MATCH (n:Species) RETURN n.displayName AS name order by name        
         """
         query_res = session.run(query)
-        print(query)
+        logger.debug(query)
         for record in query_res:
             results.append(record['name'])
     finally:
@@ -78,7 +75,7 @@ def ensembl_to_uniprot(ensembl_ids, species_list):
             'species': species_list
         }
         query_res = session.run(query, params)
-        print(query)
+        logger.debug(query)
 
         for record in query_res:
             gene_id = record['gene_id']
@@ -120,7 +117,7 @@ def uniprot_to_ensembl(uniprot_ids, species_list):
             'species': species_list
         }
         query_res = session.run(query, params)
-        print(query)
+        logger.debug(query)
 
         for record in query_res:
             gene_id = record['gene_id']
@@ -163,7 +160,7 @@ def uniprot_to_reaction(uniprot_ids, species_list):
             'species': species_list
         }
         query_res = session.run(query, params)
-        print(query)
+        logger.debug(query)
 
         for record in query_res:
             protein_id = record['protein_id']
@@ -194,7 +191,7 @@ def get_all_compound_ids():
             di.displayName AS compound_id
         """
         query_res = session.run(query)
-        print(query)
+        logger.debug(query)
 
         for record in query_res:
             key = record['compound_id'].split(':')  # e.g. 'COMPOUND:C00025'
@@ -231,7 +228,7 @@ def compound_to_reaction(compound_ids, species_list):
             'species': species_list
         }
         query_res = session.run(query, params)
-        print(query)
+        logger.debug(query)
 
         for record in query_res:
             compound_id = record['compound_id']
@@ -284,7 +281,7 @@ def get_reaction_entities(reaction_ids):
             'reaction_ids': reaction_ids
         }
         query_res = session.run(query, params)
-        print(query)
+        logger.debug(query)
 
         for record in query_res:
             reaction_id = record['reaction_id']
@@ -330,7 +327,7 @@ def reaction_to_uniprot(reaction_ids, species_list):
             'species': species_list
         }
         query_res = session.run(query, params)
-        print(query)
+        logger.debug(query)
 
         for record in query_res:
             protein_id = record['protein_id']
@@ -368,7 +365,7 @@ def reaction_to_compound(reaction_ids, species_list, use_kegg=False):
             'species': species_list
         }
         query_res = session.run(query, params)
-        print(query)
+        logger.debug(query)
 
         for record in query_res:
             reaction_id = record['reaction_id']
@@ -437,7 +434,7 @@ def reaction_to_pathway(reaction_ids, species_list, metabolic_pathway_only, leaf
             'species': species_list
         }
         query_res = session.run(query, params)
-        print(query)
+        logger.debug(query)
 
         for record in query_res:
             reaction_id = record['reaction_id']
@@ -484,7 +481,7 @@ def pathway_to_reactions(pathway_ids):
             'pathway_ids': pathway_ids
         }
         query_res = session.run(query, params)
-        print(query)
+        logger.debug(query)
 
         for record in query_res:
             reaction_id = record['reaction_id']
@@ -536,7 +533,7 @@ def get_reactome_description(reactome_id, from_parent=False):
             'reactome_id': reactome_id,
         }
         query_res = session.run(query, params)
-        print(query)
+        logger.debug(query)
         record_list = list(query_res.records())
         results = list(map(lambda x: x.data(), record_list))
         first_data = results[0]
@@ -579,7 +576,7 @@ def get_all_pathways(species_list):
             'species_list': species_list
         }
         query_res = session.run(query, params)
-        print(query)
+        logger.debug(query)
 
         for record in query_res:
             pathway_species = record['species_name']
@@ -621,7 +618,7 @@ def get_all_pathways_formulae(species):
             'species': species
         }
         query_res = session.run(query, params)
-        print(query)
+        logger.debug(query)
 
         i = 0
         retrieved = {}
@@ -634,7 +631,7 @@ def get_all_pathways_formulae(species):
             if formula is None:
                 if compound_name not in retrieved:
                     formula = retrieve_kegg_formula(compound_name)
-                    print('Missing formula for %s, retrieved %s from kegg' %
+                    logger.debug('Missing formula for %s, retrieved %s from kegg' %
                           (compound_name, formula))
                     retrieved[compound_name] = formula
                 else:

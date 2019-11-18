@@ -3,9 +3,9 @@ from goatools.associations import read_gaf
 from goatools.base import dnld_gaf
 from goatools.base import download_go_basic_obo
 from goatools.obo_parser import GODag
+from tqdm import tqdm
 
 from linker.constants import *
-from tqdm import tqdm
 
 
 def download_ontologies():
@@ -36,7 +36,7 @@ def to_id(names, names_to_id_dict):
             my_id = names_to_id_dict[x.lower()]
             ids.append(my_id)
         except KeyError as e:
-            # print(e)
+            # logger.debug(e)
             pass
     return ids
 

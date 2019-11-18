@@ -1,16 +1,16 @@
-import json
 import collections
+import json
 import pprint
 
-from django.shortcuts import render, get_object_or_404
 from django.contrib import messages
+from django.shortcuts import render, get_object_or_404
+from loguru import logger
 
-from linker.forms import AddDataForm, AddPathwayForm
+from linker.constants import GENOMICS, PROTEOMICS, METABOLOMICS, DataRelationType, COMPOUND_DATABASE_KEGG
+from linker.forms import AddDataForm
 from linker.models import Analysis, AnalysisData
 from linker.reactome import get_species_dict
-from linker.views.functions import reactome_mapping, save_analysis
-from linker.constants import GENOMICS, PROTEOMICS, METABOLOMICS, REACTIONS, PATHWAYS, \
-    DataRelationType, COMPOUND_DATABASE_CHEBI, COMPOUND_DATABASE_KEGG
+from linker.views.functions import reactome_mapping
 
 
 def settings(request, analysis_id):
@@ -70,7 +70,7 @@ def add_data(request, analysis_id):
                             analysis_data.json_data.append(item)
                             counts[r] += 1
                     analysis_data.save()
-                    print('Updated analysis data', analysis_data.pk, 'for analysis', analysis.pk)
+                    logger.info('Updated analysis data %d for analysis %d' % (analysis_data.pk, analysis.pk))
 
             # update species in analysis metadata
             species_list = list(set(analysis.get_species_list() + species_list))
@@ -78,7 +78,7 @@ def add_data(request, analysis_id):
             analysis.save()
 
             count = 1
-            print('Updated analysis', analysis.pk, '(', species_list, ')')
+            logger.info('Updated analysis %d (%s)' % (analysis.pk, species_list))
             messages.success(request, 'Add new data successful.', extra_tags='primary')
             s = pprint.pformat(dict(counts))
             messages.add_message(request, messages.DEBUG, 'Total records updated {0}'.format(s), extra_tags='secondary')

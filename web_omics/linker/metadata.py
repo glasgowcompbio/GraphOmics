@@ -1,12 +1,13 @@
-from bioservices.kegg import KEGG
-from bioservices import Ensembl
-from bioservices import UniProt
-from bioservices import ChEBI
-from bioservices import EUtils
-from bioservices import Reactome
 import json
 import urllib.request
-import pickle
+
+from bioservices import ChEBI
+from bioservices import EUtils
+from bioservices import Ensembl
+from bioservices import Reactome
+from bioservices import UniProt
+from bioservices.kegg import KEGG
+from loguru import logger
 from tqdm import tqdm
 
 
@@ -24,7 +25,7 @@ def batch(iterable, n=1):
 def get_ensembl_metadata_online(ensembl_ids):
 
     ensembl_ids = list(set(ensembl_ids))
-    print('get_ensembl_metadata', len(ensembl_ids))
+    logger.info('get_ensembl_metadata %d' % len(ensembl_ids))
 
     BATCH_SIZE = 1000
     ens = Ensembl()
@@ -33,7 +34,7 @@ def get_ensembl_metadata_online(ensembl_ids):
     for x in batch(ensembl_ids, BATCH_SIZE):
         batch_ids = [i for i in x]
         cumulative_total += len(batch_ids)
-        print(cumulative_total, '/', len(ensembl_ids))
+        logger.debug('%d/%d' % (cumulative_total, len(ensembl_ids)))
         lookup = ens.post_lookup_by_id(identifiers=batch_ids)
         ensembl_lookup.update(lookup)
 
@@ -73,7 +74,7 @@ def get_gene_names(ensembl_ids, gtf_dict):
 def get_uniprot_metadata_online(uniprot_ids):
 
     uniprot_ids = list(set(uniprot_ids))
-    print('get_uniprot_metadata', len(uniprot_ids))
+    logger.info('get_uniprot_metadata %d' % len(uniprot_ids))
 
     BATCH_SIZE = 200
     uniprot = UniProt()
@@ -83,7 +84,7 @@ def get_uniprot_metadata_online(uniprot_ids):
     for x in batch(uniprot_ids, BATCH_SIZE):
         batch_ids = [i for i in x]
         cumulative_total += len(batch_ids)
-        print(cumulative_total, '/', len(uniprot_ids))
+        logger.debug('%d/%d' % (cumulative_total, len(uniprot_ids)))
 
         res = uniprot.retrieve(batch_ids)
         for r in res:
@@ -128,7 +129,7 @@ def get_uniprot_metadata_reactome(uniprot_ids):
                 if w.startswith('recommendedName'):
                     next_w = clean_label(tokens[i + 1])
                     metadata_map[protein_id] = {'display_name': next_w}
-                    print(protein_id, '--', next_w)
+                    logger.debug('%d -- %s' % (protein_id, next_w))
     return metadata_map
 
 
@@ -146,13 +147,13 @@ def kegg_to_chebi(compound_ids):
                 assert len(res) > 0 # we should always be able to convert from KEGG -> ChEBI ids
                 le = res[0]
                 chebi_number = le.chebiId.split(':')[1]
-                print('KEGG %s --> ChEBI %s' % (compound_id, chebi_number))
+                logger.debug('KEGG %s --> ChEBI %s' % (compound_id, chebi_number))
                 results[compound_id] = chebi_number
             else:
-                print('ChEBI %s --> ChEBI %s' % (compound_id, compound_id))
+                logger.debug('ChEBI %s --> ChEBI %s' % (compound_id, compound_id))
                 results[compound_id] = compound_id
         except Exception:
-            print('KEGG %s --> KEGG %s' % (compound_id, compound_id))
+            logger.debug('KEGG %s --> KEGG %s' % (compound_id, compound_id))
             results[compound_id] = compound_id
     return results
 
@@ -172,7 +173,7 @@ def get_compound_metadata_online(kegg_ids):
             metadata_map[kegg_id] = {'display_name': first_name}
         except TypeError:
             failed += 1
-    print('Failed = %d' % failed)
+    logger.info('Failed = %d' % failed)
 
     return metadata_map
 

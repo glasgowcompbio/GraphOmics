@@ -1,10 +1,11 @@
+import loguru as logger
 from django.contrib.auth import authenticate, login, logout
+from django.contrib.auth import get_user_model
 from django.contrib.auth.models import User
 from django.http import HttpResponse, HttpResponseRedirect
 from django.shortcuts import render
 from django.urls import reverse, reverse_lazy
 from django.views.generic.edit import UpdateView
-from django.contrib.auth import get_user_model
 
 from registration.forms import UserForm
 
@@ -27,7 +28,7 @@ def register(request):
             registered = True
 
         else:
-            print(user_form.errors)
+            logger.debug(user_form.errors)
     else:
         user_form = UserForm()
 
@@ -53,7 +54,7 @@ def user_login(request):
                 login(request, guest_user)
                 return HttpResponseRedirect(reverse('experiment_list_view'))
             else:
-                print("Invalid login details: {0}, {1}".format(username, password))
+                logger.debug("Invalid login details: {0}, {1}".format(username, password))
                 return HttpResponse("Invalid login details supplied.")
                 return render(request, 'registration/login.html', {})
 

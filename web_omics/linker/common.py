@@ -1,20 +1,19 @@
 import gzip
 import logging
+import math
 import os
 import pathlib
 import pickle
-import urllib
 import zipfile
 
-import math
+import loguru as logger
 import requests
-from django.templatetags.static import static
 from tqdm import tqdm
 
 
 def create_if_not_exist(out_dir):
     if not os.path.exists(out_dir) and len(out_dir) > 0:
-        print('Created %s' % out_dir)
+        logger.info('Created %s' % out_dir)
         pathlib.Path(out_dir).mkdir(parents=True, exist_ok=True)
 
 
@@ -27,7 +26,7 @@ def save_obj(obj, filename):
     """
     out_dir = os.path.dirname(filename)
     create_if_not_exist(out_dir)
-    print('Saving %s to %s' % (type(obj), filename))
+    logger.info('Saving %s to %s' % (type(obj), filename))
     with gzip.GzipFile(filename, 'w') as f:
         pickle.dump(obj, f, protocol=pickle.HIGHEST_PROTOCOL)
 
@@ -54,7 +53,7 @@ def download_file(url, out_file=None):
 
     if out_file is None:
         out_file = url.rsplit('/', 1)[-1]  # get the last part in url
-    print('Downloading %s' % out_file)
+    logger.info('Downloading %s' % out_file)
 
     with open(out_file, 'wb') as f:
         for data in tqdm(r.iter_content(block_size), total=math.ceil(total_size // block_size), unit='KB',
@@ -66,11 +65,11 @@ def download_file(url, out_file=None):
 
 
 def extract_zip_file(in_file, delete=True):
-    print('Extracting %s' % in_file)
+    logger.info('Extracting %s' % in_file)
     with zipfile.ZipFile(file=in_file) as zip_file:
         for file in tqdm(iterable=zip_file.namelist(), total=len(zip_file.namelist())):
             zip_file.extract(member=file)
 
     if delete:
-        print('Deleting %s' % in_file)
+        logger.info('Deleting %s' % in_file)
         os.remove(in_file)

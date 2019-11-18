@@ -1,19 +1,17 @@
 import collections
 import json
-import pickle
 import re
-import urllib.request
 from collections import defaultdict
 from io import StringIO
 
 import numpy as np
 import pandas as pd
+import plotly.offline as opy
 import requests
 from clustergrammer import Network
-import plotly.offline as opy
-from django.templatetags.static import static
-from django.urls import reverse
 from django.conf import settings
+from django.urls import reverse
+from loguru import logger
 
 from linker.constants import *
 from linker.metadata import get_gene_names, get_compound_metadata, clean_label, get_species_name_to_id
@@ -34,11 +32,11 @@ def reactome_mapping(request, genes_str, proteins_str, compounds_str, compound_d
     observed_compound_df, group_compound_df, observed_compound_ids = csv_to_dataframe(compounds_str)
 
     # try to convert all kegg ids to chebi ids, if possible
-    print('Converting kegg ids -> chebi ids')
+    logger.info('Converting kegg ids -> chebi ids')
     observed_compound_ids = get_ids_from_dataframe(observed_compound_df)
     for cid in observed_compound_ids:
         if cid not in settings.KEGG_2_CHEBI:
-            print('Not found: %s' % cid)
+            logger.warning('Not found: %s' % cid)
             settings.KEGG_2_CHEBI[cid] = cid
 
     if observed_compound_df is not None:
@@ -48,12 +46,12 @@ def reactome_mapping(request, genes_str, proteins_str, compounds_str, compound_d
         observed_compound_ids = get_ids_from_dataframe(observed_compound_df)
 
     ### map genes -> proteins ###
-    print('Mapping genes -> proteins')
+    logger.info('Mapping genes -> proteins')
     gene_2_proteins_mapping, _ = ensembl_to_uniprot(observed_gene_ids, species_list)
     gene_2_proteins = make_relations(gene_2_proteins_mapping, GENE_PK, PROTEIN_PK, value_key=None)
 
     ### maps proteins -> reactions ###
-    print('Mapping proteins -> reactions')
+    logger.info('Mapping proteins -> reactions')
     protein_ids_from_genes = gene_2_proteins.values
     known_protein_ids = list(set(observed_protein_ids + protein_ids_from_genes))
     protein_2_reactions_mapping, _ = uniprot_to_reaction(known_protein_ids, species_list)
@@ -61,13 +59,13 @@ def reactome_mapping(request, genes_str, proteins_str, compounds_str, compound_d
                                          value_key='reaction_id')
 
     ### maps compounds -> reactions ###
-    print('Mapping compounds -> reactions')
+    logger.info('Mapping compounds -> reactions')
     compound_2_reactions_mapping, _ = compound_to_reaction(observed_compound_ids, species_list)
     compound_2_reactions = make_relations(compound_2_reactions_mapping, COMPOUND_PK, REACTION_PK,
                                           value_key='reaction_id')
 
     ### maps reactions -> metabolite pathways ###
-    print('Mapping reactions -> metabolite pathways')
+    logger.info('Mapping reactions -> metabolite pathways')
     reaction_ids_from_proteins = protein_2_reactions.values
     reaction_ids_from_compounds = compound_2_reactions.values
     reaction_ids = list(set(reaction_ids_from_proteins + reaction_ids_from_compounds))
@@ -78,14 +76,14 @@ def reactome_mapping(request, genes_str, proteins_str, compounds_str, compound_d
                                          value_key='pathway_id')
 
     ### maps reactions -> proteins ###
-    print('Mapping reactions -> proteins')
+    logger.info('Mapping reactions -> proteins')
     mapping, _ = reaction_to_uniprot(reaction_ids, species_list)
     reaction_2_proteins = make_relations(mapping, REACTION_PK, PROTEIN_PK, value_key=None)
     protein_2_reactions = merge_relation(protein_2_reactions, reverse_relation(reaction_2_proteins))
     all_protein_ids = protein_2_reactions.keys
 
     ### maps reactions -> compounds ###
-    print('Mapping reactions -> compounds')
+    logger.info('Mapping reactions -> compounds')
     if compound_database_str == COMPOUND_DATABASE_KEGG:
         use_kegg = True
     else:
@@ -97,7 +95,7 @@ def reactome_mapping(request, genes_str, proteins_str, compounds_str, compound_d
     all_compound_ids = compound_2_reactions.keys
 
     ### map proteins -> genes ###
-    print('Mapping proteins -> genes')
+    logger.info('Mapping proteins -> genes')
     mapping, _ = uniprot_to_ensembl(all_protein_ids, species_list)
     protein_2_genes = make_relations(mapping, PROTEIN_PK, GENE_PK, value_key=None)
     gene_2_proteins = merge_relation(gene_2_proteins, reverse_relation(protein_2_genes))
@@ -176,7 +174,7 @@ def reactome_mapping(request, genes_str, proteins_str, compounds_str, compound_d
 
     # TODO: old, unfinished method. Either complete it or remove it
     # Meanwhile, the get_reactome_overrepresentation_df() method below does the job too
-    # print('Computing reaction and pathway counts')
+    # logger.info('Computing reaction and pathway counts')
     # reaction_count_df, pathway_count_df = get_count_df(gene_2_proteins_mapping, protein_2_reactions_mapping,
     #                                                    compound_2_reactions_mapping, reaction_2_pathways_mapping,
     #                                                    species_list)
@@ -234,7 +232,7 @@ def save_analysis(analysis_name, analysis_desc,
                                        description=analysis_desc,
                                        metadata=metadata,
                                        user=current_user)
-    print('Saved analysis', analysis.pk, '(', species_list, ')')
+    logger.info('Saved analysis %d (%s)' % (analysis.pk, species_list))
     datatype_json = {
         GENOMICS: (results[GENOMICS], 'genes_json', results['group_gene_df']),
         PROTEOMICS: (results[PROTEOMICS], 'proteins_json', results['group_protein_df']),
@@ -272,11 +270,10 @@ def save_analysis(analysis_name, analysis_desc,
                 'clustergrammer': cluster_json
             }
         analysis_data.save()
-        print('Saved analysis data', analysis_data.pk, 'for analysis', analysis.pk)
+        logger.info('Saved analysis data %d for analysis %d' % (analysis_data.pk, analysis.pk))
 
         # if settings.DEBUG:
         #     save_json_string(v[0], 'static/data/debugging/' + v[1] + '.json')
-    print()
     return analysis
 
 
@@ -471,7 +468,7 @@ def get_reactome_overrepresentation_df(identifiers, species_list):
 def save_json_string(data, outfile):
     with open(outfile, 'w') as f:
         f.write(data)
-        print('Saving', outfile)
+        logger.debug('Saving %s' % outfile)
 
 
 def csv_to_dataframe(csv_str):
