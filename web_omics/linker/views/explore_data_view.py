@@ -93,18 +93,25 @@ def settings(request, analysis_id):
 def get_ensembl_gene_info(request, analysis_id):
     if request.is_ajax():
         ensembl_id = request.GET['id']
-        metadata = get_single_ensembl_metadata_online(ensembl_id)
-        display_name = metadata['display_name'] if metadata is not None and 'display_name' in metadata else ''
+        display_name = ''
+        try:
+            metadata = get_single_ensembl_metadata_online(ensembl_id)
+            display_name = metadata['display_name'] if metadata is not None and 'display_name' in metadata else ''
 
-        infos = []
-        if metadata is not None:
-            # selected = ['description', 'species', 'biotype', 'db_type', 'logic_name', 'strand', 'start', 'end']
-            selected = ['description', 'species']
-            for key in selected:
-                value = metadata[key]
-                if key == 'description':
-                    value = value[0:value.index('[')]  # remove e.g. '[xxx]' from 'abhydrolase [xxx]'
-                infos.append({'key': key.title(), 'value': value})
+            infos = []
+            if metadata is not None:
+                # selected = ['description', 'species', 'biotype', 'db_type', 'logic_name', 'strand', 'start', 'end']
+                selected = ['description', 'species']
+                for key in selected:
+                    if key in metadata:
+                        value = metadata[key]
+                        if key == 'description':
+                            value = value[0:value.index('[')]  # remove e.g. '[xxx]' from 'abhydrolase [xxx]'
+                        infos.append({'key': key.title(), 'value': value})
+        except TypeError: # https://github.com/joewandy/WebOmics/issues/9
+            pass
+        except KeyError: # https://github.com/joewandy/WebOmics/issues/10
+            pass
 
         data = Harmonizome.get(Entity.GENE, name=display_name)
         try:
