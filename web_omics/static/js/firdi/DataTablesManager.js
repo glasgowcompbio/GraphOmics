@@ -120,6 +120,10 @@ class DataTablesManager {
                     titleAttr: 'Column Visibility',
                 },
                 {
+                    extend: 'csvHtml5',
+                    text: '📤 Export',
+                },
+                {
                     text: '☑️ Select All',
                     action: function (e, dt, node, config) {
                         // toggle button text
@@ -245,7 +249,7 @@ class DataTablesManager {
             const tableAPI = $('#' + tableName).DataTable(settings['tableSettings']);
             // TODO: quick hack to hide the Select All buttons from reactions and pathways tables
             if (tableName.includes('reactions') || tableName.includes('pathways')) {
-                tableAPI.buttons(1).remove();
+                tableAPI.buttons(2).remove();
             } else { // set toggle button state for tables that have the Select ALl buttons
                 self.state.rootStore.selectAllToggles[tableName] = false;
             }

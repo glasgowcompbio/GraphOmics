@@ -3,6 +3,7 @@ import 'datatables.net-dt/css/jquery.dataTables.css';
 import 'datatables.net-buttons';
 import 'datatables.net-buttons-dt/css/buttons.dataTables.min.css';
 import 'datatables.net-buttons/js/buttons.colVis.js'; // Column visibility
+import 'datatables.net-buttons/js/buttons.html5.js';
 import 'datatables.net-responsive';
 import 'datatables.net-responsive-dt/css/responsive.dataTables.min.css';
 import 'datatables.net-scroller';
