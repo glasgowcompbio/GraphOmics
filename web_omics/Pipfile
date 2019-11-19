@@ -21,7 +21,6 @@ scikit-learn = "*"
 matplotlib = "*"
 statsmodels = "*"
 "neo4j-driver" = "*"
-jupyter = "*"
 bioservices = "*"
 jsonfield = "*"
 jsonpickle = "*"
@@ -36,6 +35,7 @@ tqdm = "*"
 xml2dict = "*"
 loguru = "*"
 pals-pathway = "*"
+jupyterlab = "*"
 
 [dev-packages]
 
