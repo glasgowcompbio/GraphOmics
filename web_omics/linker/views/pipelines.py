@@ -8,15 +8,6 @@ from sklearn import preprocessing
 from sklearn.decomposition import PCA
 from statsmodels.sandbox.stats.multicomp import multipletests
 
-try:
-    from rpy2.robjects.packages import importr
-    from rpy2 import robjects as ro
-    from rpy2.robjects.conversion import localconverter
-    from rpy2.robjects import Formula
-    from rpy2.robjects import pandas2ri
-except ImportError as e:
-    logger.warning('Failed to import rpy2: %s' % str(e))
-
 from linker.constants import GROUP_COL, IDS, PKS
 
 
@@ -76,43 +67,54 @@ class WebOmicsInference(object):
         return data_df
 
     def run_deseq(self, keep_threshold, case, control):
-        pandas2ri.activate()
-        deseq = importr('DESeq2')
-        design = Formula("~ group")
-        col_data = self.design_df
-        count_data = self.data_df.astype(int)
-        count_data = count_data[
-            col_data.index]  # make sure columns in count_data is ordered the same way as the index of col_data
-        dds = deseq.DESeqDataSetFromMatrix(countData=count_data, colData=col_data, design=design)
-        sv = ro.StrVector(col_data[GROUP_COL].values)
-        condition = ro.FactorVector(sv)
-        runs = col_data.index
-        rstring = """
-            function(dds, condition, runs, keepThreshold, case, control) {
-                # collapse technical replicates
-                dds$condition <- condition
-                dds$condition <- relevel(dds$condition, ref=control) # set control    
-                dds$sample <- runs 
-                dds$run <- runs        
-                ddsColl <- collapseReplicates(dds, dds$sample, dds$run) 
-                # count filter
-                keep <- rowSums(counts(ddsColl)) >= keepThreshold
-                ddsColl <- ddsColl[keep,]
-                # run DESeq2 analysis
-                ddsAnalysis <- DESeq(dds)
-                res <- results(ddsAnalysis, contrast=c("group", control, case))
-                resOrdered <- res[order(res$padj),]  # sort by p-adjusted values
-                df = as.data.frame(resOrdered)
-                rld <- as.data.frame(assay(rlog(dds, blind=FALSE)))
-                list(df, rld, resOrdered)
-            }
-        """
-        rfunc = ro.r(rstring)
-        results = rfunc(dds, condition, runs, keep_threshold, case, control)
-        pd_df = self._to_pd_df(results[0])
-        rld_df = self._to_pd_df(results[1])
-        res_ordered = results[2]
-        return pd_df, rld_df, res_ordered
+        try:
+
+            from rpy2.robjects.packages import importr
+            from rpy2 import robjects as ro
+            from rpy2.robjects.conversion import localconverter
+            from rpy2.robjects import Formula
+            from rpy2.robjects import pandas2ri
+
+            pandas2ri.activate()
+            deseq = importr('DESeq2')
+            design = Formula("~ group")
+            col_data = self.design_df
+            count_data = self.data_df.astype(int)
+            count_data = count_data[
+                col_data.index]  # make sure columns in count_data is ordered the same way as the index of col_data
+            dds = deseq.DESeqDataSetFromMatrix(countData=count_data, colData=col_data, design=design)
+            sv = ro.StrVector(col_data[GROUP_COL].values)
+            condition = ro.FactorVector(sv)
+            runs = col_data.index
+            rstring = """
+                function(dds, condition, runs, keepThreshold, case, control) {
+                    # collapse technical replicates
+                    dds$condition <- condition
+                    dds$condition <- relevel(dds$condition, ref=control) # set control    
+                    dds$sample <- runs 
+                    dds$run <- runs        
+                    ddsColl <- collapseReplicates(dds, dds$sample, dds$run) 
+                    # count filter
+                    keep <- rowSums(counts(ddsColl)) >= keepThreshold
+                    ddsColl <- ddsColl[keep,]
+                    # run DESeq2 analysis
+                    ddsAnalysis <- DESeq(dds)
+                    res <- results(ddsAnalysis, contrast=c("group", control, case))
+                    resOrdered <- res[order(res$padj),]  # sort by p-adjusted values
+                    df = as.data.frame(resOrdered)
+                    rld <- as.data.frame(assay(rlog(dds, blind=FALSE)))
+                    list(df, rld, resOrdered)
+                }
+            """
+            rfunc = ro.r(rstring)
+            results = rfunc(dds, condition, runs, keep_threshold, case, control)
+            pd_df = self._to_pd_df(results[0])
+            rld_df = self._to_pd_df(results[1])
+            res_ordered = results[2]
+            return pd_df, rld_df, res_ordered
+
+        except ImportError as e:
+            logger.warning('Failed to load rpy2: %s' % str(e))
 
     def run_ttest(self, case, control):
         count_data = self.data_df
