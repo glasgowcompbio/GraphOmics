@@ -1,18 +1,21 @@
-import uuid
 # import pylab as plt
 
 import numpy as np
 import pandas as pd
+from loguru import logger
 from scipy import stats
-from statsmodels.sandbox.stats.multicomp import multipletests
-from sklearn.decomposition import PCA
 from sklearn import preprocessing
+from sklearn.decomposition import PCA
+from statsmodels.sandbox.stats.multicomp import multipletests
 
-from rpy2.robjects.packages import importr
-from rpy2 import robjects as ro
-from rpy2.robjects.conversion import localconverter
-from rpy2.robjects import Formula
-from rpy2.robjects import pandas2ri
+try:
+    from rpy2.robjects.packages import importr
+    from rpy2 import robjects as ro
+    from rpy2.robjects.conversion import localconverter
+    from rpy2.robjects import Formula
+    from rpy2.robjects import pandas2ri
+except ImportError as e:
+    logger.warning('Failed to import rpy2: %s' % str(e))
 
 from linker.constants import GROUP_COL, IDS, PKS
 

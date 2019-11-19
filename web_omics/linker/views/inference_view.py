@@ -7,6 +7,7 @@ from django.urls import reverse
 from django.utils import timezone
 from django.views.generic import TemplateView
 from django_select2.forms import Select2Widget
+from loguru import logger
 from pals.common import PLAGE_WEIGHT, HG_WEIGHT
 from sklearn.decomposition import PCA as skPCA
 
@@ -148,7 +149,12 @@ def inference_deseq_t_test(request, analysis_id):
 
             if data_type == GENOMICS:  # run deseq2 here
                 wi = WebOmicsInference(data_df, design_df, data_type)
-                pd_df, rld_df, res_ordered = wi.run_deseq(10, case, control)
+                try:
+                    pd_df, rld_df, res_ordered = wi.run_deseq(10, case, control)
+                except Exception as e:
+                    logger.warning('Failed to run DESeq2: %s' % str(e))
+                    messages.warning(request, 'Add new inference failed.')
+                    return inference(request, analysis_id)
                 result_df = pd_df[['padj', 'log2FoldChange']]
             elif data_type == PROTEOMICS or data_type == METABOLOMICS:
                 wi = WebOmicsInference(data_df, design_df, data_type, min_value=5000)
