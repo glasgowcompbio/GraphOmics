@@ -1,4 +1,5 @@
 from collections import defaultdict
+import os
 
 import pandas as pd
 import xmltodict
@@ -6,11 +7,29 @@ from bioservices.kegg import KEGG
 from loguru import logger
 from neo4j.v1 import GraphDatabase, basic_auth
 
-NEO4J_SERVER='bolt://localhost:7687'
-NEO4J_USER='neo4j'
-NEO4J_PASSWORD='neo4j'
-driver = GraphDatabase.driver(NEO4J_SERVER,
-                              auth=basic_auth(NEO4J_USER, NEO4J_PASSWORD))
+
+def get_neo4j_driver():
+    NEO4J_SERVER = os.getenv('NEO4J_SERVER', 'bolt://localhost:7687')
+    if 'NEO4J_SERVER' not in os.environ:
+        logger.warning('Using a default neo4j server: %s' % NEO4J_SERVER)
+
+    NEO4J_USER = os.getenv('NEO4J_USER', 'neo4j')
+    NEO4J_PASSWORD = os.getenv('NEO4J_PASSWORD', 'neo4j')
+    if 'NEO4J_USER' not in os.environ or 'NEO4J_PASSWORD' not in os.environ:
+        logger.warning('Using a default neo4j username or password: %s' % NEO4J_USER)
+
+    try:
+        neo4j_driver = GraphDatabase.driver(NEO4J_SERVER,
+                                            auth=basic_auth(NEO4J_USER, NEO4J_PASSWORD))
+        logger.info('Created graph database driver for %s (%s)' % (NEO4J_SERVER, NEO4J_USER))
+        return neo4j_driver
+    except Exception as e:
+        logger.warning('Failed to connect to graph database: %s' % str(e))
+        raise e
+
+
+driver = get_neo4j_driver()
+
 
 def get_neo4j_session():
     session = None
@@ -254,6 +273,7 @@ def produce_kegg_dict(kegg_location, param):
 
     return kegg_dict
 
+
 ################################################################################
 ### Reaction-related functions                                               ###
 ################################################################################
@@ -409,10 +429,10 @@ def reaction_to_pathway(reaction_ids, species_list, metabolic_pathway_only, leaf
             rle.stId IN {reaction_ids} AND            
         """
 
-        if leaf: # retrieve only the leaf nodes in the pathway hierarchy
+        if leaf:  # retrieve only the leaf nodes in the pathway hierarchy
             query += " (p)-[:hasEvent]->(rle) AND "
 
-        if metabolic_pathway_only: # only retrieves metabolic pathways
+        if metabolic_pathway_only:  # only retrieves metabolic pathways
             query += " tp.displayName = 'Metabolism' AND "
 
         # remove last AND
@@ -632,7 +652,7 @@ def get_all_pathways_formulae(species):
                 if compound_name not in retrieved:
                     formula = retrieve_kegg_formula(compound_name)
                     logger.debug('Missing formula for %s, retrieved %s from kegg' %
-                          (compound_name, formula))
+                                 (compound_name, formula))
                     retrieved[compound_name] = formula
                 else:
                     formula = retrieved[compound_name]
@@ -680,8 +700,8 @@ def get_protein_to_gene(mapping):
 
 def merge_two_dicts(x, y):
     # https://stackoverflow.com/questions/38987/how-to-merge-two-dictionaries-in-a-single-expression
-    z = x.copy()   # start with x's keys and values
-    z.update(y)    # modifies z with y's keys and values & returns None
+    z = x.copy()  # start with x's keys and values
+    z.update(y)  # modifies z with y's keys and values & returns None
     return z
 
 
