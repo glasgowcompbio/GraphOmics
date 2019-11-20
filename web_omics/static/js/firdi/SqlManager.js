@@ -154,7 +154,7 @@ class SqlManager {
             const padjRules = whereType.rules.filter(rule => rule.type === 'boolean' && rule.operator === 'equal')
 
             // fcRules: the selected column has a fold change value in the range
-            const validOperators = ['greater_or_equal', 'between', 'less_or_equal'];
+            const validOperators = ['less_or_equal', 'greater_or_equal', 'between', 'not_between'];
             const fcRules = whereType.rules.filter(rule => rule.type === 'double' && validOperators.includes(rule.operator));
 
             // convert rules to SQL conditions
@@ -166,6 +166,8 @@ class SqlManager {
                     return `${rule.id} >= ${rule.value}`;
                 } else if (rule.operator === 'between') {
                     return `${rule.id} BETWEEN ${rule.value[0]} AND ${rule.value[1]}`;
+                } else if (rule.operator === 'not_between') {
+                    return `${rule.id} NOT BETWEEN ${rule.value[0]} AND ${rule.value[1]}`;
                 }
                 return '';
             });

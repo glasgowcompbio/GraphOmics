@@ -141,7 +141,7 @@ class Firdi {
                         validation: {
                             step: 0.1
                         },
-                        operators: ['greater_or_equal', 'between', 'less_or_equal']
+                        operators: ['less_or_equal', 'greater_or_equal', 'between', 'not_between']
                     });
             }
         }
