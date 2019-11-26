@@ -93,8 +93,9 @@ class FirdiStore extends Observable {
             const tableName = tableFieldNames['tableName'];
             const fields = tableFieldNames['fieldNames'];
             filtered[tableName] = {
-                'padj': fields.filter(x => x.indexOf('padj') > -1), // find columns containing 'padj'
-                'FC': fields.filter(x => x.indexOf('FC') > -1) // find columns containing 'FC'
+                'padj': fields.filter(x => x.indexOf('padj') > -1), // find columns containing 'padj' for t-test results
+                'FC': fields.filter(x => x.indexOf('FC') > -1), // find columns containing 'FC' for t-test results
+                'pals': fields.filter(x => x.indexOf('_vs_') > -1) // find columns containing '_vs_' for PALS results in pathways table
             }
         }
         return filtered;

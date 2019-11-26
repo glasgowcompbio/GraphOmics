@@ -115,12 +115,34 @@ class Firdi {
         const tableNames = Object.keys(this.state.filterNames)
         for (const tableName of tableNames) {
             const values = this.state.filterNames[tableName];
-            const padjColumns = values.padj;
-            const fcColumns = values.FC;
-            for (const padjCol of padjColumns) {
-                const shortTableName = tableName.replace('_table','');
-                builderFilters.push(
-                    {
+
+            // special handling for pathway table
+            // insert PALS results columns
+            if (tableName === 'pathways_table') {
+                const palsColumns = values.pals;
+                for (const palsColumn of palsColumns) {
+                    const shortTableName = tableName.replace('_table','');
+                    builderFilters.push({
+                        id: `${tableName}.${palsColumn}`,
+                        label: `${shortTableName}: ${palsColumn}`,
+                        type: 'boolean',
+                        input: 'select',
+                        values: {
+                            true: 'Significant'
+                        },
+                        operators: ['equal']
+                    });
+                }
+
+            } else {
+
+                // for any other table that is not pathway table
+                // insert p-value columns
+                const padjColumns = values.padj;
+                const fcColumns = values.FC;
+                for (const padjCol of padjColumns) {
+                    const shortTableName = tableName.replace('_table','');
+                    builderFilters.push({
                         id: `${tableName}.${padjCol}`,
                         label: `${shortTableName}: ${padjCol}`,
                         type: 'boolean',
@@ -130,11 +152,11 @@ class Firdi {
                         },
                         operators: ['equal']
                     });
-            }
-            for (const fcCol of fcColumns) {
-                const shortTableName = tableName.replace('_table','');
-                builderFilters.push(
-                    {
+                }
+                // insert fold-change columns
+                for (const fcCol of fcColumns) {
+                    const shortTableName = tableName.replace('_table','');
+                    builderFilters.push({
                         id: `${tableName}.${fcCol}`,
                         label: `${shortTableName}: ${fcCol}`,
                         type: 'double',
@@ -143,6 +165,8 @@ class Firdi {
                         },
                         operators: ['less_or_equal', 'greater_or_equal', 'between', 'not_between']
                     });
+                }
+
             }
         }
 
