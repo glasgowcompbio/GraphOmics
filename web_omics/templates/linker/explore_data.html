@@ -6,6 +6,7 @@
 
 {% block head_block %}
     {% render_bundle 'explore_data' 'css' %}
+    <script type="text/javascript" language="javascript" src="https://reactome.org/DiagramJs/diagram/diagram.nocache.js"></script>
 {% endblock %}
 
 {% block body_block %}
@@ -60,6 +61,10 @@
                 </div>
                 <input type="button" id="groupSubmit" name="submit" value="Save" class="btn btn-primary"/>
             </form>
+        </div>
+
+        <div id="reactomeWidgetDialog" title="Reactome Viewer" style="display: none">
+            <div id="diagramHolder"></div>
         </div>
 
     </div>

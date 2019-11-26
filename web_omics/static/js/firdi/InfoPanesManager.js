@@ -178,10 +178,12 @@ class InfoPanesManager {
             const annotId = data['annotation_id'];
             const annotUrl = data['annotation_url'];
             const annotation = data['annotation'];
-            const annotationManager = new AnnotationManager(annotId, annotUrl, displayName, annotation);
+            const annotationManager = new AnnotationManager(this.state, annotId, annotUrl, displayName, annotation);
             const annotationLink = annotationManager.getAnnotationLink();
+            const reactomeViewerLink = annotationManager.getReactomeViewerLink()
             const annotationDiv = annotationManager.getAnnotationDiv();
             infoTitle.append(annotationLink);
+            infoTitle.append(reactomeViewerLink);
             infoDiv.append(annotationDiv);
 
             // loop over additional information

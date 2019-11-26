@@ -1,6 +1,7 @@
 class AnnotationManager {
 
-    constructor(annotId, annotUrl, displayName, annotation) {
+    constructor(state, annotId, annotUrl, displayName, annotation) {
+        this.state = state;
         this.annotId = annotId;
         this.annotUrl = annotUrl;
         this.displayName = displayName;
@@ -16,6 +17,19 @@ class AnnotationManager {
             click: () => { this.showAnnotateDialog(); }
         });
         return annotationLink;
+    }
+
+    getReactomeViewerLink() {
+        const reactomeViewerLink = $('<button/>', {
+            text: '🔍',
+            type: 'button',
+            style: 'margin-left: 5px',
+            class: 'btn btn-outline-primary btn-sm',
+            click: () => {
+                this.showReactomeViewerDialog();
+            }
+        });
+        return reactomeViewerLink;
     }
 
     getAnnotationDiv() {
@@ -64,6 +78,27 @@ class AnnotationManager {
 
     getDivAnnotId() {
         return `#annotation-${this.annotId}`;
+    }
+
+    showReactomeViewerDialog() {
+        // show dialog
+        $('#reactomeWidgetDialog').dialog({
+            modal: true,
+            width: 1000,
+            height: 700
+        });
+        var diagram = Reactome.Diagram.create({
+            "placeHolder" : "diagramHolder",
+            "width" : 975,
+            "height" : 600
+        });
+
+        //Initialising it to the currently selected pathway
+        diagram.loadDiagram(this.annotId);
+        diagram.onDiagramLoaded(function (loaded) {
+            console.log('Diagram loaded');
+            // diagram.flagItems('ENSMUSG00000001323')
+        });
     }
 
 }
