@@ -71,7 +71,6 @@ class WebOmicsInference(object):
 
             from rpy2.robjects.packages import importr
             from rpy2 import robjects as ro
-            from rpy2.robjects.conversion import localconverter
             from rpy2.robjects import Formula
             from rpy2.robjects import pandas2ri
 
@@ -197,10 +196,13 @@ class WebOmicsInference(object):
                 self.data_df.loc[:, samples] = subset_df.mask(subset_df == 0, subset_df.mean(axis=1), axis=0)
 
     def _to_pd_df(self, r_df):
+        from rpy2.robjects import pandas2ri
         try: # for rpy2 2.x
             pd_df = pandas2ri.ri2py_dataframe(r_df)
             pd_df.index = r_df.rownames
         except: # for rpy2 3.x
+            from rpy2 import robjects as ro
+            from rpy2.robjects.conversion import localconverter
             with localconverter(ro.default_converter + pandas2ri.converter):
                 pd_df = ro.conversion.rpy2py(r_df)
         return pd_df
