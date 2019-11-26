@@ -156,7 +156,7 @@ def get_gene_ontology(request, analysis_id):
         # create gene ontology analysis
         goa = GOAnalysis(first_species, namespace, background_gene_names)
         df = goa.goea_analysis_df(selection_names)
-        html_data = df.to_html()
+        html_data = df.to_html(classes=['table', 'table-bordered', 'table-striped', 'table-hover'])
 
     except KeyError: # can't find the mapping between species name to GO filename to download
         html_data = '<p>Gene ontology analysis not available</p>'
