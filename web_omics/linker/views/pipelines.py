@@ -98,7 +98,7 @@ class WebOmicsInference(object):
                     ddsColl <- ddsColl[keep,]
                     # run DESeq2 analysis
                     ddsAnalysis <- DESeq(dds)
-                    res <- results(ddsAnalysis, contrast=c("group", control, case))
+                    res <- results(ddsAnalysis, contrast=c("group", case, control))
                     resOrdered <- res[order(res$padj),]  # sort by p-adjusted values
                     df = as.data.frame(resOrdered)
                     rld <- as.data.frame(assay(rlog(dds, blind=FALSE)))
@@ -116,6 +116,7 @@ class WebOmicsInference(object):
             logger.warning('Failed to load rpy2: %s' % str(e))
 
     def run_ttest(self, case, control):
+        logger.info('Case is %s, control is %s' % (case, control))
         count_data = self.data_df
         col_data = self.design_df
         sample_group = col_data[col_data[GROUP_COL] == case]
@@ -129,33 +130,37 @@ class WebOmicsInference(object):
         indices = []
 
         # if there's a negative number, assume the data has been logged, so don't do it again
-        log = True if np.all(count_data.values >= 0) else False
+        log = np.all(count_data.values >= 0)
 
-        for i in range(nrow):
-
-            case = case_data.iloc[i, :].values
-            control = control_data.iloc[i, :].values
-            idx = count_data.index[i]
-
-            # remove 0 values, which were originally NA when exported from PiMP
-            case = case[case != 0]
-            control = control[control != 0]
-
-            # log the data if it isn't already logged
-            if log:
-                case_log = np.log2(case)
-                control_log = np.log2(control)
-            else:
-                case_log = case
-                control_log = control
-
+        try:
+            lfcs, pvalues, indices = self.run_limma(case, control, log)
+        except ImportError as e:
+            logger.warning('Failed to load limma, falling back to t-test: %s' % str(e))
             # T-test for the means of two independent samples
-            statistics, pvalue = stats.ttest_ind(case_log, control_log)
-            if not np.isnan(pvalue):
-                lfc = np.mean(case_log) - np.mean(control_log)
-                pvalues.append(pvalue)
-                lfcs.append(lfc)
-                indices.append(idx)
+            for i in range(nrow):
+
+                case = case_data.iloc[i, :].values
+                control = control_data.iloc[i, :].values
+                idx = count_data.index[i]
+
+                # remove 0 values, which were originally NA when exported from PiMP
+                case = case[case != 0]
+                control = control[control != 0]
+
+                # log the data if it isn't already logged
+                if log:
+                    case_log = np.log2(case)
+                    control_log = np.log2(control)
+                else:
+                    case_log = case
+                    control_log = control
+
+                statistics, pvalue = stats.ttest_ind(case_log, control_log)
+                if not np.isnan(pvalue):
+                    lfc = np.mean(case_log) - np.mean(control_log)
+                    pvalues.append(pvalue)
+                    lfcs.append(lfc)
+                    indices.append(idx)
 
         # correct p-values
         reject, pvals_corrected, _, _ = multipletests(pvalues, method='fdr_bh')
@@ -164,6 +169,48 @@ class WebOmicsInference(object):
             'log2FoldChange': lfcs
         }, index=indices)
         return result_df
+
+    def run_limma(self, case, control, log):
+        from rpy2.robjects.packages import importr
+        from rpy2 import robjects as ro
+        from rpy2.robjects import Formula
+        from rpy2.robjects import pandas2ri
+
+        pandas2ri.activate()
+
+        intensity_data = self.data_df
+        intensity_data[intensity_data == 0.0] = np.nan
+        log_data = np.log2(self.data_df) if log else self.data_df
+        col_data = self.design_df
+        case_samples = col_data.group == case
+        control_samples = col_data.group == control
+        print(case_samples)
+        print(control_samples)
+        caseOrControl = case_samples | control_samples
+        #intensity_data_subset = log_data[caseOrControl.index[caseOrControl]]
+        print(case_samples.index[case_samples].append(control_samples.index[control_samples]))
+        intensity_data_subset = log_data[case_samples.index[case_samples].append(control_samples.index[control_samples])]
+        #intensity_data = intensity_data  # make sure columns in count_data is ordered the same way as the index of col_data
+        inputFactors = ro.StrVector(['Case'] * sum(case_samples) + ['Control'] * sum(control_samples))
+
+        rstring = """
+           function(data, inputFactors) {
+                library(limma)
+                design = model.matrix(~0+factor(inputFactors))
+                colnames(design) = c('Case', 'Control')
+                fit = lmFit(data, design, method='ls')
+                contrast.matrix <- makeContrasts(Case-Control, levels=design)
+                fit2 <- contrasts.fit(fit, contrast.matrix)
+                fit2 <- eBayes(fit2)
+                list(fit2$coefficients[,1], fit2$p.value[,1]) 
+            }
+        """
+        rfunc = ro.r(rstring)
+        results = rfunc(intensity_data_subset, inputFactors)
+        lfc = results[0]
+        pvalues = results[1]
+        indices = self.data_df.index
+        return lfc, pvalues, indices
 
     def get_pca(self, rld_df, n_components, plot=False):
         df = rld_df.transpose()
