@@ -1,5 +1,6 @@
 import pandas as pd
 from loguru import logger
+from pals.GSEA import GSEA
 from pals.ORA import ORA
 from pals.PALS import PALS
 from pals.common import DATABASE_REACTOME_KEGG, DATABASE_REACTOME_CHEBI, DATABASE_REACTOME_UNIPROT, \
@@ -78,6 +79,13 @@ def run_ora(ds):
     logger.info('Running ORA')
     ora = ORA(ds)
     pathway_df = ora.get_pathway_df(standardize=False)
+    return pathway_df
+
+
+def run_gsea(ds):
+    logger.info('Running GSEA')
+    gsea = GSEA(ds, pbar=True)
+    pathway_df = gsea.get_pathway_df(standardize=False)
     return pathway_df
 
 

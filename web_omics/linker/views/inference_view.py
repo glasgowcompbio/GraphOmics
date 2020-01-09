@@ -16,7 +16,8 @@ from linker.forms import BaseInferenceForm
 from linker.models import Analysis, AnalysisData
 from linker.views.functions import get_last_analysis_data, get_groups, get_dataframes, get_standardized_df, \
     get_group_members, fig_to_div
-from linker.views.pathway_analysis import get_pals_data_source, run_pals, update_pathway_analysis_data, run_ora
+from linker.views.pathway_analysis import get_pals_data_source, run_pals, update_pathway_analysis_data, run_ora, \
+    run_gsea
 from linker.views.pipelines import WebOmicsInference
 
 
@@ -95,6 +96,21 @@ def inference(request, analysis_id):
                 selected_form.fields['control'] = forms.ChoiceField(choices=groups,
                                                                     widget=Select2Widget(SELECT_WIDGET_ATTRS))
 
+            # do GSEA
+            elif inference_type == INFERENCE_GSEA:
+                analysis_data = get_last_analysis_data(analysis, data_type)
+                groups = get_groups(analysis_data)
+                action_url = reverse('inference_gsea', kwargs={
+                    'analysis_id': analysis_id,
+                })
+                selected_form = BaseInferenceForm()
+                selected_form.fields['data_type'].initial = data_type
+                selected_form.fields['inference_type'].initial = inference_type
+                selected_form.fields['case'] = forms.ChoiceField(choices=groups,
+                                                                 widget=Select2Widget(SELECT_WIDGET_ATTRS))
+                selected_form.fields['control'] = forms.ChoiceField(choices=groups,
+                                                                    widget=Select2Widget(SELECT_WIDGET_ATTRS))
+
             else:  # default
                 action_url = reverse('inference', kwargs={
                     'analysis_id': analysis_id,
@@ -129,7 +145,10 @@ def get_list_data(analysis_id, analysis_data_list):
 
         # when clicked, go to the Explore Data page
         click_url = None
-        if inference_type == INFERENCE_T_TEST or inference_type == INFERENCE_PALS or inference_type == INFERENCE_ORA:
+        if inference_type == INFERENCE_T_TEST or \
+                inference_type == INFERENCE_PALS or \
+                inference_type == INFERENCE_ORA or \
+                inference_type == INFERENCE_GSEA:
             click_url = reverse('explore_data', kwargs={
                 'analysis_id': analysis_id,
             })
@@ -454,9 +473,48 @@ def inference_ora(request, analysis_id):
             pathway_analysis_data = get_last_analysis_data(analysis, PATHWAYS)
             new_json_data = update_pathway_analysis_data(pathway_analysis_data, pals_df)
             new_display_name = 'ORA %s: %s_vs_%s' % (pals_data_source.database_name,
-                                                              case, control)
+                                                     case, control)
             copy_analysis_data(pathway_analysis_data, new_json_data, new_display_name, None,
                                INFERENCE_ORA)
+            messages.success(request, 'Add new inference successful.', extra_tags='primary')
+            return inference(request, analysis_id)
+
+        else:
+            messages.warning(request, 'Add new inference failed.')
+
+    return inference(request, analysis_id)
+
+
+def inference_gsea(request, analysis_id):
+    if request.method == 'POST':
+
+        analysis = get_object_or_404(Analysis, pk=analysis_id)
+        form = BaseInferenceForm(request.POST)
+        data_type = int(request.POST['data_type'])
+        analysis_data = get_last_analysis_data(analysis, data_type)
+        groups = get_groups(analysis_data)
+        form.fields['case'] = forms.ChoiceField(choices=groups, widget=Select2Widget())
+        form.fields['control'] = forms.ChoiceField(choices=groups, widget=Select2Widget())
+
+        if form.is_valid():
+            case = form.cleaned_data['case']
+            control = form.cleaned_data['control']
+
+            # get pals data source from the current analysis_data
+            pals_data_source = get_pals_data_source(analysis, analysis_data, case, control)
+            if pals_data_source is None:
+                messages.warning(request, 'Add new inference failed. No data found.')
+                return inference(request, analysis_id)
+
+            # run ora
+            pals_df = run_gsea(pals_data_source)
+            # update ORA results to database
+            pathway_analysis_data = get_last_analysis_data(analysis, PATHWAYS)
+            new_json_data = update_pathway_analysis_data(pathway_analysis_data, pals_df)
+            new_display_name = 'GSEA %s: %s_vs_%s' % (pals_data_source.database_name,
+                                                     case, control)
+            copy_analysis_data(pathway_analysis_data, new_json_data, new_display_name, None,
+                               INFERENCE_GSEA)
             messages.success(request, 'Add new inference successful.', extra_tags='primary')
             return inference(request, analysis_id)
 

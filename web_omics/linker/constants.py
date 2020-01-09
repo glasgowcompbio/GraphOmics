@@ -129,13 +129,14 @@ MetabolicPathwayOnlyChoices = (
 
 # Constants used in the Inference page
 
-INFERENCE_T_TEST, INFERENCE_CORRELATION, INFERENCE_PCA, INFERENCE_PALS, INFERENCE_ORA = range(0, 5)
+INFERENCE_T_TEST, INFERENCE_CORRELATION, INFERENCE_PCA, INFERENCE_PALS, INFERENCE_ORA, INFERENCE_GSEA = range(0, 6)
 InferenceTypeChoices = (
     (None, NA),
     (INFERENCE_T_TEST, 'DESeq2 / t-test'),
     (INFERENCE_PCA, 'Principal Component Analysis'),
     (INFERENCE_PALS, 'Pathway Analysis (PLAGE)'),
     (INFERENCE_ORA, 'Pathway Analysis (ORA)'),
+    (INFERENCE_GSEA, 'Pathway Analysis (GSEA)'),
 )
 SELECT_WIDGET_ATTRS = {'style': 'width: 300px'}
 
