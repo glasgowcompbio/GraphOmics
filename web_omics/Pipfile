@@ -24,6 +24,7 @@ statsmodels = "*"
 bioservices = "*"
 jsonfield = "*"
 jsonpickle = "*"
+rpy2 = {version = "*",sys_platform = "!= 'win32'"}
 rpy2_win = {path = "./whl/rpy2-2.9.5-cp37-cp37m-win_amd64.whl",sys_platform = "== 'win32'"}
 tzlocal = "*"
 django-webpack-loader = "*"
