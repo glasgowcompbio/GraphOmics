@@ -39,6 +39,7 @@ urlpatterns = [
     path('inference/pca/<int:analysis_id>', views.inference_pca, name='inference_pca'),
     path('inference/pca/results/<int:analysis_id>/<int:analysis_data_id>/', views.PCAResult.as_view(), name='pca_result'),
     path('inference/pals/<int:analysis_id>', views.inference_pals, name='inference_pals'),
+    path('inference/ora/<int:analysis_id>', views.inference_ora, name='inference_ora'),
 
     # summary page
     path('summary/<int:analysis_id>', views.summary, name='summary'),
