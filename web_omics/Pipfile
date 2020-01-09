@@ -38,6 +38,8 @@ pals-pathway = "*"
 jupyterlab = "*"
 
 [dev-packages]
+pyqt5 = "*"
+qtconsole = "*"
 
 [requires]
 python_version = "3.7"

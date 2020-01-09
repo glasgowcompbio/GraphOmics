@@ -70,7 +70,7 @@ def get_comparison(case, control):
 
 def run_pals(ds, plage_weight, hg_weight):
     logger.info('Running PALS with plage_weight=%d hg_weight=%d' % (plage_weight, hg_weight))
-    pals = PALS(ds, plage_weight=plage_weight, hg_weight=hg_weight)
+    pals = PALS(ds, num_resamples=5000, plage_weight=plage_weight, hg_weight=hg_weight)
     pathway_df = pals.get_pathway_df(standardize=False)
     return pathway_df
 
