@@ -4,7 +4,7 @@ verify_ssl = true
 name = "pypi"
 
 [packages]
-django = "*"
+django = "==2.2.9"
 django-configurations = "*"
 dj-database-url = "*"
 django-debug-toolbar = "*"
@@ -38,6 +38,8 @@ pals-pathway = "*"
 jupyterlab = "*"
 
 [dev-packages]
+pyqt5 = "*"
+qtconsole = "*"
 
 [requires]
 python_version = "3.7"

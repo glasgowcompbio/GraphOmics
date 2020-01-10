@@ -2,10 +2,11 @@ import os
 
 TRUNCATE_LIMIT = 10000
 
-EXTERNAL_COMPOUND_NAMES = os.path.join(os.getcwd(), 'static', 'data', 'compound_names.p')
-EXTERNAL_KEGG_TO_CHEBI = os.path.join(os.getcwd(), 'static', 'data', 'kegg_to_chebi.p')
-EXTERNAL_GENE_NAMES = os.path.join(os.getcwd(), 'static', 'data', 'gene_names.p')
-EXTERNAL_GO_DATA = os.path.join(os.getcwd(), 'static', 'data', 'go_data.p')
+BASE_DIR = os.path.dirname(os.path.dirname(__file__))
+EXTERNAL_COMPOUND_NAMES = os.path.join(BASE_DIR, 'static', 'data', 'compound_names.p')
+EXTERNAL_KEGG_TO_CHEBI = os.path.join(BASE_DIR, 'static', 'data', 'kegg_to_chebi.p')
+EXTERNAL_GENE_NAMES = os.path.join(BASE_DIR, 'static', 'data', 'gene_names.p')
+EXTERNAL_GO_DATA = os.path.join(BASE_DIR, 'static', 'data', 'go_data.p')
 
 # list of default species for Add Pathways when creating new data integration analysis
 # now unused since Add Pathways will be removed
@@ -129,12 +130,14 @@ MetabolicPathwayOnlyChoices = (
 
 # Constants used in the Inference page
 
-INFERENCE_T_TEST, INFERENCE_CORRELATION, INFERENCE_PCA, INFERENCE_PALS = range(0, 4)
+INFERENCE_T_TEST, INFERENCE_CORRELATION, INFERENCE_PCA, INFERENCE_PALS, INFERENCE_ORA, INFERENCE_GSEA = range(0, 6)
 InferenceTypeChoices = (
     (None, NA),
     (INFERENCE_T_TEST, 'DESeq2 / t-test'),
     (INFERENCE_PCA, 'Principal Component Analysis'),
-    (INFERENCE_PALS, 'Pathway Analysis')
+    (INFERENCE_PALS, 'Pathway Analysis (PLAGE)'),
+    (INFERENCE_ORA, 'Pathway Analysis (ORA)'),
+    (INFERENCE_GSEA, 'Pathway Analysis (GSEA)'),
 )
 SELECT_WIDGET_ATTRS = {'style': 'width: 300px'}
 
