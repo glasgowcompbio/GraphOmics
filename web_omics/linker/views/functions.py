@@ -255,7 +255,7 @@ def save_analysis(analysis_name, analysis_desc,
         json_design = json.loads(group_info.to_json()) if group_info is not None else None
         keys = json_data[0].keys()
         padj_col_count = len(list(filter(lambda x: x.startswith(PADJ_COL_PREFIX), keys)))
-        inference_type = INFERENCE_T_TEST if padj_col_count > 0 else None
+        inference_type = None
         display_name = 'Loaded data' if padj_col_count > 0 else None
         analysis_data = AnalysisData(analysis=analysis,
                                      json_data=json_data,

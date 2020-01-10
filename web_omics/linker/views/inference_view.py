@@ -238,7 +238,7 @@ def inference_deseq(request, analysis_id):
                 'rld_df': rld_df.to_json(),
                 'res_ordered': jsonpickle.encode(res_ordered)
             }
-            copy_analysis_data(analysis_data, json_data, display_name, metadata, INFERENCE_T_TEST)
+            copy_analysis_data(analysis_data, json_data, display_name, metadata, INFERENCE_DESEQ)
             messages.success(request, 'Add new inference successful.', extra_tags='primary')
             return inference(request, analysis_id)
         else:
@@ -270,7 +270,7 @@ def inference_limma(request, analysis_id):
             # create a new analysis data
             display_name = 't-test: %s_vs_%s' % (case, control)
             metadata = {}
-            copy_analysis_data(analysis_data, json_data, display_name, metadata, INFERENCE_T_TEST)
+            copy_analysis_data(analysis_data, json_data, display_name, metadata, INFERENCE_LIMMA)
             messages.success(request, 'Add new inference successful.', extra_tags='primary')
             return inference(request, analysis_id)
         else:
