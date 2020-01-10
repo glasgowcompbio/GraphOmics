@@ -151,14 +151,21 @@ class SqlManager {
         let whereSubClauses2 = null;
         if (whereType) {
             // padjRules: the selected column is significant (above > 0.05)
-            const padjRules = whereType.rules.filter(rule => rule.type === 'boolean' && rule.operator === 'equal')
+            const padjOperators = ['less_or_equal'];
+            const padjRules = whereType.rules.filter(rule => rule.type === 'double' && padjOperators.includes(rule.operator));
 
             // fcRules: the selected column has a fold change value in the range
-            const validOperators = ['less_or_equal', 'greater_or_equal', 'between', 'not_between'];
-            const fcRules = whereType.rules.filter(rule => rule.type === 'double' && validOperators.includes(rule.operator));
+            const fcOperators = ['less_or_equal', 'greater_or_equal', 'between', 'not_between'];
+            const fcRules = whereType.rules.filter(rule => rule.type === 'double' && fcOperators.includes(rule.operator));
 
             // convert rules to SQL conditions
-            const padjConditions = padjRules.map(rule => `${rule.id} < 0.05`);
+            const padjConditions = padjRules.map(rule => {
+                if (rule.operator === 'less_or_equal') {
+                    return `${rule.id} <= ${rule.value}`;
+                }
+                return '';
+            });
+
             const fcConditions = fcRules.map(rule => {
                 if (rule.operator === 'less_or_equal') {
                     return `${rule.id} <= ${rule.value}`;

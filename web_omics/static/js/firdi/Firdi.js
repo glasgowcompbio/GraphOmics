@@ -125,12 +125,11 @@ class Firdi {
                     builderFilters.push({
                         id: `${tableName}.${palsColumn}`,
                         label: `${shortTableName}: ${palsColumn}`,
-                        type: 'boolean',
-                        input: 'select',
-                        values: {
-                            true: 'Significant'
+                        type: 'double',
+                        validation: {
+                            step: 0.1
                         },
-                        operators: ['equal']
+                        operators: ['less_or_equal']
                     });
                 }
 
@@ -145,12 +144,12 @@ class Firdi {
                     builderFilters.push({
                         id: `${tableName}.${padjCol}`,
                         label: `${shortTableName}: ${padjCol}`,
-                        type: 'boolean',
-                        input: 'select',
-                        values: {
-                            true: 'Significant'
+                        type: 'double',
+                        validation: {
+                            step: 0.001
                         },
-                        operators: ['equal']
+                        default_value: 0.05,
+                        operators: ['less_or_equal']
                     });
                 }
                 // insert fold-change columns
