@@ -119,6 +119,8 @@ Note: rpy2 is difficult to install on Windows, see https://stackoverflow.com/que
 As a workaround, we have included a precompiled .whl version of rpy2 in `whl/rpy2-2.9.5-cp37-cp37m-win_amd64.whl`, downloaded from https://www.lfd.uci.edu/~gohlke/pythonlibs/#rpy2.
 The requirements in Pipfile has been configured to try to install this when Windows is detected. If it fails, then please install it manually.
 
+Note2: the Django project template is based on https://github.com/jpadilla/django-project-template, but it has been modified to support the 'page-as-a-component' setup for front-end javascript (https://hackernoon.com/reconciling-djangos-mvc-templates-with-react-components-3aa986cf510a).
+
 ### 6. Install front-end dependencies
 
 Now we need to install the front-end dependencies of WebOmics. The Javascript packages required by WebOmics are managed by Node.js.
