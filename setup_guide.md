@@ -86,6 +86,13 @@ Install DESeq2 in R using Bioconductor following [this instruction](https://bioc
 > biocLite("DESeq2")
 ```
 
+Install limma in R using Bioconductor following [this](https://bioconductor.org/packages/release/bioc/html/limma.html).
+```
+if (!requireNamespace("BiocManager", quietly = TRUE))
+    install.packages("BiocManager")
+BiocManager::install("limma")
+```
+
 ### 5. Install Django
 
 Note: Django 2.0 requires Python 3. If you also have Python 2 installed, the

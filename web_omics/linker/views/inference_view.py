@@ -37,16 +37,26 @@ def inference(request, analysis_id):
             if inference_type == INFERENCE_T_TEST:
                 analysis_data = get_last_analysis_data(analysis, data_type)
                 groups = get_groups(analysis_data)
-                action_url = reverse('inference_deseq_t_test', kwargs={
+                action_url = reverse('inference_t_test', kwargs={
                     'analysis_id': analysis_id,
                 })
-                selected_form = BaseInferenceForm()
-                selected_form.fields['data_type'].initial = data_type
-                selected_form.fields['inference_type'].initial = inference_type
-                selected_form.fields['case'] = forms.ChoiceField(choices=groups,
-                                                                 widget=Select2Widget(SELECT_WIDGET_ATTRS))
-                selected_form.fields['control'] = forms.ChoiceField(choices=groups,
-                                                                    widget=Select2Widget(SELECT_WIDGET_ATTRS))
+                selected_form = get_case_control_form(data_type, groups, inference_type)
+
+            elif inference_type == INFERENCE_DESEQ:
+                analysis_data = get_last_analysis_data(analysis, data_type)
+                groups = get_groups(analysis_data)
+                action_url = reverse('inference_deseq', kwargs={
+                    'analysis_id': analysis_id,
+                })
+                selected_form = get_case_control_form(data_type, groups, inference_type)
+
+            elif inference_type == INFERENCE_LIMMA:
+                analysis_data = get_last_analysis_data(analysis, data_type)
+                groups = get_groups(analysis_data)
+                action_url = reverse('inference_limma', kwargs={
+                    'analysis_id': analysis_id,
+                })
+                selected_form = get_case_control_form(data_type, groups, inference_type)
 
             # do PCA
             elif inference_type == INFERENCE_PCA:
@@ -69,16 +79,10 @@ def inference(request, analysis_id):
                 action_url = reverse('inference_pals', kwargs={
                     'analysis_id': analysis_id,
                 })
-                selected_form = BaseInferenceForm()
-                selected_form.fields['data_type'].initial = data_type
-                selected_form.fields['inference_type'].initial = inference_type
-                selected_form.fields['case'] = forms.ChoiceField(choices=groups,
-                                                                 widget=Select2Widget(SELECT_WIDGET_ATTRS))
-                selected_form.fields['control'] = forms.ChoiceField(choices=groups,
-                                                                    widget=Select2Widget(SELECT_WIDGET_ATTRS))
-                selected_form.fields['plage_weight'] = forms.IntegerField(min_value=1, initial=PLAGE_WEIGHT,
-                                                                          label='Measurement weight')
-                selected_form.fields['hg_weight'] = forms.IntegerField(min_value=1, initial=HG_WEIGHT,
+                selected_form = get_case_control_form(data_type, groups, inference_type)
+                selected_form.fields['plage_weight'] = forms.IntegerField(min_value=0, initial=PLAGE_WEIGHT,
+                                                                          label='Intensity weight')
+                selected_form.fields['hg_weight'] = forms.IntegerField(min_value=0, initial=HG_WEIGHT,
                                                                        label='Coverage weight')
 
             # do ORA
@@ -88,13 +92,7 @@ def inference(request, analysis_id):
                 action_url = reverse('inference_ora', kwargs={
                     'analysis_id': analysis_id,
                 })
-                selected_form = BaseInferenceForm()
-                selected_form.fields['data_type'].initial = data_type
-                selected_form.fields['inference_type'].initial = inference_type
-                selected_form.fields['case'] = forms.ChoiceField(choices=groups,
-                                                                 widget=Select2Widget(SELECT_WIDGET_ATTRS))
-                selected_form.fields['control'] = forms.ChoiceField(choices=groups,
-                                                                    widget=Select2Widget(SELECT_WIDGET_ATTRS))
+                selected_form = get_case_control_form(data_type, groups, inference_type)
 
             # do GSEA
             elif inference_type == INFERENCE_GSEA:
@@ -103,13 +101,7 @@ def inference(request, analysis_id):
                 action_url = reverse('inference_gsea', kwargs={
                     'analysis_id': analysis_id,
                 })
-                selected_form = BaseInferenceForm()
-                selected_form.fields['data_type'].initial = data_type
-                selected_form.fields['inference_type'].initial = inference_type
-                selected_form.fields['case'] = forms.ChoiceField(choices=groups,
-                                                                 widget=Select2Widget(SELECT_WIDGET_ATTRS))
-                selected_form.fields['control'] = forms.ChoiceField(choices=groups,
-                                                                    widget=Select2Widget(SELECT_WIDGET_ATTRS))
+                selected_form = get_case_control_form(data_type, groups, inference_type)
 
             else:  # default
                 action_url = reverse('inference', kwargs={
@@ -138,6 +130,17 @@ def inference(request, analysis_id):
         return render(request, 'linker/inference.html', context)
 
 
+def get_case_control_form(data_type, groups, inference_type):
+    selected_form = BaseInferenceForm()
+    selected_form.fields['data_type'].initial = data_type
+    selected_form.fields['inference_type'].initial = inference_type
+    selected_form.fields['case'] = forms.ChoiceField(choices=groups,
+                                                     widget=Select2Widget(SELECT_WIDGET_ATTRS))
+    selected_form.fields['control'] = forms.ChoiceField(choices=groups,
+                                                        widget=Select2Widget(SELECT_WIDGET_ATTRS))
+    return selected_form
+
+
 def get_list_data(analysis_id, analysis_data_list):
     list_data = []
     for analysis_data in analysis_data_list:
@@ -146,6 +149,8 @@ def get_list_data(analysis_id, analysis_data_list):
         # when clicked, go to the Explore Data page
         click_url = None
         if inference_type == INFERENCE_T_TEST or \
+                inference_type == INFERENCE_DESEQ or \
+                inference_type == INFERENCE_LIMMA or \
                 inference_type == INFERENCE_PALS or \
                 inference_type == INFERENCE_ORA or \
                 inference_type == INFERENCE_GSEA:
@@ -165,7 +170,7 @@ def get_list_data(analysis_id, analysis_data_list):
     return list_data
 
 
-def inference_deseq_t_test(request, analysis_id):
+def inference_t_test(request, analysis_id):
     if request.method == 'POST':
 
         analysis = get_object_or_404(Analysis, pk=analysis_id)
@@ -181,50 +186,13 @@ def inference_deseq_t_test(request, analysis_id):
             control = form.cleaned_data['control']
             data_df, design_df = get_dataframes(analysis_data, PKS)
 
-            if data_type == GENOMICS:  # run deseq2 here
-                wi = WebOmicsInference(data_df, design_df, data_type)
-                try:
-                    pd_df, rld_df, res_ordered = wi.run_deseq(10, case, control)
-                except Exception as e:
-                    logger.warning('Failed to run DESeq2: %s' % str(e))
-                    messages.warning(request, 'Add new inference failed.')
-                    return inference(request, analysis_id)
-                result_df = pd_df[['padj', 'log2FoldChange']]
-            elif data_type == PROTEOMICS or data_type == METABOLOMICS:
-                wi = WebOmicsInference(data_df, design_df, data_type, min_value=5000)
-                result_df = wi.run_ttest(case, control)
-
-            res = result_df.to_dict()
-            json_data = analysis_data.json_data
-            label = '%s_vs_%s' % (case, control)
-            for i in range(len(json_data)):
-                item = json_data[i]
-                key = item[PKS[data_type]]
-                try:
-                    padj = res['padj'][key]
-                    if np.isnan(padj):
-                        padj = None
-                except KeyError:
-                    padj = None
-                try:
-                    lfc = res['log2FoldChange'][key]
-                    if np.isnan(lfc) or np.isinf(lfc):
-                        lfc = None
-                except KeyError:
-                    lfc = None
-                item['padj_%s' % label] = padj
-                item['FC_%s' % label] = lfc
+            wi = WebOmicsInference(data_df, design_df, data_type, min_value=5000)
+            result_df = wi.run_ttest(case, control)
+            json_data = get_updated_json_data(analysis_data, data_type, case, control, result_df)
 
             # create a new analysis data
-            if data_type == GENOMICS:
-                display_name = 'DESeq2: %s_vs_%s' % (case, control)
-                metadata = {
-                    'rld_df': rld_df.to_json(),
-                    'res_ordered': jsonpickle.encode(res_ordered)
-                }
-            elif data_type == PROTEOMICS or data_type == METABOLOMICS:
-                display_name = 't-test: %s_vs_%s' % (case, control)
-                metadata = {}
+            display_name = 't-test: %s_vs_%s' % (case, control)
+            metadata = {}
             copy_analysis_data(analysis_data, json_data, display_name, metadata, INFERENCE_T_TEST)
             messages.success(request, 'Add new inference successful.', extra_tags='primary')
             return inference(request, analysis_id)
@@ -232,6 +200,121 @@ def inference_deseq_t_test(request, analysis_id):
             messages.warning(request, 'Add new inference failed.')
 
     return inference(request, analysis_id)
+
+
+def inference_deseq(request, analysis_id):
+    if request.method == 'POST':
+        data_type = int(request.POST['data_type'])
+        if data_type == PROTEOMICS or data_type == METABOLOMICS:
+            messages.warning(request, 'Add new inference failed. DESeq2 only works for discrete count data.')
+            return inference(request, analysis_id)
+
+        analysis = get_object_or_404(Analysis, pk=analysis_id)
+        form = BaseInferenceForm(request.POST)
+        analysis_data = get_last_analysis_data(analysis, data_type)
+        groups = get_groups(analysis_data)
+        form.fields['case'] = forms.ChoiceField(choices=groups, widget=Select2Widget())
+        form.fields['control'] = forms.ChoiceField(choices=groups, widget=Select2Widget())
+
+        if form.is_valid():
+            case = form.cleaned_data['case']
+            control = form.cleaned_data['control']
+            data_df, design_df = get_dataframes(analysis_data, PKS)
+
+            # run deseq2 here
+            wi = WebOmicsInference(data_df, design_df, data_type)
+            try:
+                pd_df, rld_df, res_ordered = wi.run_deseq(10, case, control)
+            except Exception as e:
+                logger.warning('Failed to run DESeq2: %s' % str(e))
+                messages.warning(request, 'Add new inference failed.')
+                return inference(request, analysis_id)
+            result_df = pd_df[['padj', 'log2FoldChange']]
+            json_data = get_updated_json_data(analysis_data, data_type, case, control, result_df)
+
+            # create a new analysis data
+            display_name = 'DESeq2: %s_vs_%s' % (case, control)
+            metadata = {
+                'rld_df': rld_df.to_json(),
+                'res_ordered': jsonpickle.encode(res_ordered)
+            }
+            copy_analysis_data(analysis_data, json_data, display_name, metadata, INFERENCE_T_TEST)
+            messages.success(request, 'Add new inference successful.', extra_tags='primary')
+            return inference(request, analysis_id)
+        else:
+            messages.warning(request, 'Add new inference failed.')
+
+    return inference(request, analysis_id)
+
+
+def inference_limma(request, analysis_id):
+    if request.method == 'POST':
+
+        analysis = get_object_or_404(Analysis, pk=analysis_id)
+        form = BaseInferenceForm(request.POST)
+        data_type = int(request.POST['data_type'])
+        analysis_data = get_last_analysis_data(analysis, data_type)
+        groups = get_groups(analysis_data)
+        form.fields['case'] = forms.ChoiceField(choices=groups, widget=Select2Widget())
+        form.fields['control'] = forms.ChoiceField(choices=groups, widget=Select2Widget())
+
+        if form.is_valid():
+            case = form.cleaned_data['case']
+            control = form.cleaned_data['control']
+            data_df, design_df = get_dataframes(analysis_data, PKS)
+
+            wi = WebOmicsInference(data_df, design_df, data_type, min_value=5000)
+            result_df = wi.run_limma(case, control)
+            json_data = get_updated_json_data(analysis_data, data_type, case, control, result_df)
+
+            # create a new analysis data
+            display_name = 't-test: %s_vs_%s' % (case, control)
+            metadata = {}
+            copy_analysis_data(analysis_data, json_data, display_name, metadata, INFERENCE_T_TEST)
+            messages.success(request, 'Add new inference successful.', extra_tags='primary')
+            return inference(request, analysis_id)
+        else:
+            messages.warning(request, 'Add new inference failed.')
+
+    return inference(request, analysis_id)
+
+
+def get_updated_json_data(analysis_data, data_type, case, control, result_df):
+    res = result_df.to_dict()
+    json_data = analysis_data.json_data
+    label = '%s_vs_%s' % (case, control)
+    padj_label = 'padj_%s' % label
+    fc_label = 'FC_%s' % label
+
+    #  remove the previous DE result if exists
+    for i in range(len(json_data)):
+        item = json_data[i]
+        if padj_label in item:
+            del item[padj_label]
+            logger.debug('Removed old padj value')
+        if fc_label in item:
+            del item[fc_label]
+            logger.debug('Removed old FC value')
+
+    # set new DE result to json_data
+    for i in range(len(json_data)):
+        item = json_data[i]
+        key = item[PKS[data_type]]
+        try:
+            padj = res['padj'][key]
+            if np.isnan(padj):
+                padj = None
+        except KeyError:
+            padj = None
+        try:
+            lfc = res['log2FoldChange'][key]
+            if np.isnan(lfc) or np.isinf(lfc):
+                lfc = None
+        except KeyError:
+            lfc = None
+        item[padj_label] = padj
+        item[fc_label] = lfc
+    return json_data
 
 
 def copy_analysis_data(analysis_data, new_json_data, new_display_name, new_metadata, inference_type):
@@ -412,8 +495,8 @@ def inference_pals(request, analysis_id):
         groups = get_groups(analysis_data)
         form.fields['case'] = forms.ChoiceField(choices=groups, widget=Select2Widget())
         form.fields['control'] = forms.ChoiceField(choices=groups, widget=Select2Widget())
-        form.fields['plage_weight'] = forms.IntegerField(min_value=1, initial=PLAGE_WEIGHT, label='Measurement weight')
-        form.fields['hg_weight'] = forms.IntegerField(min_value=1, initial=HG_WEIGHT, label='Coverage weight')
+        form.fields['plage_weight'] = forms.IntegerField(min_value=0, initial=PLAGE_WEIGHT, label='Measurement weight')
+        form.fields['hg_weight'] = forms.IntegerField(min_value=0, initial=HG_WEIGHT, label='Coverage weight')
 
         if form.is_valid():
             case = form.cleaned_data['case']
@@ -512,7 +595,7 @@ def inference_gsea(request, analysis_id):
             pathway_analysis_data = get_last_analysis_data(analysis, PATHWAYS)
             new_json_data = update_pathway_analysis_data(pathway_analysis_data, pals_df)
             new_display_name = 'GSEA %s: %s_vs_%s' % (pals_data_source.database_name,
-                                                     case, control)
+                                                      case, control)
             copy_analysis_data(pathway_analysis_data, new_json_data, new_display_name, None,
                                INFERENCE_GSEA)
             messages.success(request, 'Add new inference successful.', extra_tags='primary')
