@@ -36,6 +36,7 @@ xml2dict = "*"
 loguru = "*"
 pals-pathway = "*"
 jupyterlab = "*"
+django-grappelli = "*"
 
 [dev-packages]
 pyqt5 = "*"

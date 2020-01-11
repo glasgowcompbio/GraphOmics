@@ -1,10 +1,10 @@
-from django.db import models
-from jsonfield import JSONField
-from django.utils import timezone
-from django.conf import settings
 import os
 
+from django.conf import settings
 from django.contrib.auth import get_user_model
+from django.db import models
+from django.utils import timezone
+from jsonfield import JSONField
 
 User = get_user_model()
 
@@ -18,6 +18,9 @@ class Analysis(models.Model):
     metadata = JSONField()
     user = models.ForeignKey(User, on_delete=models.CASCADE)
 
+    class Meta:
+        verbose_name_plural = "Analyses"
+
     def get_species_str(self):
         if 'species_list' in self.metadata:
             return ', '.join(self.metadata['species_list'])
@@ -29,6 +32,9 @@ class Analysis(models.Model):
             return self.metadata['species_list']
         else:
             return []
+
+    def __str__(self):
+        return self.name
 
 
 def get_upload_folder(instance, filename):
@@ -61,6 +67,9 @@ class AnalysisData(models.Model):
     metadata = JSONField(blank=True, null=True)
     timestamp = models.DateTimeField(default=timezone.localtime, null=False)
 
+    class Meta:
+        verbose_name_plural = "Analysis Data"
+
     def get_data_type_str(self):
         try:
             return dict(DataRelationType)[self.data_type]
@@ -73,6 +82,9 @@ class AnalysisData(models.Model):
         except KeyError:
             return ''
 
+    def __str__(self):
+        return '%s data_type=%d %s' % (self.analysis.name, self.data_type, self.display_name)
+
 
 class AnalysisAnnotation(models.Model):
     analysis = models.ForeignKey(Analysis, on_delete=models.CASCADE)
@@ -82,6 +94,12 @@ class AnalysisAnnotation(models.Model):
     annotation = models.CharField(max_length=1000)
     timestamp = models.DateTimeField(default=timezone.localtime, null=False)
 
+    class Meta:
+        verbose_name_plural = "Analysis Annotations"
+
+    def __str__(self):
+        return '%s data_type=%d %s' % (self.analysis.name, self.data_type, self.display_name)
+
 
 class AnalysisGroup(models.Model):
     analysis = models.ForeignKey(Analysis, on_delete=models.CASCADE)
@@ -89,3 +107,9 @@ class AnalysisGroup(models.Model):
     display_name = models.CharField(max_length=1000)
     description = models.CharField(max_length=1000)
     timestamp = models.DateTimeField(default=timezone.localtime, null=False)
+
+    class Meta:
+        verbose_name_plural = "Analysis Groups"
+
+    def __str__(self):
+        return '%s data_type=%d %s' % (self.analysis.name, self.data_type, self.display_name)
