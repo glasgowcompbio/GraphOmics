@@ -127,8 +127,9 @@ class Firdi {
                         label: `${shortTableName}: ${palsColumn}`,
                         type: 'double',
                         validation: {
-                            step: 0.1
+                            step: 0.001
                         },
+                        default_value: 0.05,
                         operators: ['less_or_equal']
                     });
                 }

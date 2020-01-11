@@ -268,7 +268,7 @@ def inference_limma(request, analysis_id):
             json_data = get_updated_json_data(analysis_data, data_type, case, control, result_df)
 
             # create a new analysis data
-            display_name = 't-test: %s_vs_%s' % (case, control)
+            display_name = 'limma: %s_vs_%s' % (case, control)
             metadata = {}
             copy_analysis_data(analysis_data, json_data, display_name, metadata, INFERENCE_LIMMA)
             messages.success(request, 'Add new inference successful.', extra_tags='primary')
