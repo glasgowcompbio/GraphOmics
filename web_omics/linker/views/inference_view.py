@@ -186,7 +186,11 @@ def inference_t_test(request, analysis_id):
             control = form.cleaned_data['control']
             data_df, design_df = get_dataframes(analysis_data, PKS)
 
-            wi = WebOmicsInference(data_df, design_df, data_type, min_value=5000)
+            if data_type == GENOMICS:
+                min_replace = MIN_REPLACE_GENOMICS
+            elif data_type == PROTEOMICS or data_type == METABOLOMICS:
+                min_replace = MIN_REPLACE_PROTEOMICS_METABOLOMICS
+            wi = WebOmicsInference(data_df, design_df, data_type, min_value=min_replace)
             result_df = wi.run_ttest(case, control)
             json_data = get_updated_json_data(analysis_data, data_type, case, control, result_df)
 
@@ -224,7 +228,7 @@ def inference_deseq(request, analysis_id):
             # run deseq2 here
             wi = WebOmicsInference(data_df, design_df, data_type)
             try:
-                pd_df, rld_df, res_ordered = wi.run_deseq(10, case, control)
+                pd_df, rld_df, res_ordered = wi.run_deseq(MIN_REPLACE_GENOMICS, case, control)
             except Exception as e:
                 logger.warning('Failed to run DESeq2: %s' % str(e))
                 messages.warning(request, 'Add new inference failed.')
@@ -263,7 +267,11 @@ def inference_limma(request, analysis_id):
             control = form.cleaned_data['control']
             data_df, design_df = get_dataframes(analysis_data, PKS)
 
-            wi = WebOmicsInference(data_df, design_df, data_type, min_value=5000)
+            if data_type == GENOMICS:
+                min_replace = MIN_REPLACE_GENOMICS
+            elif data_type == PROTEOMICS or data_type == METABOLOMICS:
+                min_replace = MIN_REPLACE_PROTEOMICS_METABOLOMICS
+            wi = WebOmicsInference(data_df, design_df, data_type, min_value=min_replace)
             result_df = wi.run_limma(case, control)
             json_data = get_updated_json_data(analysis_data, data_type, case, control, result_df)
 
@@ -512,10 +520,17 @@ def inference_pals(request, analysis_id):
 
             # run pals
             pals_df = run_pals(pals_data_source, plage_weight, hg_weight)
+
+            # check for NaN in the results. It shouldn't happen.
+            if pals_df.isnull().values.any():
+                logger.warning('PALS result contains NaN! These rows will be deleted.')
+                logger.warning(pals_df[pals_df.isnull().any(axis=1)])
+                pals_df = pals_df.dropna()
+
             # update PALS results to database
             pathway_analysis_data = get_last_analysis_data(analysis, PATHWAYS)
             new_json_data = update_pathway_analysis_data(pathway_analysis_data, pals_df)
-            new_display_name = 'PALS %s (%d:%d): %s_vs_%s' % (pals_data_source.database_name,
+            new_display_name = 'PLAGE %s (%d:%d): %s_vs_%s' % (pals_data_source.database_name,
                                                               plage_weight, hg_weight,
                                                               case, control)
             copy_analysis_data(pathway_analysis_data, new_json_data, new_display_name, None,

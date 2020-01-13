@@ -8,7 +8,7 @@ from pals.common import DATABASE_REACTOME_KEGG, DATABASE_REACTOME_CHEBI, DATABAS
 from pals.feature_extraction import DataSource
 
 from linker.constants import PKS, COMPOUND_DATABASE_KEGG, COMPOUND_DATABASE_CHEBI, PATHWAY_PK, NA, METABOLOMICS, \
-    PROTEOMICS, GENOMICS
+    PROTEOMICS, GENOMICS, MIN_REPLACE_PROTEOMICS_METABOLOMICS, MIN_REPLACE_GENOMICS, PALS_NUM_RESAMPLES
 from linker.views.functions import get_group_members, get_standardized_df
 
 
@@ -42,20 +42,24 @@ def get_pals_data_source(analysis, analysis_data, case, control):
     database_name = None
 
     # select database name
+    min_replace = None
     if analysis_data.data_type == METABOLOMICS:
         if analysis.metadata['compound_database_str'] == COMPOUND_DATABASE_KEGG:
             database_name = DATABASE_REACTOME_KEGG
         elif analysis.metadata['compound_database_str'] == COMPOUND_DATABASE_CHEBI:
             database_name = DATABASE_REACTOME_CHEBI
+        min_replace = MIN_REPLACE_PROTEOMICS_METABOLOMICS
     elif analysis_data.data_type == PROTEOMICS:
         database_name = DATABASE_REACTOME_UNIPROT
+        min_replace = MIN_REPLACE_PROTEOMICS_METABOLOMICS
     elif analysis_data.data_type == GENOMICS:
         database_name = DATABASE_REACTOME_ENSEMBL
+        min_replace = MIN_REPLACE_GENOMICS
 
     # create a PALS data source
     assert database_name is not None
     ds = DataSource(X_std, annotation_df, experimental_design, database_name,
-                    reactome_species, reactome_metabolic_pathway_only, reactome_query)
+                    reactome_species, reactome_metabolic_pathway_only, reactome_query, min_replace=min_replace)
 
     return ds
 
@@ -70,7 +74,7 @@ def get_comparison(case, control):
 
 def run_pals(ds, plage_weight, hg_weight):
     logger.info('Running PALS with plage_weight=%d hg_weight=%d' % (plage_weight, hg_weight))
-    pals = PALS(ds, num_resamples=5000, plage_weight=plage_weight, hg_weight=hg_weight)
+    pals = PALS(ds, num_resamples=PALS_NUM_RESAMPLES, plage_weight=plage_weight, hg_weight=hg_weight)
     pathway_df = pals.get_pathway_df(standardize=False)
     return pathway_df
 
@@ -127,5 +131,5 @@ def comparison_to_key(comparison):
         key = comparison.strip().rsplit('_', 1)[0]
     else:
         key = comparison
-    # key = 'PALS_%s' % key
+    # key = 'PLAGE_%s' % key
     return key

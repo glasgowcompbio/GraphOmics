@@ -295,10 +295,10 @@ def get_standardized_df(analysis_data, axis, pk_cols=PKS):
     # standardise data differently for genomics vs proteomics/metabolomics
     X_std = None
     if data_type == GENOMICS:
-        inference = WebOmicsInference(data_df, design_df, data_type)
+        inference = WebOmicsInference(data_df, design_df, data_type, min_value=MIN_REPLACE_GENOMICS)
         X_std = inference.standardize_df(inference.data_df, axis=axis)
     elif data_type == PROTEOMICS or data_type == METABOLOMICS:
-        inference = WebOmicsInference(data_df, design_df, data_type, min_value=5000)
+        inference = WebOmicsInference(data_df, design_df, data_type, min_value=MIN_REPLACE_PROTEOMICS_METABOLOMICS)
         X_std = inference.standardize_df(inference.data_df, log=True, axis=axis)
     return X_std, data_df, design_df
 
