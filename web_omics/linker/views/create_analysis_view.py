@@ -33,7 +33,7 @@ class CreateAnalysisView(FormView):
         analysis = get_data(self.request, analysis_desc, analysis_name, compounds_str,
                                                compound_database_str, current_user, genes_str, proteins_str,
                                                species_list, metabolic_pathway_only)
-        context = get_context(analysis)
+        context = get_context(analysis, current_user)
         return render(self.request, self.success_url, context)
 
 
@@ -57,7 +57,7 @@ class UploadAnalysisView(FormView):
         analysis = get_data(self.request, analysis_desc, analysis_name, compounds_str,
                                                compound_database_str, current_user, genes_str, proteins_str,
                                                species_list, metabolic_pathway_only)
-        context = get_context(analysis)
+        context = get_context(analysis, current_user)
         return render(self.request, self.success_url, context)
 
 
@@ -105,9 +105,10 @@ class AddPathwayView(FormView):
         proteins_str = '\n'.join(['identifier'] + all_proteins)
         compounds_str = '\n'.join(['identifier'] + all_compounds)
 
+        current_user = self.request.user
         analysis = get_data(self.request, analysis_desc, analysis_name, compounds_str, compound_database_str,
                                                current_user, genes_str, proteins_str, species_list, metabolic_pathway_only)
-        context = get_context(analysis)
+        context = get_context(analysis, current_user)
         return render(self.request, self.success_url, context)
 
 

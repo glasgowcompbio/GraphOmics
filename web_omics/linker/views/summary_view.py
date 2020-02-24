@@ -48,6 +48,7 @@ def summary(request, analysis_id):
     context = {
         'analysis_id': analysis.pk,
         'data': data,
+        'read_only': analysis.get_read_only_status(request.user)
     }
     return render(request, 'linker/summary.html', context)
 

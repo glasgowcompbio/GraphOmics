@@ -3,14 +3,17 @@ import json
 import pprint
 
 from django.contrib import messages
+from django.contrib.auth import get_user_model
 from django.shortcuts import render, get_object_or_404
 from loguru import logger
 
 from linker.constants import GENOMICS, PROTEOMICS, METABOLOMICS, DataRelationType, COMPOUND_DATABASE_KEGG
-from linker.forms import AddDataForm
-from linker.models import Analysis, AnalysisData
+from linker.forms import AddDataForm, ShareAnalysisForm
+from linker.models import Analysis, AnalysisData, Share
 from linker.reactome import get_species_dict
 from linker.views.functions import reactome_mapping
+
+User = get_user_model()
 
 
 def settings(request, analysis_id):
@@ -18,17 +21,71 @@ def settings(request, analysis_id):
     species_dict = get_species_dict()
 
     # here we also set the species field to the first species of this analysis
-    form = AddDataForm()
+    form_1 = AddDataForm()
     inv_map = {v: k for k, v in species_dict.items()}
     first_species = analysis.metadata['species_list'][0]
     idx = inv_map[first_species]
-    form.fields['species'].initial = idx
+    form_1.fields['species'].initial = idx
+
+    form_2 = ShareAnalysisForm()
+
+    shares = Share.objects.filter(analysis=analysis)
 
     context = {
         'analysis_id': analysis.pk,
-        'form': form,
+        'form_1': form_1,
+        'form_2': form_2,
+        'shares': shares
     }
     return render(request, 'linker/settings.html', context)
+
+
+def add_share(request, analysis_id):
+    if request.method == 'POST':
+        analysis = get_object_or_404(Analysis, pk=analysis_id)
+        form = ShareAnalysisForm(request.POST, request.FILES)
+        if form.is_valid():
+            username = form.cleaned_data['username']
+            read_only = True if form.cleaned_data['share_type'] == 'True' else False
+
+            # check username exists
+            try:
+                current_user = User.objects.get(username=username)
+            except User.DoesNotExist:
+                current_user = None
+                messages.warning(request, 'Username %s does not exist' % username)
+
+            if current_user is not None:
+                try:
+                    # try to get an existing share for this analysis under this user
+                    share = Share.objects.get(analysis=analysis, user=current_user)
+                    if not share.owner:
+                        share.delete()  # if yes delete it, except for owner
+                except Share.DoesNotExist:
+                    share = None
+
+                # now we can insert a new share
+                share = Share(user=current_user, analysis=analysis, read_only=read_only, owner=False)
+                share.save()
+
+                if read_only:
+                    messages.success(request, 'Analysis shared to %s in read-only mode' % current_user,
+                                     extra_tags='primary')
+                else:
+                    messages.success(request, 'Analysis shared to %s in edit mode' % current_user,
+                                     extra_tags='primary')
+
+        else:
+            messages.warning(request, 'Add share failed')
+
+    return settings(request, analysis_id)
+
+
+def delete_share(request, analysis_id, share_id):
+    share = get_object_or_404(Share, pk=share_id)
+    share.delete()
+    messages.success(request, 'Share was successfully deleted', extra_tags='primary')
+    return settings(request, analysis_id)
 
 
 def add_data(request, analysis_id):
@@ -65,7 +122,7 @@ def add_data(request, analysis_id):
                 analysis_data = AnalysisData.objects.filter(analysis=analysis, data_type=k).first()
                 if analysis_data is not None:
                     new_json_data = json.loads(results[k])
-                    for item in new_json_data: # add the new data
+                    for item in new_json_data:  # add the new data
                         if item not in analysis_data.json_data:
                             analysis_data.json_data.append(item)
                             counts[r] += 1
@@ -89,19 +146,19 @@ def add_data(request, analysis_id):
 
 
 def get_formatted_data(metadata, key, database_id):
-    if len(metadata[key]) == 0: # nothing stored in the metadata
+    if len(metadata[key]) == 0:  # nothing stored in the metadata
         header_line = 'identifier'
         if database_id is not None:
             new_str = header_line + '\n' + database_id
         else:
             new_str = header_line + '\n' + ''
 
-    else: # we found something
+    else:  # we found something
         header_line = metadata[key].splitlines()[0]
         toks = header_line.split(',')
         if database_id is not None:
-            vals = [database_id] + [','] * (len(toks)-1)
-            assert(len(toks) == len(vals))
+            vals = [database_id] + [','] * (len(toks) - 1)
+            assert (len(toks) == len(vals))
             new_str = header_line + '\n' + ''.join(vals)
         else:
             new_str = header_line + '\n'

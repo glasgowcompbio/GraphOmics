@@ -5,20 +5,24 @@
                href="{% url 'explore_data' analysis_id=analysis_id %}">🔍 Explore Data</a>
         </li>
         {% if user.is_authenticated %}
-            <li class="nav-item">
-                <a class="nav-link {% if active == "inference" %}active{% endif %}"
-                   href="{% url 'inference' analysis_id=analysis_id %}">📊 Inference</a>
-            </li>
+            {% if not read_only %}
+                <li class="nav-item">
+                    <a class="nav-link {% if active == "inference" %}active{% endif %}"
+                       href="{% url 'inference' analysis_id=analysis_id %}">📊 Inference</a>
+                </li>
+            {% endif %}
         {% endif %}
         <li class="nav-item">
             <a class="nav-link {% if active == "summary" %}active{% endif %}"
                href="{% url 'summary' analysis_id=analysis_id %}">📘 Summary</a>
         </li>
         {% if user.is_authenticated %}
-            <li class="nav-item">
-                <a class="nav-link {% if active == "settings" %}active{% endif %}"
-                   href="{% url 'settings' analysis_id=analysis_id %}">⚙️ Settings</a>
-            </li>
+            {% if not read_only %}
+                <li class="nav-item">
+                    <a class="nav-link {% if active == "settings" %}active{% endif %}"
+                       href="{% url 'settings' analysis_id=analysis_id %}">⚙️ Settings</a>
+                </li>
+            {% endif %}
         {% endif %}
         {% if show_selection_group %}
             <li class="nav-item ml-auto">

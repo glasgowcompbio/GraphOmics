@@ -1,6 +1,7 @@
 {% extends 'base.html' %}
 
 {% load staticfiles %}
+{% load linker_tags %}
 
 {% block body_block %}
     <div class="container-fluid">
@@ -9,7 +10,7 @@
             <div class="panel-body mt-2">
                 <h3>Analysis</h3>
                 <p>
-                    The following table shows all data integration analyses that have been created.
+                    The following table shows all data integration analyses that have been created or shared with you.
                     To add a new analysis, click the Create button below.
                 </p>
                 <table class="table table-bordered table-hover">
@@ -18,24 +19,29 @@
                             <th>Analysis Name</th>
                             <th>Analysis Description</th>
                             <th>Species</th>
-                            <th>User</th>
-                            <th>Date</th>
+                            <th>Create Date</th>
+                            <th>Owner</th>
+                            <th>Status</th>
                             <th>Action</th>
                         </tr>
                     </thead>
                     {% for analysis in object_list %}
                         <tr>
+                            {% get_read_only_status analysis user as read_only_flag %}
                             <td>
                                 <a href="{% url 'explore_data' analysis_id=analysis.pk %}">{{ analysis.name }}</a>
                             </td>
                             <td>{{ analysis.description }}</td>
                             <td>{{ analysis.get_species_str }}</td>
-                            <td>{{ analysis.user }}</td>
                             <td>{{ analysis.timestamp|date:"jS F Y H:i" }}</td>
+                            <td>{{ analysis.get_owner }}</td>
+                            <td>{% get_read_only_str analysis user %}</td>
                             <td class="text-center">
-                                <a href="{% url 'delete_analysis' pk=analysis.pk %}" style="text-decoration: none">
-                                    🗑️
-                                </a>
+                                {% if not read_only_flag %}
+                                    <a href="{% url 'delete_analysis' pk=analysis.pk %}" style="text-decoration: none">
+                                        🗑️
+                                    </a>
+                                {% endif %}
                             </td>
                         </tr>
                     {% endfor %}

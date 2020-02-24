@@ -16,7 +16,7 @@ class Analysis(models.Model):
     description = models.CharField(max_length=1000, null=True)
     timestamp = models.DateTimeField(default=timezone.localtime, null=False)
     metadata = JSONField()
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    users = models.ManyToManyField(User, through='Share')
 
     class Meta:
         verbose_name_plural = "Analyses"
@@ -33,8 +33,40 @@ class Analysis(models.Model):
         else:
             return []
 
+    def get_owner(self):
+        for share in self.share_set.all():
+            if share.owner:
+                return share.user
+
+    def get_read_only_status(self, user):
+        for share in self.share_set.all(): # search shares for this user
+            if share.user == user:
+                if share.owner: # owner can always edit
+                    return False
+                return share.read_only # otherwise check the read-only field
+        return False
+
+    def get_read_only_str(self, user):
+        read_only = self.get_read_only_status(user)
+        msg = 'Read Only' if read_only else 'Edit'
+        return msg
+
     def __str__(self):
         return self.name
+
+
+class Share(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    analysis = models.ForeignKey(Analysis, on_delete=models.CASCADE)
+    read_only = models.BooleanField()
+    owner = models.BooleanField()
+
+    def __str__(self):
+        return 'User=%s, Analysis=%s, read_only=%s, owner=%s' % (self.user, self.analysis, self.read_only, self.owner)
+
+    def get_read_only_str(self):
+        msg = 'Read Only' if self.read_only else 'Edit'
+        return msg
 
 
 def get_upload_folder(instance, filename):

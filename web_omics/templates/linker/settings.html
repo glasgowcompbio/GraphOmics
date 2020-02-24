@@ -18,17 +18,10 @@
 
         {% include 'linker/navbar.html' with show_selection_group=False active='settings' %}
 
-        <div class="m-1 mb-3">
+        <!-- div class="m-1 mb-3">
             <div class="card">
                 <div class="card-body">
                     <h5>Add Data</h5>
-                    {% if messages %}
-                        {% for message in messages %}
-                            <div class="alert alert-{{ message.tags }}" role="alert">
-                                {{ message }}
-                            </div>
-                        {% endfor %}
-                    {% endif %}
                     <p>
                         To add a new data point, enter its database identifiers below.
                     </p>
@@ -49,11 +42,69 @@
                           enctype="multipart/form-data">
                         {% csrf_token %}
                         <table>
-                            {{ form.as_table }}
+                            {{ form_1.as_table }}
                         </table>
                         <br/>
                         <input type="submit" name="submit" value="Save" class="btn btn-primary"/>
                     </form>
+                </div>
+            </div>
+        </div -->
+
+        <div class="m-1 mb-3">
+            <div class="card">
+                <div class="card-body">
+                    <h5>Share Analysis</h5>
+
+                    {% if messages %}
+                        {% for message in messages %}
+                            <div class="alert alert-{{ message.tags }}" role="alert">
+                                {{ message }}
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+
+                    <p>
+                        Enter the username to share this analysis with.
+                    </p>
+                    <form id="share_analysis_form"
+                          method="post"
+                          action="{% url 'add_share' analysis_id=analysis_id %}"
+                          enctype="multipart/form-data">
+                        {% csrf_token %}
+                        <table>
+                            {{ form_2.as_table }}
+                        </table>
+                        <br/>
+                        <input type="submit" name="submit" value="Save" class="btn btn-primary"/>
+                    </form>
+
+                    {% if shares %}
+                        <table class="table table-sm mt-3">
+                            <tr>
+                                <th>Username</th>
+                                <th>Share type</th>
+                                <th>Owner</th>
+                                <th>Action</th>
+                            </tr>
+                            {% for share in shares %}
+                                <tr>
+                                    <td>{{ share.user }}</td>
+                                    <td>{{ share.get_read_only_str }}</td>
+                                    <td>{{ share.owner }}</td>
+                                    <td>
+                                        {% if not share.owner %}
+                                            <a href="{% url 'delete_share' analysis_id=analysis_id share_id=share.pk %}"
+                                               style="text-decoration: none">
+                                                🗑️
+                                            </a>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </table>
+                    {% endif %}
+
                 </div>
             </div>
         </div>

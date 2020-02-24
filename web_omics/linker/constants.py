@@ -127,6 +127,10 @@ MetabolicPathwayOnlyChoices = (
     (True, 'Only metabolic pathways'),
     (False, 'All pathways'),
 )
+ShareReadOnlyChoices = (
+    (True, 'Read only'),
+    (False, 'Edit'),
+)
 
 # Constants used in the Inference page
 

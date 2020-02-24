@@ -4,7 +4,7 @@ from django import forms
 from django_select2.forms import Select2Widget, Select2MultipleWidget
 
 from linker.constants import AddNewDataChoices, InferenceTypeChoices, CompoundDatabaseChoices, \
-    MetabolicPathwayOnlyChoices, SELECT_WIDGET_ATTRS, DEFAULT_SPECIES
+    MetabolicPathwayOnlyChoices, SELECT_WIDGET_ATTRS, DEFAULT_SPECIES, ShareReadOnlyChoices
 from linker.reactome import get_species_dict, get_all_pathways
 from linker.models import Analysis, AnalysisUpload
 
@@ -108,3 +108,8 @@ class AddPathwayForm(forms.Form):
 class BaseInferenceForm(forms.Form):
     data_type = forms.ChoiceField(required=True, choices=AddNewDataChoices, widget=Select2Widget(attrs=SELECT_WIDGET_ATTRS))
     inference_type = forms.ChoiceField(required=True, choices=InferenceTypeChoices, widget=Select2Widget(attrs=SELECT_WIDGET_ATTRS))
+
+
+class ShareAnalysisForm(forms.Form):
+    username = forms.CharField(required=True, widget=forms.TextInput(attrs={'size': 100}))
+    share_type = forms.ChoiceField(required=True, choices=ShareReadOnlyChoices, widget=Select2Widget(attrs=SELECT_WIDGET_ATTRS))

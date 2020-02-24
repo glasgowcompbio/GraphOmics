@@ -15,7 +15,7 @@ from loguru import logger
 
 from linker.constants import *
 from linker.metadata import get_gene_names, get_compound_metadata, clean_label, get_species_name_to_id
-from linker.models import Analysis, AnalysisData
+from linker.models import Analysis, AnalysisData, Share
 from linker.reactome import ensembl_to_uniprot, uniprot_to_reaction, compound_to_reaction, \
     reaction_to_pathway, reaction_to_uniprot, reaction_to_compound, uniprot_to_ensembl
 from linker.reactome import get_reaction_df
@@ -232,6 +232,8 @@ def save_analysis(analysis_name, analysis_desc,
                                        description=analysis_desc,
                                        metadata=metadata,
                                        user=current_user)
+    share = Share(user=current_user, analysis=analysis, read_only=False, owner=True)
+    share.save()
     logger.info('Saved analysis %d (%s)' % (analysis.pk, species_list))
     datatype_json = {
         GENOMICS: (results[GENOMICS], 'genes_json', results['group_gene_df']),
@@ -338,7 +340,7 @@ def get_last_data(analysis, data_type):
     return analysis_data
 
 
-def get_context(analysis):
+def get_context(analysis, current_user):
     view_names = {
         TABLE_IDS[GENOMICS]: get_reverse_url('get_ensembl_gene_info', analysis),
         TABLE_IDS[PROTEOMICS]: get_reverse_url('get_uniprot_protein_info', analysis),
@@ -352,7 +354,7 @@ def get_context(analysis):
         'load_group': get_reverse_url('load_group', analysis),
         'list_groups': get_reverse_url('list_groups', analysis),
         'get_boxplot': get_reverse_url('get_boxplot', analysis),
-        'get_gene_ontology': get_reverse_url('get_gene_ontology', analysis),
+        'get_gene_ontology': get_reverse_url('get_gene_ontology', analysis)
     }
     context = {
         'analysis_id': analysis.pk,
@@ -362,7 +364,8 @@ def get_context(analysis):
         'view_names': json.dumps(view_names),
         'show_gene_data': show_data_table(analysis, GENOMICS),
         'show_protein_data': show_data_table(analysis, PROTEOMICS),
-        'show_compound_data': show_data_table(analysis, METABOLOMICS)
+        'show_compound_data': show_data_table(analysis, METABOLOMICS),
+        'read_only': analysis.get_read_only_status(current_user)
     }
     return context
 

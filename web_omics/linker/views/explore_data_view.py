@@ -24,7 +24,8 @@ def truncate(my_str):
 
 def explore_data(request, analysis_id):
     analysis = get_object_or_404(Analysis, pk=analysis_id)
-    context = get_context(analysis)
+    current_user = request.user
+    context = get_context(analysis, current_user)
     return render(request, 'linker/explore_data.html', context)
 
 
