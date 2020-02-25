@@ -36,6 +36,7 @@ loguru = "*"
 pals-pathway = "*"
 jupyterlab = "*"
 django-grappelli = "*"
+gseapy = "*"
 
 [dev-packages]
 pyqt5 = "*"
