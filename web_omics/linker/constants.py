@@ -165,6 +165,8 @@ PIMP_RT_COl = 'RT'
 PIMP_POLARITY_COL = 'Polarity'
 PIMP_ANNOTATION_COL = 'PiMP Annotation'
 PIMP_FRANK_ANNOTATION_COL = 'FrAnK Annotation'
+PIMP_INCHI_KEY_COL = 'InChI Key'
+PIMP_IDENTIFICATION_COL = 'Identification'
 PIMP_KEGG_ID_COL = 'KEGG ID'
 
 # Gene Ontology Constants

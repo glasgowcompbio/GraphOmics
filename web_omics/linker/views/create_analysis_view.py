@@ -1,16 +1,15 @@
 import pandas as pd
-import json
+from django.contrib import messages
 from django.shortcuts import render
 from django.urls import reverse_lazy
 from django.views.generic.edit import FormView, DeleteView
-from django.contrib import messages
 
+from linker.constants import *
 from linker.forms import CreateAnalysisForm, UploadAnalysisForm, AddPathwayForm, pathway_species_dict
-from linker.models import AnalysisData, Analysis
+from linker.models import Analysis
 from linker.reactome import get_species_dict, pathway_to_reactions, reaction_to_uniprot, reaction_to_compound, \
     uniprot_to_ensembl
 from linker.views.functions import reactome_mapping, save_analysis, change_column_order, get_context
-from linker.constants import *
 
 
 class CreateAnalysisView(FormView):
@@ -31,8 +30,8 @@ class CreateAnalysisView(FormView):
         current_user = self.request.user
 
         analysis = get_data(self.request, analysis_desc, analysis_name, compounds_str,
-                                               compound_database_str, current_user, genes_str, proteins_str,
-                                               species_list, metabolic_pathway_only)
+                            compound_database_str, current_user, genes_str, proteins_str,
+                            species_list, metabolic_pathway_only)
         context = get_context(analysis, current_user)
         return render(self.request, self.success_url, context)
 
@@ -55,8 +54,8 @@ class UploadAnalysisView(FormView):
         current_user = self.request.user
 
         analysis = get_data(self.request, analysis_desc, analysis_name, compounds_str,
-                                               compound_database_str, current_user, genes_str, proteins_str,
-                                               species_list, metabolic_pathway_only)
+                            compound_database_str, current_user, genes_str, proteins_str,
+                            species_list, metabolic_pathway_only)
         context = get_context(analysis, current_user)
         return render(self.request, self.success_url, context)
 
@@ -107,7 +106,7 @@ class AddPathwayView(FormView):
 
         current_user = self.request.user
         analysis = get_data(self.request, analysis_desc, analysis_name, compounds_str, compound_database_str,
-                                               current_user, genes_str, proteins_str, species_list, metabolic_pathway_only)
+                            current_user, genes_str, proteins_str, species_list, metabolic_pathway_only)
         context = get_context(analysis, current_user)
         return render(self.request, self.success_url, context)
 
@@ -115,14 +114,14 @@ class AddPathwayView(FormView):
 def get_data(request, analysis_desc, analysis_name, compounds_str, compound_database_str,
              current_user, genes_str, proteins_str, species_list, metabolic_pathway_only):
     try:
-        metabolic_pathway_only = metabolic_pathway_only.lower() in ("yes", "true", "t", "1") # convert string to bool
+        metabolic_pathway_only = metabolic_pathway_only.lower() in ("yes", "true", "t", "1")  # convert string to bool
     except AttributeError:
         pass
     results = reactome_mapping(request, genes_str, proteins_str, compounds_str,
                                compound_database_str, species_list, metabolic_pathway_only)
     analysis = save_analysis(analysis_name, analysis_desc,
-                                   genes_str, proteins_str, compounds_str, compound_database_str,
-                                   results, species_list, current_user, metabolic_pathway_only)
+                             genes_str, proteins_str, compounds_str, compound_database_str,
+                             results, species_list, current_user, metabolic_pathway_only)
     return analysis
 
 
@@ -146,11 +145,9 @@ def get_uploaded_str(data_df, design_df):
     # check if it's a PiMP peak-table export format
     if PIMP_PEAK_ID_COL in data_df.columns:
         # remove unwanted columns
-        to_drop = [PIMP_MASS_COL, PIMP_RT_COl, PIMP_POLARITY_COL]
-        if PIMP_FRANK_ANNOTATION_COL in data_df.columns:
-            to_drop.append(PIMP_FRANK_ANNOTATION_COL)
-        if PIMP_ANNOTATION_COL in data_df.columns:
-            to_drop.append(PIMP_ANNOTATION_COL)
+        drop_check = [PIMP_MASS_COL, PIMP_RT_COl, PIMP_POLARITY_COL, PIMP_FRANK_ANNOTATION_COL, PIMP_ANNOTATION_COL,
+                      PIMP_INCHI_KEY_COL, PIMP_IDENTIFICATION_COL]
+        to_drop = [col for col in drop_check if col in data_df.columns]
         data_df = data_df.drop(to_drop, axis=1)
         # format dataframe: each kegg compound is a row by itself
         data_list = []
@@ -167,7 +164,7 @@ def get_uploaded_str(data_df, design_df):
             except AttributeError:
                 continue
         data_df = pd.DataFrame(data_list)
-        data_df = change_column_order(data_df, IDENTIFIER_COL, 0) # assume it's the first column always
+        data_df = change_column_order(data_df, IDENTIFIER_COL, 0)  # assume it's the first column always
 
     # convert to csv since that's what subsequent methods want, adding the second grouping line if necessary
     data_list = data_df.to_csv(index=False).splitlines()
@@ -178,7 +175,8 @@ def get_uploaded_str(data_df, design_df):
     if design_df is not None:
         design_df.columns = design_df.columns.str.lower()
         sample_2_group = design_df.set_index(SAMPLE_COL).to_dict()[GROUP_COL]
-        second_line = [GROUP_COL] + [sample_2_group[x] if x in sample_2_group else DEFAULT_GROUP_NAME for x in first_line[1:]]
+        second_line = [GROUP_COL] + [sample_2_group[x] if x in sample_2_group else DEFAULT_GROUP_NAME for x in
+                                     first_line[1:]]
         new_data_list.append(','.join(second_line))
 
     new_data_list.extend(data_list[1:])
