@@ -23,12 +23,12 @@
                             <td>{{ object.get_species_str }}</td>
                         </tr>
                         <tr>
-                            <th scope="row">User</th>
-                            <td>{{ object.user }}</td>
+                            <th scope="row">Create Date</th>
+                            <td>{{ object.timestamp|date:"jS F Y H:i" }}</td>
                         </tr>
                         <tr>
-                            <th scope="row">Date</th>
-                            <td>{{ object.timestamp|date:"jS F Y H:i" }}</td>
+                            <th scope="row">Owner</th>
+                            <td>{{ object.get_owner }}</td>
                         </tr>
                     </tbody>
                 </table>
