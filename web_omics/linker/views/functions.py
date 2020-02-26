@@ -230,8 +230,7 @@ def save_analysis(analysis_name, analysis_desc,
     }
     analysis = Analysis.objects.create(name=analysis_name,
                                        description=analysis_desc,
-                                       metadata=metadata,
-                                       user=current_user)
+                                       metadata=metadata)
     share = Share(user=current_user, analysis=analysis, read_only=False, owner=True)
     share.save()
     logger.info('Saved analysis %d (%s)' % (analysis.pk, species_list))
