@@ -31,18 +31,24 @@ def reactome_mapping(request, genes_str, proteins_str, compounds_str, compound_d
     observed_protein_df, group_protein_df, observed_protein_ids = csv_to_dataframe(proteins_str)
     observed_compound_df, group_compound_df, observed_compound_ids = csv_to_dataframe(compounds_str)
 
-    # try to convert all kegg ids to chebi ids, if possible
-    logger.info('Converting kegg ids -> chebi ids')
-    observed_compound_ids = get_ids_from_dataframe(observed_compound_df)
-    for cid in observed_compound_ids:
-        if cid not in settings.KEGG_2_CHEBI:
-            logger.warning('Not found: %s' % cid)
-            settings.KEGG_2_CHEBI[cid] = cid
-
     if observed_compound_df is not None:
         if compound_database_str == COMPOUND_DATABASE_CHEBI:
+
+            # try to convert all kegg ids to chebi ids, if possible
+            logger.info('Converting kegg ids -> chebi ids')
+            observed_compound_ids = get_ids_from_dataframe(observed_compound_df)
+            for cid in observed_compound_ids:
+                if cid.startswith('C'):
+                    if cid not in settings.KEGG_2_CHEBI:
+                        logger.warning('Not found: %s' % cid)
+                        settings.KEGG_2_CHEBI[cid] = cid
+                    else:
+                        logger.debug('Found: %s -> %s' % (cid, settings.KEGG_2_CHEBI[cid]))
+
+            # map the first id column in the dataframe
             observed_compound_df.iloc[:, 0] = observed_compound_df.iloc[:, 0].map(
                 settings.KEGG_2_CHEBI)  # assume 1st column is id
+
         observed_compound_ids = get_ids_from_dataframe(observed_compound_df)
 
     ### map genes -> proteins ###
