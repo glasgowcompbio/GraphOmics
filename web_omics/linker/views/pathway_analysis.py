@@ -18,6 +18,20 @@ def get_pals_data_source(analysis, analysis_data, case, control):
     if design_df is None:
         return None
 
+    # if this is a pimp data, the index of X_std will be in this format:
+    # <compound_id>_<peak_id>
+    # we need to remove the <peak_id> for PALS compound matching to work
+    old_index = X_std.index.values
+    new_index = []
+    for idx in old_index:
+        if '_' in idx:
+            tokens = idx.split('_')
+            new_index.append(tokens[0])
+        else:
+            new_index.append(idx)
+    assert len(old_index) == len(new_index)
+    X_std = X_std.rename(index=dict(zip(old_index, new_index)))
+
     # retrieve experimental design information
     experimental_design = {
         'comparisons': [get_comparison(case, control)],
