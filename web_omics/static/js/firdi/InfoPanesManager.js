@@ -283,7 +283,7 @@ class InfoPanesManager {
             'class': 'btn btn-sm btn-primary',
             'text': 'Show measurements',
             'css': {
-                'margin-top': '10px'
+                'display': 'block'
             }
         });
         dataDiv.append(d3_intensity_chart_load_btn);
@@ -350,9 +350,9 @@ class InfoPanesManager {
         });
 
         // d3 margin convention. Make the width and height relative to page components
-        var margin = {top: 20, bottom: 75, right: 20, left: 60},
-            width = $('#gene-row-info').width() - margin.right - margin.left,
-            height = $('#genes_table_wrapper').height() - margin.top - margin.bottom - 50;
+        var margin = {top: 20, bottom: 75, right: 20, left: 60};
+        var width = 250 - margin.right - margin.left;
+        var height = $('#genes_table_wrapper').height() - margin.top - margin.bottom - 50;
 
         // Initialise the svg
         var svg = d3.select(plotDiv)
