@@ -1,11 +1,12 @@
 class AnnotationManager {
 
-    constructor(state, annotId, annotUrl, displayName, annotation) {
+    constructor(state, annotId, annotUrl, displayName, annotation, reactomeToken) {
         this.state = state;
         this.annotId = annotId;
         this.annotUrl = annotUrl;
         this.displayName = displayName;
         this.annotation = annotation;
+        this.reactomeToken = reactomeToken;
     }
 
     getAnnotationLink() {
@@ -95,9 +96,14 @@ class AnnotationManager {
 
         //Initialising it to the currently selected pathway
         diagram.loadDiagram(this.annotId);
+
+        const token = this.reactomeToken;
         diagram.onDiagramLoaded(function (loaded) {
             console.log('Diagram loaded');
-            // diagram.flagItems('ENSMUSG00000001323')
+            if (token) {
+                console.log('Found analysis token: ' + token);
+                diagram.setAnalysisToken(token, 'TOTAL');
+            }
         });
     }
 

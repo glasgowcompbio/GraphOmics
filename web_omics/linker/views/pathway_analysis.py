@@ -53,10 +53,21 @@ def get_pals_data_source(analysis, analysis_data, case, control):
     reactome_metabolic_pathway_only = analysis.metadata['metabolic_pathway_only']
     reactome_species = analysis.metadata['species_list'][0]  # assume the first one
     reactome_query = True
-    database_name = None
 
     # select database name
+    database_name, min_replace = _get_database_name(analysis, analysis_data)
+
+    # create a PALS data source
+    assert database_name is not None
+    ds = DataSource(X_std, annotation_df, experimental_design, database_name,
+                    reactome_species, reactome_metabolic_pathway_only, reactome_query, min_replace=min_replace)
+
+    return ds
+
+
+def _get_database_name(analysis, analysis_data):
     min_replace = None
+    database_name = None
     if analysis_data.data_type == METABOLOMICS:
         if analysis.metadata['compound_database_str'] == COMPOUND_DATABASE_KEGG:
             database_name = DATABASE_REACTOME_KEGG
@@ -69,13 +80,7 @@ def get_pals_data_source(analysis, analysis_data, case, control):
     elif analysis_data.data_type == GENOMICS:
         database_name = DATABASE_REACTOME_ENSEMBL
         min_replace = MIN_REPLACE_GENOMICS
-
-    # create a PALS data source
-    assert database_name is not None
-    ds = DataSource(X_std, annotation_df, experimental_design, database_name,
-                    reactome_species, reactome_metabolic_pathway_only, reactome_query, min_replace=min_replace)
-
-    return ds
+    return database_name, min_replace
 
 
 def get_comparison(case, control):
@@ -127,15 +132,21 @@ def update_pathway_analysis_data(analysis_data, pathway_df):
                 del pathway_dict[key]
 
     # get pathway analysis data and modify its json_data to include the PALS results
+    hits = 0
     for pathway_dict in new_json_data:
         pathway_pk = pathway_dict[PATHWAY_PK]
+        found = False
         for comparison in pals_dict:
             key = comparison_to_key(comparison)
             try:
                 pals_results = pals_dict[comparison]
                 pathway_dict[key] = pals_results[pathway_pk]
+                found = True
             except KeyError:  # pathway is not present in dataset, so it isn't included in PALS results
                 pathway_dict[key] = NA
+        if found:
+            hits += 1
+    logger.debug('Updated %d pathways' % hits)
     return new_json_data
 
 

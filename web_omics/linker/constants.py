@@ -54,13 +54,15 @@ COMPOUND_PK = 'compound_pk'
 REACTION_PK = 'reaction_pk'
 PATHWAY_PK = 'pathway_pk'
 
-GENOMICS, TRANSCRIPTOMICS, PROTEOMICS, METABOLOMICS, REACTIONS, PATHWAYS = range(0, 6)
+GENOMICS, TRANSCRIPTOMICS, PROTEOMICS, METABOLOMICS, REACTIONS, PATHWAYS, MULTI_OMICS = range(0, 7)
 AddNewDataChoices = (
     (None, NA),
     (GENOMICS, 'Gene Data'),
     (PROTEOMICS, 'Protein Data'),
     (METABOLOMICS, 'Compound Data'),
+    (MULTI_OMICS, 'Multi-omics Data')
 )
+AddNewDataDict = dict(AddNewDataChoices)
 DataType = (
     (GENOMICS, 'Genomics'),
     (TRANSCRIPTOMICS, 'Transcriptomics'),
@@ -69,6 +71,7 @@ DataType = (
     (REACTIONS, 'Reactions'),
     (PATHWAYS, 'Pathways')
 )
+DataTypeDict = dict(DataType)
 TABLE_IDS = {
     GENOMICS: 'genes_table',
     PROTEOMICS: 'proteins_table',
@@ -142,6 +145,7 @@ INFERENCE_ORA = 4
 INFERENCE_GSEA = 5
 INFERENCE_DESEQ = 6
 INFERENCE_LIMMA = 7
+INFERENCE_REACTOME = 8
 
 InferenceTypeChoices = (
     (None, NA),
@@ -152,6 +156,7 @@ InferenceTypeChoices = (
     (INFERENCE_PALS, 'Pathway Analysis (PLAGE)'),
     (INFERENCE_ORA, 'Pathway Analysis (ORA)'),
     (INFERENCE_GSEA, 'Pathway Analysis (GSEA)'),
+    (INFERENCE_REACTOME, 'Reactome Analysis Service')
 )
 SELECT_WIDGET_ATTRS = {'style': 'width: 400px'}
 

@@ -1,7 +1,13 @@
+import json
+from urllib.parse import quote
+
 import jsonpickle
 import numpy as np
+import pandas as pd
+import requests
 from django import forms
 from django.contrib import messages
+from django.forms import TextInput, DecimalField
 from django.shortcuts import render, get_object_or_404
 from django.urls import reverse
 from django.utils import timezone
@@ -103,6 +109,29 @@ def inference(request, analysis_id):
                 })
                 selected_form = get_case_control_form(data_type, groups, inference_type)
 
+            # do Reactome Analysis Service
+            elif inference_type == INFERENCE_REACTOME:
+                selected_form = BaseInferenceForm()
+                selected_form.fields['data_type'].initial = data_type
+                selected_form.fields['inference_type'].initial = inference_type
+
+                if data_type == MULTI_OMICS:
+                    for dtype in [GENOMICS, PROTEOMICS, METABOLOMICS]:
+                        analysis_data = get_last_analysis_data(analysis, dtype)
+                        populate_reactome_choices(analysis_data, dtype, selected_form)
+                else:
+                    analysis_data = get_last_analysis_data(analysis, data_type)
+                    populate_reactome_choices(analysis_data, data_type, selected_form)
+
+                selected_form.fields['threshold'] = DecimalField(required=True, widget=TextInput(
+                    attrs={'autocomplete': 'off', 'type': 'number', 'min': '0', 'max': '1', 'step': '0.05',
+                           'size': '10'}))
+                selected_form.fields['threshold'].initial = 0.0
+
+                action_url = reverse('inference_reactome', kwargs={
+                    'analysis_id': analysis_id,
+                })
+
             else:  # default
                 action_url = reverse('inference', kwargs={
                     'analysis_id': analysis_id,
@@ -128,6 +157,20 @@ def inference(request, analysis_id):
             'action_url': action_url
         }
         return render(request, 'linker/inference.html', context)
+
+
+def populate_reactome_choices(analysis_data, data_type, selected_form):
+    data_df, design_df = get_dataframes(analysis_data, PKS)
+    if design_df is not None:
+        comparisons = [col for col in data_df.columns if col.startswith(FC_COL_PREFIX)]
+        comparisons = list(map(lambda comp: comp.replace(FC_COL_PREFIX, ''), comparisons))
+        comparison_choices = ((None, NA),) + tuple(zip(comparisons, comparisons))
+        data_type_comp_fieldname = '%s_comparison' % AddNewDataDict[data_type]
+        selected_form.fields[data_type_comp_fieldname] = forms.ChoiceField(required=False, choices=comparison_choices,
+                                                                           widget=Select2Widget(SELECT_WIDGET_ATTRS))
+        return data_df, data_type_comp_fieldname
+    else:
+        return None, None
 
 
 def get_case_control_form(data_type, groups, inference_type):
@@ -165,6 +208,11 @@ def get_list_data(analysis_id, analysis_data_list):
                 'analysis_data_id': analysis_data.id
             })
 
+        # when clicked, go to Reactome
+        elif inference_type == INFERENCE_REACTOME:
+            if 'reactome_url' in analysis_data.metadata:
+                click_url = analysis_data.metadata['reactome_url']
+
         item = [analysis_data, click_url]
         list_data.append(item)
     return list_data
@@ -196,8 +244,9 @@ def inference_t_test(request, analysis_id):
 
             # create a new analysis data
             display_name = 't-test: %s_vs_%s' % (case, control)
-            metadata = {}
-            copy_analysis_data(analysis_data, json_data, display_name, metadata, INFERENCE_T_TEST)
+            metadata = None
+            data_type = analysis_data.data_type
+            copy_analysis_data(analysis_data, json_data, display_name, metadata, data_type, INFERENCE_T_TEST)
             messages.success(request, 'Add new inference successful.', extra_tags='primary')
             return inference(request, analysis_id)
         else:
@@ -242,7 +291,8 @@ def inference_deseq(request, analysis_id):
                 'rld_df': rld_df.to_json(),
                 'res_ordered': jsonpickle.encode(res_ordered)
             }
-            copy_analysis_data(analysis_data, json_data, display_name, metadata, INFERENCE_DESEQ)
+            data_type = analysis_data.data_type
+            copy_analysis_data(analysis_data, json_data, display_name, metadata, data_type, INFERENCE_DESEQ)
             messages.success(request, 'Add new inference successful.', extra_tags='primary')
             return inference(request, analysis_id)
         else:
@@ -277,8 +327,9 @@ def inference_limma(request, analysis_id):
 
             # create a new analysis data
             display_name = 'limma: %s_vs_%s' % (case, control)
-            metadata = {}
-            copy_analysis_data(analysis_data, json_data, display_name, metadata, INFERENCE_LIMMA)
+            metadata = None
+            data_type = analysis_data.data_type
+            copy_analysis_data(analysis_data, json_data, display_name, metadata, data_type, INFERENCE_LIMMA)
             messages.success(request, 'Add new inference successful.', extra_tags='primary')
             return inference(request, analysis_id)
         else:
@@ -325,7 +376,7 @@ def get_updated_json_data(analysis_data, data_type, case, control, result_df):
     return json_data
 
 
-def copy_analysis_data(analysis_data, new_json_data, new_display_name, new_metadata, inference_type):
+def copy_analysis_data(analysis_data, new_json_data, new_display_name, new_metadata, new_data_type, inference_type):
     parent_pk = analysis_data.pk
     # creates a copy of analysis_data by setting the pk to None
     analysis_data.pk = None
@@ -334,7 +385,8 @@ def copy_analysis_data(analysis_data, new_json_data, new_display_name, new_metad
     analysis_data.inference_type = inference_type
     analysis_data.timestamp = timezone.localtime()
     analysis_data.display_name = new_display_name
-    if analysis_data.metadata is not None:
+    analysis_data.data_type = new_data_type
+    if analysis_data.metadata is not None and new_metadata is not None:
         analysis_data.metadata.update(new_metadata)
     analysis_data.save()
 
@@ -367,7 +419,9 @@ def inference_pca(request, analysis_id):
                     'pca_var_exp': jsonpickle.dumps(var_exp)
                 }
                 display_name = 'PCA: %s components' % n_components
-                copy_analysis_data(analysis_data, analysis_data.json_data, display_name, metadata, INFERENCE_PCA)
+                data_type = analysis_data.data_type
+                copy_analysis_data(analysis_data, analysis_data.json_data, display_name, metadata, data_type,
+                                   INFERENCE_PCA)
                 messages.success(request, 'Add new inference successful.', extra_tags='primary')
             else:
                 messages.warning(request, 'Add new inference failed. No data found.')
@@ -531,9 +585,10 @@ def inference_pals(request, analysis_id):
             pathway_analysis_data = get_last_analysis_data(analysis, PATHWAYS)
             new_json_data = update_pathway_analysis_data(pathway_analysis_data, pals_df)
             new_display_name = 'PLAGE %s (%d:%d): %s_vs_%s' % (pals_data_source.database_name,
-                                                              plage_weight, hg_weight,
-                                                              case, control)
-            copy_analysis_data(pathway_analysis_data, new_json_data, new_display_name, None,
+                                                               plage_weight, hg_weight,
+                                                               case, control)
+            data_type = pathway_analysis_data.data_type
+            copy_analysis_data(pathway_analysis_data, new_json_data, new_display_name, None, data_type,
                                INFERENCE_PALS)
             messages.success(request, 'Add new inference successful.', extra_tags='primary')
             return inference(request, analysis_id)
@@ -572,7 +627,8 @@ def inference_ora(request, analysis_id):
             new_json_data = update_pathway_analysis_data(pathway_analysis_data, pals_df)
             new_display_name = 'ORA %s: %s_vs_%s' % (pals_data_source.database_name,
                                                      case, control)
-            copy_analysis_data(pathway_analysis_data, new_json_data, new_display_name, None,
+            data_type = pathway_analysis_data.data_type
+            copy_analysis_data(pathway_analysis_data, new_json_data, new_display_name, None, data_type,
                                INFERENCE_ORA)
             messages.success(request, 'Add new inference successful.', extra_tags='primary')
             return inference(request, analysis_id)
@@ -611,10 +667,171 @@ def inference_gsea(request, analysis_id):
             new_json_data = update_pathway_analysis_data(pathway_analysis_data, pals_df)
             new_display_name = 'GSEA %s: %s_vs_%s' % (pals_data_source.database_name,
                                                       case, control)
-            copy_analysis_data(pathway_analysis_data, new_json_data, new_display_name, None,
+            data_type = pathway_analysis_data.data_type
+            copy_analysis_data(pathway_analysis_data, new_json_data, new_display_name, None, data_type,
                                INFERENCE_GSEA)
             messages.success(request, 'Add new inference successful.', extra_tags='primary')
             return inference(request, analysis_id)
+
+        else:
+            messages.warning(request, 'Add new inference failed.')
+
+    return inference(request, analysis_id)
+
+
+def inference_reactome(request, analysis_id):
+    if request.method == 'POST':
+        analysis = get_object_or_404(Analysis, pk=analysis_id)
+        form = BaseInferenceForm(request.POST)
+        data_type = int(request.POST['data_type'])
+
+        data_types = [data_type]
+        if data_type == MULTI_OMICS:
+            data_types = [GENOMICS, PROTEOMICS, METABOLOMICS]
+
+        omics_data = {}
+        for dtype in data_types:
+            analysis_data = get_last_analysis_data(analysis, dtype)
+            data_df, data_type_comp_fieldname = populate_reactome_choices(analysis_data, dtype, form)
+            if data_df is not None:
+                # https://reactome.org/userguide/analysis
+                # Identifiers that contain only numbers such as those from OMIM and EntrezGene must be prefixed by the
+                # source database name and a colon e.g. MIM:602544, EntrezGene:55718. Mixed identifier lists
+                # (different protein identifiers or protein/gene identifiers) may be used.
+                # Identifiers must be one per line.
+
+                # database_name, _ = _get_database_name(analysis, analysis_data)
+                # if database_name == DATABASE_REACTOME_CHEBI:
+                #     data_df = data_df.set_index('ChEBI:' + data_df.index.astype(str))
+
+                omics_data[dtype] = {
+                    'df': data_df,
+                    'fieldname': data_type_comp_fieldname
+                }
+
+        if len(omics_data) == 0:
+            messages.warning(request, 'Add new inference failed. No data found.')
+            return inference(request, analysis_id)
+
+        form.fields['threshold'] = DecimalField(required=True, widget=TextInput(
+            attrs={'autocomplete': 'off', 'type': 'number', 'min': '0', 'max': '1', 'step': '0.05',
+                   'size': '10'}))
+        form.fields['threshold'].initial = 0.0
+
+        PVALUE_COLNAME = 'p-value'
+        FOLD_CHANGE_COLNAME = 'fold_change'
+        used_dtypes = []
+        if form.is_valid():
+            dfs = []
+            for dtype in omics_data:
+                res = omics_data[dtype]
+                df = res['df']
+                fieldname = res['fieldname']
+                if fieldname in form.cleaned_data and len(form.cleaned_data[fieldname]) > 0:
+                    colname = form.cleaned_data[fieldname]
+                    padj_colname = PADJ_COL_PREFIX + colname
+                    fc_colname = FC_COL_PREFIX + colname
+                    selected_df = df[[padj_colname, fc_colname]]
+                    selected_df = selected_df.rename(columns={
+                        padj_colname: PVALUE_COLNAME,
+                        fc_colname: FOLD_CHANGE_COLNAME
+                    })
+                    dfs.append(selected_df)
+                    used_dtypes.append(dtype)
+
+            df = pd.concat(dfs)
+            df.dropna(inplace=True)
+
+            # TODO: refactor task
+            # rename BaseInferenceForm.data_type to source_data
+            # remove data type genomics, use transcriptomics
+
+            # for debugging
+            # df_out = os.path.join(BASE_DIR, 'static', 'data', 'debugging', 'reactome_df.p')
+            # logger.debug('Written to %s' % df_out)
+            # df.to_pickle(df_out)
+            # df_out = os.path.join(BASE_DIR, 'static', 'data', 'debugging', 'reactome_df.tsv')
+            # logger.debug('Written to %s' % df_out)
+
+            threshold = float(form.cleaned_data['threshold'])
+            analysis_species = analysis.get_species_list()
+            assert len(analysis_species) >= 1
+            if len(analysis_species) > 1:
+                logger.warning('Multiple species detected. Using only the first species for analysis.')
+
+            encoded_species = quote(analysis_species[0])
+            logger.debug('Species: ' + encoded_species)
+
+            df = df[df[PVALUE_COLNAME] > threshold]  # filter dataframe by p-value threshold
+            df = df[FOLD_CHANGE_COLNAME].to_frame()  # convert series to dataframe
+
+            # prepare expression value to send to Reactome
+            # we can't send negative values (UI seems to glithc), so here we use fold-change, not the log fold-change
+            df = np.power(df, 2)
+            logger.debug('Dataframe to send:')
+            logger.debug(df)
+            logger.debug(df.shape)
+
+            # convert dataframe to tab-separated values
+            # first column in the header has to start with a '#' sign
+            # can't use scientific notation, so we format to %.15f
+            data = df.to_csv(sep='\t', header=True, index_label='#id', float_format='%.15f')
+
+            # refer to https://reactome.org/AnalysisService/#/identifiers/getPostTextUsingPOST
+            url = 'https://reactome.org/AnalysisService/identifiers/?interactors=false&species=' + encoded_species + \
+                  '&sortBy=ENTITIES_PVALUE&order=ASC&resource=TOTAL&pValue=1&includeDisease=true'
+            logger.debug('Reactome URL: ' + url)
+
+            # make a POSt request to Reactome Analysis service
+            response = requests.post(url, headers={'Content-Type': 'text/plain'}, data=data.encode('utf-8'))
+            logger.debug('Response status code = %d' % response.status_code)
+
+            # make sure the post request was successful
+            if response.status_code != 200:
+                messages.warning(request, 'Add new inference failed. Reactome Analysis Service returned status '
+                                          'code %d' % response.status_code)
+            else:  # success
+
+                # see https://reactome.org/userguide/analysis for results explanation
+                json_response = json.loads(response.text)
+                token = json_response['summary']['token']
+                reactome_url = 'https://reactome.org/PathwayBrowser/#DTAB=AN&ANALYSIS=' + token
+                logger.debug('Pathway analysis token: ' + token)
+                logger.debug('Pathway analysis URL: ' + reactome_url)
+
+                pathways = json_response['pathways']
+                # https://stackoverflow.com/questions/6027558/flatten-nested-dictionaries-compressing-keys
+                pathways_df = pd.io.json.json_normalize(pathways, sep='_')
+                logger.debug('Pathway analysis results:')
+                logger.debug(pathways_df.columns.values)
+                logger.debug(pathways_df)
+
+                if pathways_df.empty:
+                    messages.warning(request, 'Add new inference failed. No pathways returned by Reactome Analysis '
+                                              'Service. Please check the logs.')
+                else:
+                    # as a quick hack, we put pathways df in the same format as PALS output
+                    # this will let us use the update_pathway_analysis_data() method below
+                    pathways_df = pathways_df[['stId', 'name', 'entities_fdr']].set_index('stId').rename(columns={
+                        'name': 'pw_name',
+                        'entities_fdr': 'REACTOME %s comb_p' % (colname)
+                    })
+
+                    # update reactome analysis results to database
+                    pathway_analysis_data = get_last_analysis_data(analysis, PATHWAYS)
+                    new_json_data = update_pathway_analysis_data(pathway_analysis_data, pathways_df)
+
+                    new_data_type = pathway_analysis_data.data_type
+                    display_data_type = ','.join([AddNewDataDict[dt] for dt in used_dtypes])
+                    new_display_name = 'Reactome Analysis Service (%s): %s' % (display_data_type, colname)
+                    new_metadata = {
+                        'reactome_token': token,
+                        'reactome_url': reactome_url
+                    }
+                    copy_analysis_data(analysis_data, new_json_data, new_display_name, new_metadata, new_data_type,
+                                       INFERENCE_REACTOME)
+                    messages.success(request, 'Add new inference successful.', extra_tags='primary')
+                    return inference(request, analysis_id)
 
         else:
             messages.warning(request, 'Add new inference failed.')

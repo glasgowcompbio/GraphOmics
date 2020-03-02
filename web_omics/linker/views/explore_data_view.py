@@ -6,6 +6,7 @@ from django.http import JsonResponse
 from django.shortcuts import render, get_object_or_404
 from django.urls import reverse
 from django.utils import timezone
+from loguru import logger
 
 from linker.constants import *
 from linker.metadata import get_single_ensembl_metadata_online, get_single_uniprot_metadata_online, \
@@ -13,7 +14,7 @@ from linker.metadata import get_single_ensembl_metadata_online, get_single_unipr
 from linker.models import Analysis, AnalysisAnnotation
 from linker.reactome import get_reactome_description, get_reaction_entities, pathway_to_reactions
 from linker.views.functions import change_column_order, recur_dictify, get_context, \
-    get_last_data
+    get_last_data, get_last_analysis_data
 from .harmonizomeapi import Harmonizome, Entity
 
 
@@ -109,9 +110,9 @@ def get_ensembl_gene_info(request, analysis_id):
                         if key == 'description':
                             value = value[0:value.index('[')]  # remove e.g. '[xxx]' from 'abhydrolase [xxx]'
                         infos.append({'key': key.title(), 'value': value})
-        except TypeError: # https://github.com/joewandy/WebOmics/issues/9
+        except TypeError:  # https://github.com/joewandy/WebOmics/issues/9
             pass
-        except KeyError: # https://github.com/joewandy/WebOmics/issues/10
+        except KeyError:  # https://github.com/joewandy/WebOmics/issues/10
             pass
 
         data = Harmonizome.get(Entity.GENE, name=display_name)
@@ -474,6 +475,7 @@ def get_reactome_pathway_info(request, analysis_id):
         ]
         annotation = get_annotation(analysis_id, pathway_id, PATHWAYS)
         annotation_url = get_annotation_url(analysis_id, pathway_id, PATHWAYS)
+
         data = {
             'infos': infos,
             'images': images,
@@ -482,6 +484,15 @@ def get_reactome_pathway_info(request, analysis_id):
             'annotation_url': annotation_url,
             'annotation_id': pathway_id
         }
+
+        # get reactome token if available
+        analysis = get_object_or_404(Analysis, pk=analysis_id)
+        analysis_data = get_last_analysis_data(analysis, PATHWAYS)
+        if analysis_data.metadata and 'reactome_token' in analysis_data.metadata:
+            reactome_token = analysis_data.metadata['reactome_token']
+            data.update({'reactome_token': reactome_token})
+            logger.debug('Found reactome_token %s' % reactome_token)
+
         return JsonResponse(data)
 
 
