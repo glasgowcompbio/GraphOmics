@@ -15,6 +15,7 @@ from django.views.generic import TemplateView
 from django_select2.forms import Select2Widget
 from loguru import logger
 from pals.common import PLAGE_WEIGHT, HG_WEIGHT
+from sklearn import preprocessing
 from sklearn.decomposition import PCA as skPCA
 
 from linker.constants import *
@@ -679,6 +680,10 @@ def inference_gsea(request, analysis_id):
     return inference(request, analysis_id)
 
 
+# TODO: refactor task
+# rename BaseInferenceForm.data_type to source_data
+# remove data type genomics, use transcriptomics
+
 def inference_reactome(request, analysis_id):
     if request.method == 'POST':
         analysis = get_object_or_404(Analysis, pk=analysis_id)
@@ -721,7 +726,9 @@ def inference_reactome(request, analysis_id):
         PVALUE_COLNAME = 'p-value'
         FOLD_CHANGE_COLNAME = 'fold_change'
         used_dtypes = []
+
         if form.is_valid():
+            threshold = float(form.cleaned_data['threshold'])
             dfs = []
             for dtype in omics_data:
                 res = omics_data[dtype]
@@ -731,51 +738,47 @@ def inference_reactome(request, analysis_id):
                     colname = form.cleaned_data[fieldname]
                     padj_colname = PADJ_COL_PREFIX + colname
                     fc_colname = FC_COL_PREFIX + colname
-                    selected_df = df[[padj_colname, fc_colname]]
-                    selected_df = selected_df.rename(columns={
+                    df = df[[padj_colname, fc_colname]]
+                    df = df.rename(columns={
                         padj_colname: PVALUE_COLNAME,
                         fc_colname: FOLD_CHANGE_COLNAME
                     })
-                    dfs.append(selected_df)
+
+                    # filter dataframe
+                    df.dropna(inplace=True)
+                    df = df[df[PVALUE_COLNAME] > threshold]  # filter dataframe by p-value threshold
+                    df = df[FOLD_CHANGE_COLNAME].to_frame()  # convert series to dataframe
+
+                    # scale features between (-1, 1) range
+                    # df = 2 ** df
+                    scaled_data = preprocessing.minmax_scale(df[FOLD_CHANGE_COLNAME], feature_range=(-1, 1))
+                    df[FOLD_CHANGE_COLNAME] = scaled_data  # set scaled data back to the dataframe
+
+                    dfs.append(df)
                     used_dtypes.append(dtype)
 
             df = pd.concat(dfs)
-            df.dropna(inplace=True)
-
-            # TODO: refactor task
-            # rename BaseInferenceForm.data_type to source_data
-            # remove data type genomics, use transcriptomics
-
-            # for debugging
-            # df_out = os.path.join(BASE_DIR, 'static', 'data', 'debugging', 'reactome_df.p')
-            # logger.debug('Written to %s' % df_out)
-            # df.to_pickle(df_out)
-            # df_out = os.path.join(BASE_DIR, 'static', 'data', 'debugging', 'reactome_df.tsv')
-            # logger.debug('Written to %s' % df_out)
-
-            threshold = float(form.cleaned_data['threshold'])
-            analysis_species = analysis.get_species_list()
-            assert len(analysis_species) >= 1
-            if len(analysis_species) > 1:
-                logger.warning('Multiple species detected. Using only the first species for analysis.')
-
-            encoded_species = quote(analysis_species[0])
-            logger.debug('Species: ' + encoded_species)
-
-            df = df[df[PVALUE_COLNAME] > threshold]  # filter dataframe by p-value threshold
-            df = df[FOLD_CHANGE_COLNAME].to_frame()  # convert series to dataframe
-
-            # prepare expression value to send to Reactome
-            # we can't send negative values (UI seems to glithc), so here we use fold-change, not the log fold-change
-            df = np.power(df, 2)
             logger.debug('Dataframe to send:')
             logger.debug(df)
             logger.debug(df.shape)
+
+            # for debugging
+            # df_out = os.path.join(BASE_DIR, 'static', 'data', 'debugging', 'reactome_df.csv')
+            # df.to_csv(df_out, sep=',', header=True, index_label='#id', float_format='%.15f')
+            # logger.debug('Written to %s' % df_out)
 
             # convert dataframe to tab-separated values
             # first column in the header has to start with a '#' sign
             # can't use scientific notation, so we format to %.15f
             data = df.to_csv(sep='\t', header=True, index_label='#id', float_format='%.15f')
+
+            # get first species of this analysis
+            analysis_species = analysis.get_species_list()
+            assert len(analysis_species) >= 1
+            if len(analysis_species) > 1:
+                logger.warning('Multiple species detected. Using only the first species for analysis.')
+            encoded_species = quote(analysis_species[0])
+            logger.debug('Species: ' + encoded_species)
 
             # refer to https://reactome.org/AnalysisService/#/identifiers/getPostTextUsingPOST
             url = 'https://reactome.org/AnalysisService/identifiers/?interactors=false&species=' + encoded_species + \
