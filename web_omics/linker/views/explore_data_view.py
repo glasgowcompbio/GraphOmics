@@ -488,10 +488,16 @@ def get_reactome_pathway_info(request, analysis_id):
         # get reactome token if available
         analysis = get_object_or_404(Analysis, pk=analysis_id)
         analysis_data = get_last_analysis_data(analysis, PATHWAYS)
-        if analysis_data.metadata and 'reactome_token' in analysis_data.metadata:
-            reactome_token = analysis_data.metadata['reactome_token']
-            data.update({'reactome_token': reactome_token})
-            logger.debug('Found reactome_token %s' % reactome_token)
+        if analysis_data.metadata:
+            if REACTOME_ORA_TOKEN in analysis_data.metadata:
+                token = analysis_data.metadata[REACTOME_ORA_TOKEN]
+                data.update({REACTOME_ORA_TOKEN: token})
+                logger.debug('Found reactome expression token %s' % token)
+
+            if REACTOME_EXPR_TOKEN in analysis_data.metadata:
+                token = analysis_data.metadata[REACTOME_EXPR_TOKEN]
+                data.update({REACTOME_EXPR_TOKEN: token})
+                logger.debug('Found reactome expression token %s' % token)
 
         return JsonResponse(data)
 

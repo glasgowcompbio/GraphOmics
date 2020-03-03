@@ -25,6 +25,14 @@ class InfoPanesManager {
 
         // to track the current selections for each table
         this.initNextPrevButtons()
+
+        // Reactome diagram viewer
+        this.diagram = Reactome.Diagram.create({
+            "placeHolder" : "diagramHolder",
+            "width" : 975,
+            "height" : 600
+        });
+
     }
 
     initNextPrevButtons() {
@@ -178,14 +186,25 @@ class InfoPanesManager {
             const annotId = data['annotation_id'];
             const annotUrl = data['annotation_url'];
             const annotation = data['annotation'];
-            const reactomeToken = data['reactome_token'];
+            const reactomeOraToken = data['reactome_ora_token'];
+            const reactomeExprToken = data['reactome_expr_token'];
             const annotationManager = new AnnotationManager(this.state, annotId, annotUrl, displayName, annotation,
-                reactomeToken);
+                reactomeOraToken, reactomeExprToken);
             const annotationLink = annotationManager.getAnnotationLink();
-            const reactomeViewerLink = annotationManager.getReactomeViewerLink()
+            const reactomeOraViewerLink = annotationManager.getReactomeOraViewerLink();
+            const reactomeExprViewerLink = annotationManager.getReactomeExprViewerLink();
             const annotationDiv = annotationManager.getAnnotationDiv();
+            infoTitle.append($('<br/>'));
             infoTitle.append(annotationLink);
-            infoTitle.append(reactomeViewerLink);
+            infoTitle.append($('<br/>'));
+            if (reactomeOraViewerLink) {
+                infoTitle.append(reactomeOraViewerLink);
+                infoTitle.append($('<br/>'));
+            }
+            if (reactomeExprViewerLink) {
+                infoTitle.append(reactomeExprViewerLink);
+                infoTitle.append($('<br/>'));
+            }
             infoDiv.append(annotationDiv);
 
             // loop over additional information

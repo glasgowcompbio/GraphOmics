@@ -1,33 +1,57 @@
 class AnnotationManager {
 
-    constructor(state, annotId, annotUrl, displayName, annotation, reactomeToken) {
+    constructor(state, annotId, annotUrl, displayName, annotation,
+                reactomeOraToken, reactomeExprToken) {
         this.state = state;
         this.annotId = annotId;
         this.annotUrl = annotUrl;
         this.displayName = displayName;
         this.annotation = annotation;
-        this.reactomeToken = reactomeToken;
+        this.reactomeOraToken = reactomeOraToken;
+        this.reactomeExprToken = reactomeExprToken;
+        this.loaded = false;
     }
 
     getAnnotationLink() {
         const annotationLink = $('<button/>', {
-            text: '📝',
+            text: '📝 Annotate',
             type: 'button',
-            style: 'margin-left: 5px',
-            class: 'btn btn-outline-primary btn-sm',
+            style: 'margin-top: 5px',
+            class: 'btn btn-primary btn-sm',
             click: () => { this.showAnnotateDialog(); }
         });
         return annotationLink;
     }
 
-    getReactomeViewerLink() {
+    getReactomeOraViewerLink() {
+        if (this.reactomeOraToken) {
+            const reactomeViewerLink = $('<button/>', {
+                text: '🔍 Show Pathway (with Reactome ORA results)',
+                type: 'button',
+                style: 'margin-top: 5px',
+                class: 'btn btn-primary btn-sm',
+                click: () => {
+                    this.showReactomeViewerDialog(this.reactomeOraToken);
+                }
+            });
+            return reactomeViewerLink;
+        } else {
+            return undefined;
+        }
+    }
+
+    getReactomeExprViewerLink() {
+        let text = '🔍 Show Pathway';
+        if (this.reactomeExprToken) {
+            text = '🔍 Show Pathway (with expression data)'
+        }
         const reactomeViewerLink = $('<button/>', {
-            text: '🔍',
+            text: text,
             type: 'button',
-            style: 'margin-left: 5px',
-            class: 'btn btn-outline-primary btn-sm',
+            style: 'margin-top: 5px',
+            class: 'btn btn-primary btn-sm',
             click: () => {
-                this.showReactomeViewerDialog();
+                this.showReactomeViewerDialog(this.reactomeExprToken);
             }
         });
         return reactomeViewerLink;
@@ -81,30 +105,30 @@ class AnnotationManager {
         return `#annotation-${this.annotId}`;
     }
 
-    showReactomeViewerDialog() {
+    showReactomeViewerDialog(token) {
         // show dialog
         $('#reactomeWidgetDialog').dialog({
             modal: true,
             width: 1000,
             height: 700
         });
-        var diagram = Reactome.Diagram.create({
+        const diagram = Reactome.Diagram.create({
             "placeHolder" : "diagramHolder",
             "width" : 975,
             "height" : 600
         });
 
-        //Initialising it to the currently selected pathway
-        diagram.loadDiagram(this.annotId);
-
-        const token = this.reactomeToken;
-        diagram.onDiagramLoaded(function (loaded) {
-            console.log('Diagram loaded');
-            if (token) {
-                console.log('Found analysis token: ' + token);
-                diagram.setAnalysisToken(token, 'TOTAL');
-            }
-        });
+        //Initialising it to the currently selected pathway, if not loaded
+        if (!this.loaded) {
+            console.log('Load diagram for ' + this.annotId + ' using reactome token: ' + token);
+            diagram.loadDiagram(this.annotId);
+            diagram.setAnalysisToken(token, 'TOTAL');
+            this.loaded = true;
+        } else { // already loaded. just change the overlay
+            console.log('Reset overlay using reactome token: ' + token);
+            diagram.resetAnalysis();
+            diagram.setAnalysisToken(token, 'TOTAL');
+        }
     }
 
 }
