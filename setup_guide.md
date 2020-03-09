@@ -28,6 +28,7 @@ $ echo 'deb https://debian.neo4j.org/repo stable/' | sudo tee -a /etc/apt/source
 $ sudo apt-get update
 $ sudo apt-get install neo4j=1:3.4.6
 ```
+Later version of Neo4j can also be used, as long as it is version 3 (version 4 seems to have problems with Reactome database).
 
 Verify that Neo4j is running:
 ```bash
@@ -52,11 +53,11 @@ Download the Reactome database. Extract and move it to `$NEO4J_HOME/data/databas
 ```bash
 $ wget https://reactome.org/download/current/reactome.graphdb.tgz
 $ tar xvzf reactome.graphdb.tgz
-$ sudo mv reactome.graphdb.v65 /var/lib/neo4j/data/databases
-$ chown -R neo4j:neo4j /var/lib/neo4j/data/databases/reactome.graphdb.v65
+$ sudo mv graph.db /var/lib/neo4j/data/databases
+$ chown -R neo4j:neo4j /var/lib/neo4j/data/databases/graph.db
 ```
 Edit the config file at either `$NEO4J_HOME/conf/neo4j.conf` or `/etc/neo4j/neo4j.conf`. 
-Change ```dbms.active_database``` to ```dbms.active_database=reactome.graphdb.v65```
+Change ```dbms.active_database``` to ```dbms.active_database=graph.db``` if necessary.
 
 Check that the neo4j service is running with the following command. If it is not running, start it.
 ```bash
@@ -79,19 +80,14 @@ $ sudo apt update
 $ sudo apt install r-base libxml2-dev libcurl4-openssl-dev
 ```
 
-Install DESeq2 in R using Bioconductor following [this instruction](https://bioconductor.org/packages/devel/bioc/vignettes/DESeq2/inst/doc/DESeq2.html#i-have-trouble-installing-deseq2-on-ubuntulinux)
- and [this](https://bioconductor.org/packages/release/bioc/html/DESeq2.html).
-```
-> source("https://bioconductor.org/biocLite.R")
-> biocLite("DESeq2")
-```
-
-Install limma in R using Bioconductor following [this](https://bioconductor.org/packages/release/bioc/html/limma.html).
+Install DESeq2 and limma in R using Bioconductor following [this](https://bioconductor.org/packages/release/bioc/html/DESeq2.html) and [this](https://bioconductor.org/packages/release/bioc/html/limma.html).
 ```
 if (!requireNamespace("BiocManager", quietly = TRUE))
     install.packages("BiocManager")
+BiocManager::install("DESeq2")
 BiocManager::install("limma")
 ```
+[Note](https://bioconductor.org/packages/devel/bioc/vignettes/DESeq2/inst/doc/DESeq2.html#i-have-trouble-installing-deseq2-on-ubuntulinux)
 
 ### 5. Install Django
 
