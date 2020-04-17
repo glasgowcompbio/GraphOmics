@@ -161,7 +161,7 @@ class Development(Common):
     DEBUG = True
     MESSAGE_LEVEL = message_constants.DEBUG
 
-    ALLOWED_HOSTS = ['*']
+    ALLOWED_HOSTS = values.ListValue(['*'])
 
     INTERNAL_IPS = [
         '127.0.0.1'
