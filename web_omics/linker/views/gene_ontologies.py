@@ -13,9 +13,10 @@ class GOAnalysis(object):
         self.background_gene_names = background_names
         self.significant = significant
 
-        self.ontologies = settings.ONTOLOGIES
-        self.associations = settings.SPECIES_ASSOCIATIONS[species][namespace]
-        self.names_to_id_dict = settings.GAF_NAME_TO_ID[species]
+        GO_DATA = load_obj(settings.EXTERNAL_GO_DATA)
+        self.ontologies = GO_DATA['ontologies']
+        self.associations = GO_DATA['species_associations']
+        self.names_to_id_dict = GO_DATA['gaf_name_to_id']
 
         # convert background gene names to gene ids used in the associations
         self.background_gene_ids = to_id(self.background_gene_names, self.names_to_id_dict)

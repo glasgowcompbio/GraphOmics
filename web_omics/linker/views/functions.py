@@ -34,15 +34,16 @@ def reactome_mapping(request, genes_str, proteins_str, compounds_str, compound_d
     # try to convert all kegg ids to chebi ids, if possible
     logger.info('Converting kegg ids -> chebi ids')
     observed_compound_ids = get_ids_from_dataframe(observed_compound_df)
+    KEGG_2_CHEBI = load_obj(settings.EXTERNAL_KEGG_TO_CHEBI)
     for cid in observed_compound_ids:
-        if cid not in settings.KEGG_2_CHEBI:
+        if cid not in KEGG_2_CHEBI:
             logger.warning('Not found: %s' % cid)
-            settings.KEGG_2_CHEBI[cid] = cid
+            KEGG_2_CHEBI[cid] = cid
 
     if observed_compound_df is not None:
         if compound_database_str == COMPOUND_DATABASE_CHEBI:
             observed_compound_df.iloc[:, 0] = observed_compound_df.iloc[:, 0].map(
-                settings.KEGG_2_CHEBI)  # assume 1st column is id
+                KEGG_2_CHEBI)  # assume 1st column is id
         observed_compound_ids = get_ids_from_dataframe(observed_compound_df)
 
     ### map genes -> proteins ###
@@ -137,7 +138,8 @@ def reactome_mapping(request, genes_str, proteins_str, compounds_str, compound_d
     reaction_pk_list = [x for x in reaction_ids if x not in reaction_2_pathways.keys]
     reaction_2_pathways = add_links(reaction_2_pathways, REACTION_PK, PATHWAY_PK, reaction_pk_list, [NA])
 
-    metadata_map = get_gene_names(all_gene_ids, settings.GTF_DICT)
+    GTF_DICT = load_obj(settings.EXTERNAL_GENE_NAMES)
+    metadata_map = get_gene_names(all_gene_ids, GTF_DICT)
     genes_json = pk_to_json(GENE_PK, 'gene_id', all_gene_ids, metadata_map, observed_gene_df,
                             observed_ids=observed_gene_ids)
     gene_2_proteins_json = json.dumps(gene_2_proteins.mapping_list)
@@ -149,7 +151,8 @@ def reactome_mapping(request, genes_str, proteins_str, compounds_str, compound_d
 
     # TODO: this feels like a very bad way to implement this
     # We need to deal with uploaded peak data from PiMP, which contains a lot of duplicate identifications per peak
-    metadata_map = get_compound_metadata(all_compound_ids, settings.KEGG_ID_2_DISPLAY_NAMES, reaction_to_compound_id_to_names)
+    KEGG_ID_2_DISPLAY_NAMES = load_obj(settings.EXTERNAL_COMPOUND_NAMES)
+    metadata_map = get_compound_metadata(all_compound_ids, KEGG_ID_2_DISPLAY_NAMES, reaction_to_compound_id_to_names)
     try:
         mapping = get_mapping(observed_compound_df)
     except KeyError:
