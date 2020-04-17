@@ -178,6 +178,7 @@ class Staging(Common):
         ('HTTP_X_FORWARDED_PROTO', 'https')
     )
     ALLOWED_HOSTS = values.ListValue(['*'])
+    ADMINS = values.SingleNestedTupleValue(())
 
 class Production(Staging):
     """
