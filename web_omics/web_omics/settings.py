@@ -161,7 +161,7 @@ class Development(Common):
     DEBUG = True
     MESSAGE_LEVEL = message_constants.DEBUG
 
-    ALLOWED_HOSTS = values.ListValue(['*'])
+    ALLOWED_HOSTS = ['*']
 
     INTERNAL_IPS = [
         '127.0.0.1'
@@ -188,7 +188,7 @@ class Staging(Common):
     SECURE_PROXY_SSL_HEADER = values.TupleValue(
         ('HTTP_X_FORWARDED_PROTO', 'https')
     )
-
+    ALLOWED_HOSTS = values.ListValue(['*'])
 
 class Production(Staging):
     """
