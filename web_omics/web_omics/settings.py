@@ -32,9 +32,16 @@ class Common(Configuration):
     LOGGING = {
         'version': 1,
         'disable_existing_loggers': False,
+        'formatters': {
+            'verbose': {
+                'format': '{levelname} {asctime} {filename}:{lineno} | {message}',
+                'style': '{',
+            },
+        },
         'handlers': {
             'console': {
                 'class': 'logging.StreamHandler',
+                'formatter': 'verbose',
             },
         },
         'root': {

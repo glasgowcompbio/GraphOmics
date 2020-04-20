@@ -1,3 +1,5 @@
+import logging
+
 from django.views.generic.list import ListView
 from django.utils import timezone
 
@@ -7,6 +9,7 @@ from django.utils.decorators import method_decorator
 
 from linker.models import Analysis
 
+logger = logging.getLogger(__name__)
 
 class LoginRequired(View):
     """
@@ -24,9 +27,11 @@ class ExperimentListView(LoginRequired, ListView):
     template_name = 'webOmics/index.html'
 
     def get_context_data(self, **kwargs):
+        logger.debug('Getting context data')
         context = super().get_context_data(**kwargs)
         context['now'] = timezone.now()
         return context
 
     def get_queryset(self):
+        logger.debug('Getting queryset')
         return Analysis.objects.filter(share__user=self.request.user).order_by('-timestamp')

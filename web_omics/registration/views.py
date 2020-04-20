@@ -54,7 +54,7 @@ def user_login(request):
                 login(request, guest_user)
                 return HttpResponseRedirect(reverse('experiment_list_view'))
             else:
-                logger.debug("Invalid login details: {0}, {1}".format(username, password))
+                logger.debug("Invalid login details: {0}".format(username))
                 return HttpResponse("Invalid login details supplied.")
                 return render(request, 'registration/login.html', {})
 
