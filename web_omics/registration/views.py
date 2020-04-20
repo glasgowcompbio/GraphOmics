@@ -1,4 +1,4 @@
-import loguru as logger
+import logging
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import User
@@ -10,7 +10,7 @@ from django.views.generic.edit import UpdateView
 from registration.forms import UserForm
 
 User = get_user_model()
-
+logger = logging.getLogger(__name__)
 
 def user_logout(request):
     logout(request)
