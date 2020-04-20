@@ -13,7 +13,6 @@ from configurations import Configuration, values
 from django.contrib.messages import constants as message_constants
 from django.urls import reverse_lazy
 
-from linker.common import load_obj
 from linker.constants import EXTERNAL_GO_DATA, EXTERNAL_KEGG_TO_CHEBI, EXTERNAL_GENE_NAMES, EXTERNAL_COMPOUND_NAMES
 
 

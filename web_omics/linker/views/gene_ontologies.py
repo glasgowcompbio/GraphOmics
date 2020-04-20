@@ -4,7 +4,7 @@ from goatools.go_enrichment import GOEnrichmentStudy
 
 from django.conf import settings
 from linker.gene_ontologies_utils import to_id
-
+from linker.common import load_obj
 
 class GOAnalysis(object):
     def __init__(self, species, namespace, background_names, significant=0.05):

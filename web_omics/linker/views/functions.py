@@ -13,6 +13,7 @@ from django.conf import settings
 from django.urls import reverse
 from loguru import logger
 
+from linker.common import load_obj
 from linker.constants import *
 from linker.metadata import get_gene_names, get_compound_metadata, clean_label, get_species_name_to_id
 from linker.models import Analysis, AnalysisData, Share
