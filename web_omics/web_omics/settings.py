@@ -34,7 +34,7 @@ class Common(Configuration):
         'disable_existing_loggers': False,
         'formatters': {
             'verbose': {
-                'format': '{levelname} {asctime} {filename}:{lineno} | {message}',
+                'format': '{name} {levelname} {asctime} {filename}:{lineno} | {message}',
                 'style': '{',
             },
         },
@@ -47,6 +47,14 @@ class Common(Configuration):
         'root': {
             'handlers': ['console'],
             'level': 'DEBUG',
+        },
+        'loggers': {
+            'neobolt': {
+                'level': 'WARNING'
+            },
+            'matplotlib': {
+                'level': 'WARNING'
+            },
         },
     }
 
