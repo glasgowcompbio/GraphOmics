@@ -188,6 +188,7 @@ class Staging(Common):
     """
     # Security
     SESSION_COOKIE_SECURE = values.BooleanValue(True)
+    CSRF_COOKIE_SECURE = values.BooleanValue(True)
     SECURE_BROWSER_XSS_FILTER = values.BooleanValue(True)
     SECURE_CONTENT_TYPE_NOSNIFF = values.BooleanValue(True)
     SECURE_HSTS_INCLUDE_SUBDOMAINS = values.BooleanValue(True)
@@ -198,6 +199,7 @@ class Staging(Common):
     SECURE_PROXY_SSL_HEADER = values.TupleValue(
         ('HTTP_X_FORWARDED_PROTO', 'https')
     )
+    X_FRAME_OPTIONS = 'DENY'
     ALLOWED_HOSTS = values.ListValue(['*'])
     ADMINS = values.SingleNestedTupleValue(())
 
