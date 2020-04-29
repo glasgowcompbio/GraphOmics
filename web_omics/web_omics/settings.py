@@ -54,6 +54,9 @@ class Common(Configuration):
             'matplotlib': {
                 'level': 'WARNING'
             },
+            'suds': {
+                'level': 'WARNING'
+            },
         },
     }
 
