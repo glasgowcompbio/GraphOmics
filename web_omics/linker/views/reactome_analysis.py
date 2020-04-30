@@ -84,7 +84,8 @@ def get_data(form_data, omics_data, used_dtypes, threshold):
 
         # scale features between (-1, 1) range
         # df = 2 ** df
-        scaled_data = preprocessing.minmax_scale(df[REACTOME_FOLD_CHANGE_COLNAME], feature_range=(-1, 1))
+        scaled_data = preprocessing.power_transform(df[[REACTOME_FOLD_CHANGE_COLNAME]], method='yeo-johnson')
+        #scaled_data = preprocessing.minmax_scale(df[REACTOME_FOLD_CHANGE_COLNAME], feature_range=(-1, 1))
         df[REACTOME_FOLD_CHANGE_COLNAME] = scaled_data  # set scaled data back to the dataframe
 
         dfs.append(df)
