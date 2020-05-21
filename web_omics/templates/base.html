@@ -32,14 +32,14 @@
         <ul class="navbar-nav ml-auto">
             {% if user.is_authenticated %}
                 <li class="nav-item">
-                    <a class="nav-link" href="/registration/profile">Profile</a>
+                    <a class="nav-link" href="{% url 'profile' %}">Profile</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" href="/registration/logout">Log out {{ user }}</a>
+                    <a class="nav-link" href="{% url 'logout' %}">Log out {{ user }}</a>
                 </li>
             {% else %}
                 <li class="nav-item active">
-                    <a class="nav-link" href="/registration/login">Log in</a>
+                    <a class="nav-link" href="{% url 'login' %}">Log in</a>
                 </li>
             {% endif %}
         </ul>

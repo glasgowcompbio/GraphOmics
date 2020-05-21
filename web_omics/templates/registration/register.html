@@ -19,7 +19,7 @@
                                 {% if registered %}
                                 <strong>Thank you for registering! Your account is now active, and you can run analyses by logging into the site.</strong><br/><br/>
                                 {% else %}
-                                <form id="user_form" method="post" action="/registration/register/"
+                                <form id="user_form" method="post" action="{% url 'register' %}"
                                         enctype="multipart/form-data">
                                     {% csrf_token %}
                                     <table>
