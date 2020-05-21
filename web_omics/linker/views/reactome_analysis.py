@@ -84,9 +84,21 @@ def get_data(form_data, omics_data, used_dtypes, threshold):
 
         # scale features between (-1, 1) range
         # df = 2 ** df
-        scaled_data = preprocessing.power_transform(df[[REACTOME_FOLD_CHANGE_COLNAME]], method='yeo-johnson')
+        #scaled_data = preprocessing.power_transform(df[[REACTOME_FOLD_CHANGE_COLNAME]], method='yeo-johnson')
         #scaled_data = preprocessing.minmax_scale(df[REACTOME_FOLD_CHANGE_COLNAME], feature_range=(-1, 1))
-        df[REACTOME_FOLD_CHANGE_COLNAME] = scaled_data  # set scaled data back to the dataframe
+        positiveFC = df[REACTOME_FOLD_CHANGE_COLNAME] >= 0.0
+        if ( positiveFC.any() ):
+            positive_scaled_data = preprocessing.quantile_transform(df.loc[positiveFC, [REACTOME_FOLD_CHANGE_COLNAME]],
+                                                                    output_distribution='uniform')
+            df.loc[positiveFC, REACTOME_FOLD_CHANGE_COLNAME] = positive_scaled_data.squeeze()  # set scaled data back to the dataframe
+
+        negativeFC = df[REACTOME_FOLD_CHANGE_COLNAME] < 0.0
+        if ( negativeFC.any() ):
+            negative_scaled_data = preprocessing.quantile_transform(df.loc[negativeFC, [REACTOME_FOLD_CHANGE_COLNAME]],
+                                                                    output_distribution='uniform')
+            df.loc[negativeFC, REACTOME_FOLD_CHANGE_COLNAME] = negative_scaled_data.squeeze() - 1.0# set scaled data back to the dataframe
+        #scaled_data = preprocessing.quantile_transform(df[[REACTOME_FOLD_CHANGE_COLNAME]], output_distribution='uniform')
+        #df[REACTOME_FOLD_CHANGE_COLNAME] = scaled_data  # set scaled data back to the dataframe
 
         dfs.append(df)
 
