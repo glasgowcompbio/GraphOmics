@@ -29,7 +29,7 @@ Finally the **Inference** tab allows user to create and set-up various statistic
 
 **Demo**
 
-Live demo is available at https://webomics.glasgowcompbio.org/app/
+Live demo is available at [https://webomics.glasgowcompbio.org/app/](https://webomics.glasgowcompbio.org/app/)
 
 ## How to install?
 
