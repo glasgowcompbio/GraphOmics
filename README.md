@@ -4,6 +4,19 @@ Using this tool, you can map transcriptomics, proteomics and metabolomics data o
 WebOmics uses [Reactome](https://reactome.org/) as the knowledge base to map entities across different omics.
 Methods to rank pathway and highlight interesting connection are also included.
 
+**Live demo is available at [https://webomics.glasgowcompbio.org/app/](https://webomics.glasgowcompbio.org/app/)**
+
+## How to install?
+
+Refer to the [setup guide](setup_guide.md).
+
+**Requirement**:
+- Django 2.0/Python and rpy for backend.
+- A local Reactome installation.
+- The usual scientific python stack (Numpy/Scipy/Pandas) for analysis and running the notebooks (optional).
+
+## Usage
+
 The **Data Browser** tab shows all the interconnected transcripts, proteins, metabolites, reactions and pathways in your data, alongside their fold-change measurements colour-coded by their p-value significance.
 
 ![Data Explorer](web_omics/images/screenshot1.PNG?raw=true "Data Explorer")
@@ -21,16 +34,3 @@ A **selection group** can be created from the Data Browser or the Clustergrammer
 Finally the **Inference** tab allows user to create and set-up various statistical inference such as DEseq2, t-test, PCA and pathway ranking analysis.
 
 ![Inference](web_omics/images/screenshot4.PNG?raw=true "Inference")
-
-**Requirement**:
-- Django 2.0/Python and rpy for backend.
-- A local Reactome installation.
-- The usual scientific python stack (Numpy/Scipy/Pandas) for analysis and running the notebooks (optional).
-
-**Demo**
-
-Live demo is available at [https://webomics.glasgowcompbio.org/app/](https://webomics.glasgowcompbio.org/app/)
-
-## How to install?
-
-Refer to the [setup guide](setup_guide.md).
