@@ -94,21 +94,28 @@ class DataTablesManager {
                 {
                     'targets': '_all',
                     'defaultContent': '-',
-                    'type': dashType,
+                    'type': 'dashType',
                     'render': function (data, type, row) {
-                        if (typeof (data) == 'number') {
-                            if (row.hasOwnProperty('pathway_pk')) {
-                                return data.toFixed(4);
+                        // https://datatables.net/manual/data/orthogonal-data
+                        // If display or filter data is requested, format the data
+                        if ( type === 'display' || type === 'filter' ) {
+                            if (typeof (data) == 'number') {
+                                if (row.hasOwnProperty('pathway_pk')) {
+                                    return data.toExponential(4);
+                                } else {
+                                    return data.toFixed(2);
+                                }
+                            } else if (typeof (data) == 'string') {
+                                return self.truncateString(data, MAX_STRING_LEN);
+                                // } else if (data === null) {
+                                //     return '-'
                             } else {
-                                return data.toFixed(2);
+                                return data;
                             }
-                        } else if (typeof (data) == 'string') {
-                            return self.truncateString(data, MAX_STRING_LEN);
-                            // } else if (data === null) {
-                            //     return '-'
-                        } else {
-                            return data;
                         }
+                        // Otherwise the data type requested (`type`) is type detection or
+                        // sorting data, so just return the data unaltered
+                        return data;
                     }
                 }
             ],
