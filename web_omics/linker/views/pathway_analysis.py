@@ -12,7 +12,7 @@ from linker.constants import PKS, COMPOUND_DATABASE_KEGG, COMPOUND_DATABASE_CHEB
 from linker.views.functions import get_group_members, get_standardized_df
 
 
-def get_pals_data_source(analysis, analysis_data, case, control):
+def get_pals_data_source(analysis, analysis_data, case, control, min_hits):
     axis = 1
     X_std, data_df, design_df = get_standardized_df(analysis_data, axis, pk_cols=PKS)
     if design_df is None:
@@ -60,7 +60,8 @@ def get_pals_data_source(analysis, analysis_data, case, control):
     # create a PALS data source
     assert database_name is not None
     ds = DataSource(X_std, annotation_df, experimental_design, database_name,
-                    reactome_species, reactome_metabolic_pathway_only, reactome_query, min_replace=min_replace)
+                    reactome_species, reactome_metabolic_pathway_only, reactome_query, min_replace=min_replace,
+                    min_hits=min_hits)
 
     return ds
 
@@ -91,9 +92,9 @@ def get_comparison(case, control):
     }
 
 
-def run_pals(ds, plage_weight, hg_weight):
-    logger.info('Running PALS with plage_weight=%d hg_weight=%d' % (plage_weight, hg_weight))
-    pals = PLAGE(ds, num_resamples=PALS_NUM_RESAMPLES, plage_weight=plage_weight, hg_weight=hg_weight)
+def run_pals(ds):
+    logger.info('Running PALS')
+    pals = PLAGE(ds, num_resamples=PALS_NUM_RESAMPLES)
     pathway_df = pals.get_pathway_df(standardize=False)
     return pathway_df
 

@@ -9,7 +9,7 @@ from django.utils import timezone
 from django.views.generic import TemplateView
 from django_select2.forms import Select2Widget
 from loguru import logger
-from pals.common import PLAGE_WEIGHT, HG_WEIGHT
+from pals.common import MIN_HITS
 from sklearn.decomposition import PCA as skPCA
 
 from linker.constants import *
@@ -83,10 +83,8 @@ def inference(request, analysis_id):
                     'analysis_id': analysis_id,
                 })
                 selected_form = get_case_control_form(data_type, groups, inference_type)
-                selected_form.fields['plage_weight'] = forms.IntegerField(min_value=0, initial=PLAGE_WEIGHT,
-                                                                          label='Intensity weight')
-                selected_form.fields['hg_weight'] = forms.IntegerField(min_value=0, initial=HG_WEIGHT,
-                                                                       label='Coverage weight')
+                selected_form.fields['min_hits'] = forms.IntegerField(min_value=0, initial=MIN_HITS,
+                                                                      label='Minimum number of hits to be considered in the results')
 
             # do ORA
             elif inference_type == INFERENCE_ORA:
@@ -542,23 +540,22 @@ def inference_pals(request, analysis_id):
         groups = get_groups(analysis_data)
         form.fields['case'] = forms.ChoiceField(choices=groups, widget=Select2Widget())
         form.fields['control'] = forms.ChoiceField(choices=groups, widget=Select2Widget())
-        form.fields['plage_weight'] = forms.IntegerField(min_value=0, initial=PLAGE_WEIGHT, label='Measurement weight')
-        form.fields['hg_weight'] = forms.IntegerField(min_value=0, initial=HG_WEIGHT, label='Coverage weight')
+        form.fields['min_hits'] = forms.IntegerField(min_value=0, initial=MIN_HITS,
+                                                     label='Minimum number of hits to be considered in the results')
 
         if form.is_valid():
             case = form.cleaned_data['case']
             control = form.cleaned_data['control']
-            plage_weight = form.cleaned_data['plage_weight']
-            hg_weight = form.cleaned_data['hg_weight']
+            min_hits = form.cleaned_data['min_hits']
 
             # get pals data source from the current analysis_data
-            pals_data_source = get_pals_data_source(analysis, analysis_data, case, control)
+            pals_data_source = get_pals_data_source(analysis, analysis_data, case, control, min_hits)
             if pals_data_source is None:
                 messages.warning(request, 'Add new inference failed. No data found.')
                 return inference(request, analysis_id)
 
             # run pals
-            pals_df = run_pals(pals_data_source, plage_weight, hg_weight)
+            pals_df = run_pals(pals_data_source)
 
             # check for NaN in the results. It shouldn't happen.
             if pals_df.isnull().values.any():
@@ -569,9 +566,7 @@ def inference_pals(request, analysis_id):
             # update PALS results to database
             pathway_analysis_data = get_last_analysis_data(analysis, PATHWAYS)
             new_json_data = update_pathway_analysis_data(pathway_analysis_data, pals_df)
-            new_display_name = 'PLAGE %s (%d:%d): %s_vs_%s' % (pals_data_source.database_name,
-                                                               plage_weight, hg_weight,
-                                                               case, control)
+            new_display_name = 'PLAGE %s: %s_vs_%s' % (pals_data_source.database_name, case, control)
             data_type = pathway_analysis_data.data_type
             copy_analysis_data(pathway_analysis_data, new_json_data, new_display_name, None, data_type,
                                INFERENCE_PALS)
