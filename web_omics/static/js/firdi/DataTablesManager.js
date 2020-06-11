@@ -94,7 +94,7 @@ class DataTablesManager {
                 {
                     'targets': '_all',
                     'defaultContent': '-',
-                    'type': 'dashType',
+                    'type': dashType,
                     'render': function (data, type, row) {
                         // https://datatables.net/manual/data/orthogonal-data
                         // If display or filter data is requested, format the data
