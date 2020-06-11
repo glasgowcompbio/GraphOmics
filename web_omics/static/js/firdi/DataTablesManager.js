@@ -169,7 +169,7 @@ class DataTablesManager {
                     let str = '';
                     for (let p in obj) {
                         if (obj.hasOwnProperty(p) && obj[p] !== null && p.startsWith('padj')) {
-                            str += p + ': ' + obj[p].toFixed(4) + '\n';
+                            str += p + ': ' + obj[p].toExponential(4) + '\n';
                         }
                     }
                     return str;
