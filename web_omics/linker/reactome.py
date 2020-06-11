@@ -5,7 +5,7 @@ import pandas as pd
 import xmltodict
 from bioservices.kegg import KEGG
 from loguru import logger
-from neo4j.v1 import GraphDatabase, basic_auth
+from neo4j import GraphDatabase, basic_auth
 
 
 def get_neo4j_driver():
