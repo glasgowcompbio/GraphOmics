@@ -34,3 +34,9 @@ A **selection group** can be created from the Data Browser or the Clustergrammer
 Finally the **Inference** tab allows user to create and set-up various statistical inference such as DEseq2, t-test, PCA and pathway ranking analysis.
 
 ![Inference](web_omics/images/screenshot4.PNG?raw=true "Inference")
+
+## Pathway Analysis
+
+The pathway analysis functionalities in WebOmics have been separated into a stand-alone Python library that can be used outside this project.
+This includes pathway analysis using ORA, GSEA and PLAGE on transcripts (Ensembl ID), proteins (UniProt ID)
+and compound (KEGG or ChEBI IDs) from the Reactome or KEGG database. You can find this here: http://pals.glasgowcompbio.org/.
