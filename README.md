@@ -37,6 +37,5 @@ Finally the **Inference** tab allows user to create and set-up various statistic
 
 ## Pathway Analysis
 
-The pathway analysis functionalities in WebOmics have been separated into a stand-alone Python library that can be used outside this project.
-This includes pathway analysis using ORA, GSEA and PLAGE on transcripts (Ensembl ID), proteins (UniProt ID)
-and compound (KEGG or ChEBI IDs) from the Reactome or KEGG database. You can find this here: http://pals.glasgowcompbio.org/.
+The pathway analysis functionalities used in WebOmics have been separated into a stand-alone Python library **PALS** that can be used outside this project. This includes pathway analysis using ORA, GSEA and PLAGE on transcripts (Ensembl ID), proteins (UniProt ID)
+and compound (KEGG or ChEBI IDs) from the Reactome or KEGG database. For more details, please refer to [PALS](http://pals.glasgowcompbio.org)
