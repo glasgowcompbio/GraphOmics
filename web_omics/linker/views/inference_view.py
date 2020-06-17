@@ -84,7 +84,7 @@ def inference(request, analysis_id):
                 })
                 selected_form = get_case_control_form(data_type, groups, inference_type)
                 selected_form.fields['min_hits'] = forms.IntegerField(min_value=0, initial=MIN_HITS,
-                                                                      label='Minimum number of hits to be considered in the results')
+                                                                      label='Minimum hits')
 
             # do ORA
             elif inference_type == INFERENCE_ORA:
@@ -541,7 +541,7 @@ def inference_pals(request, analysis_id):
         form.fields['case'] = forms.ChoiceField(choices=groups, widget=Select2Widget())
         form.fields['control'] = forms.ChoiceField(choices=groups, widget=Select2Widget())
         form.fields['min_hits'] = forms.IntegerField(min_value=0, initial=MIN_HITS,
-                                                     label='Minimum number of hits to be considered in the results')
+                                                     label='Minimum hits')
 
         if form.is_valid():
             case = form.cleaned_data['case']
