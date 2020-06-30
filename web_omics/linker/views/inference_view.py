@@ -594,7 +594,7 @@ def inference_ora(request, analysis_id):
             control = form.cleaned_data['control']
 
             # get pals data source from the current analysis_data
-            pals_data_source = get_pals_data_source(analysis, analysis_data, case, control)
+            pals_data_source = get_pals_data_source(analysis, analysis_data, case, control, 0)
             if pals_data_source is None:
                 messages.warning(request, 'Add new inference failed. No data found.')
                 return inference(request, analysis_id)
@@ -634,7 +634,7 @@ def inference_gsea(request, analysis_id):
             control = form.cleaned_data['control']
 
             # get pals data source from the current analysis_data
-            pals_data_source = get_pals_data_source(analysis, analysis_data, case, control)
+            pals_data_source = get_pals_data_source(analysis, analysis_data, case, control, 0)
             if pals_data_source is None:
                 messages.warning(request, 'Add new inference failed. No data found.')
                 return inference(request, analysis_id)
