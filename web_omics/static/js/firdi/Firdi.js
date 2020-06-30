@@ -161,7 +161,7 @@ class Firdi {
                         label: `${shortTableName}: ${fcCol}`,
                         type: 'double',
                         validation: {
-                            step: 0.1
+                            step: 0.05
                         },
                         operators: ['less_or_equal', 'greater_or_equal', 'between', 'not_between']
                     });
