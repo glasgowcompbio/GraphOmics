@@ -106,7 +106,7 @@ class AnalysisData(models.Model):
             return ''
 
     def __str__(self):
-        return 'AnalysisData %d (analysis %d data_type=%s)' % (self.pk, self.analysis.pk, self.get_data_type_str())
+        return '%s data for analysis %d' % (self.get_data_type_str(), self.analysis.pk)
 
 
 class AnalysisHistory(models.Model):
@@ -129,7 +129,7 @@ class AnalysisHistory(models.Model):
             return ''
 
     def __str__(self):
-        return 'AnalysisHistory %d (%s)' % (self.pk, self.analysis_data,)
+        return '%s (%s)' % (self.display_name, self.analysis_data,)
 
 
 class AnalysisAnnotation(models.Model):
