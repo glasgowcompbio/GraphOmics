@@ -94,6 +94,7 @@ class AnalysisData(models.Model):
     json_data = JSONField()
     json_design = JSONField()
     metadata = JSONField(blank=True, null=True)
+    timestamp = models.DateTimeField(default=timezone.localtime, null=False)
 
     class Meta:
         verbose_name_plural = "Analysis Data"
