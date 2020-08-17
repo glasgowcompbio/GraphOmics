@@ -89,15 +89,11 @@ class AnalysisUpload(models.Model):
 
 
 class AnalysisData(models.Model):
-    parent = models.ForeignKey("self", blank=True, null=True, on_delete=models.CASCADE)
     analysis = models.ForeignKey(Analysis, on_delete=models.CASCADE)
-    display_name = models.CharField(max_length=1000, blank=True, null=True)
+    data_type = models.IntegerField(choices=DataRelationType)
     json_data = JSONField()
     json_design = JSONField()
-    data_type = models.IntegerField(choices=DataRelationType)
-    inference_type = models.IntegerField(choices=InferenceTypeChoices, blank=True, null=True)
     metadata = JSONField(blank=True, null=True)
-    timestamp = models.DateTimeField(default=timezone.localtime, null=False)
 
     class Meta:
         verbose_name_plural = "Analysis Data"
@@ -108,6 +104,23 @@ class AnalysisData(models.Model):
         except KeyError:
             return ''
 
+    def __str__(self):
+        return 'AnalysisData %d (analysis %d data_type=%s)' % (self.pk, self.analysis.pk, self.get_data_type_str())
+
+
+class AnalysisHistory(models.Model):
+    analysis = models.ForeignKey(Analysis, on_delete=models.CASCADE)
+    display_name = models.CharField(max_length=1000, blank=True, null=True)
+    analysis_data = models.ForeignKey(AnalysisData, on_delete=models.CASCADE)
+    inference_type = models.IntegerField(choices=InferenceTypeChoices, blank=True, null=True)
+    timestamp = models.DateTimeField(default=timezone.localtime, null=False)
+
+    class Meta:
+        verbose_name_plural = "Analysis Histories"
+
+    def get_data_type_str(self):
+        return self.analysis_data.get_data_type_str()
+
     def get_inference_type_str(self):
         try:
             return dict(InferenceTypeChoices)[self.inference_type]
@@ -115,7 +128,7 @@ class AnalysisData(models.Model):
             return ''
 
     def __str__(self):
-        return '%s data_type=%d %s' % (self.analysis.name, self.data_type, self.display_name)
+        return 'AnalysisHistory %d (%s)' % (self.pk, self.analysis_data,)
 
 
 class AnalysisAnnotation(models.Model):
