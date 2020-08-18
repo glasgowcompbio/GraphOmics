@@ -67,7 +67,7 @@
     "datatables.net-select": "^1.2.5",
     "datatables.net-select-dt": "^1.2.5",
     "jQuery-QueryBuilder": "^2.5.2",
-    "jquery": "^3.5.0",
+    "jquery": "^3.5.1",
     "mathjs": "^5.4.0",
     "mobx": "^5.13.0",
     "mobx-utils": "^5.4.1",
