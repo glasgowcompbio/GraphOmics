@@ -1,5 +1,5 @@
 import alasql from "alasql";
-import {isTableVisible, getConstraintTablesConstraintKeyName} from "./Utils";
+import {getConstraintTablesConstraintKeyName, isTableVisible} from "./Utils";
 
 class SqlManager {
 
@@ -8,6 +8,7 @@ class SqlManager {
         this.firstTable = this.getFirstTable(tablesInfo);
         this.tableRelationships = this.getTableRelationships(tablesInfo);
         this.constraintTableConstraintKeyNames = getConstraintTablesConstraintKeyName(tablesInfo);
+        this.cache = new Map();
     }
 
     initialiseAlasqlTables(tablesInfo) {
@@ -230,6 +231,19 @@ class SqlManager {
         }
     }
 
+    // https://stackoverflow.com/questions/7616461/generate-a-hash-from-string-in-javascript
+    cyrb53(str, seed = 0) {
+        let h1 = 0xdeadbeef ^ seed, h2 = 0x41c6ce57 ^ seed;
+        for (let i = 0, ch; i < str.length; i++) {
+            ch = str.charCodeAt(i);
+            h1 = Math.imul(h1 ^ ch, 2654435761);
+            h2 = Math.imul(h2 ^ ch, 1597334677);
+        }
+        h1 = Math.imul(h1 ^ (h1 >>> 16), 2246822507) ^ Math.imul(h2 ^ (h2 >>> 13), 3266489909);
+        h2 = Math.imul(h2 ^ (h2 >>> 16), 2246822507) ^ Math.imul(h1 ^ (h1 >>> 13), 3266489909);
+        return 4294967296 * (2097151 & h2) + (h1 >>> 0);
+    }
+
     queryDatabase(tablesInfo, constraints, whereType) {
 
         const constraintTableNames = this.constraintTableConstraintKeyNames.map(t => t['tableName']);
@@ -255,30 +269,54 @@ class SqlManager {
         });
 
         const sqlQuery = this.makeSQLquery(tablesInfo, skipConstraints, whereType);
-        console.log(sqlQuery);
-        const compiledSQLQuery = alasql.compile(sqlQuery);
 
-        return compiledSQLQuery(selectedConstraints);
+        // attempt to cache expensive queries
+        const constraintString = selectedConstraints.flat().sort().join();
+        const keyStr = sqlQuery.concat(' -- ', constraintString);
+        const key = this.cyrb53(keyStr);
+        let queryResult = undefined;
+        if (this.cache.has(key)) {
+            console.log('Cached:', key);
+            queryResult = this.cache.get(key);
+        } else {
+            console.log('Query:', key);
+            const compiledSQLQuery = alasql.compile(sqlQuery);
+            queryResult = compiledSQLQuery(selectedConstraints);
+            this.cache.set(key, queryResult);
+        }
+        return {
+            'queryResults': queryResult,
+            'key': key
+        };
     }
 
-    prefixQuery(tableFieldNames, dataSource) {
+    prefixQuery(tableFieldNames, dataSource, dataSourceKey) {
         const tableName = tableFieldNames['tableName'];
         const prefix = tableName + '_';
         const fieldNames = tableFieldNames['fieldNames'].map(x => prefix + x);
-
         const sqlQuery = "SELECT DISTINCT " + fieldNames.join(", ") + " FROM ?";
-        console.log(sqlQuery);
-        const temp = alasql(sqlQuery, [dataSource]);
 
-        temp.map(x => { // for each row in the sql results
-            Object.keys(x).map(key => { // rename the properties to remove the table name in front
-                const newkey = key.replace(prefix, '');
-                x[newkey] = x[key];
-                delete (x[key]);
+        // attempt to cache expensive queries
+        const keyStr = sqlQuery.concat(' -- ', dataSourceKey);
+        const key = this.cyrb53(keyStr);
+        let queryResult = undefined;
+        if (this.cache.has(key)) {
+            console.log('Cached:', key);
+            queryResult = this.cache.get(key);
+        } else {
+            console.log('Query:', key);
+            queryResult = alasql(sqlQuery, [dataSource]);
+
+            queryResult.map(x => { // for each row in the sql results
+                Object.keys(x).map(key => { // rename the properties to remove the table name in front
+                    const newkey = key.replace(prefix, '');
+                    x[newkey] = x[key];
+                    delete (x[key]);
+                });
             });
-        });
-
-        return temp;
+            this.cache.set(key, queryResult);
+        }
+        return queryResult;
     }
 
 }

@@ -105,8 +105,10 @@ class FirdiStore extends Observable {
         // console.trace('queryResult');
 
         // get alasql query result
-        const resultset = this.sqlManager.queryDatabase(this.tablesInfo, this.constraints,
+        const mainResults = this.sqlManager.queryDatabase(this.tablesInfo, this.constraints,
             this.whereType);
+        const resultset = mainResults.queryResults;
+        const resultsetKey = mainResults.key;
 
         // get results for each table
         const fieldNames = this.fieldNames;
@@ -114,7 +116,7 @@ class FirdiStore extends Observable {
         for (let i = 0; i < fieldNames.length; i++) {
             const tableFieldNames = fieldNames[i];
             const tableName = tableFieldNames['tableName'];
-            const data = this.sqlManager.prefixQuery(tableFieldNames, resultset);
+            const data = this.sqlManager.prefixQuery(tableFieldNames, resultset, resultsetKey);
             tableData[tableName] = data;
         }
 
