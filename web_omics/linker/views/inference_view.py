@@ -228,8 +228,7 @@ def inference_t_test(request, analysis_id):
             # create a new analysis data
             display_name = 't-test: %s_vs_%s' % (case, control)
             metadata = None
-            data_type = analysis_data.data_type
-            update_analysis_data_and_history(analysis_data, json_data, display_name, metadata, data_type, INFERENCE_T_TEST)
+            update_analysis_data_and_history(analysis_data, json_data, display_name, metadata, INFERENCE_T_TEST)
             messages.success(request, 'Add new inference successful.', extra_tags='primary')
             return inference(request, analysis_id)
         else:
@@ -274,8 +273,7 @@ def inference_deseq(request, analysis_id):
                 'rld_df': rld_df.to_json(),
                 'res_ordered': jsonpickle.encode(res_ordered)
             }
-            data_type = analysis_data.data_type
-            update_analysis_data_and_history(analysis_data, json_data, display_name, metadata, data_type, INFERENCE_DESEQ)
+            update_analysis_data_and_history(analysis_data, json_data, display_name, metadata, INFERENCE_DESEQ)
             messages.success(request, 'Add new inference successful.', extra_tags='primary')
             return inference(request, analysis_id)
         else:
@@ -311,8 +309,7 @@ def inference_limma(request, analysis_id):
             # create a new analysis data
             display_name = 'limma: %s_vs_%s' % (case, control)
             metadata = None
-            data_type = analysis_data.data_type
-            update_analysis_data_and_history(analysis_data, json_data, display_name, metadata, data_type, INFERENCE_LIMMA)
+            update_analysis_data_and_history(analysis_data, json_data, display_name, metadata, INFERENCE_LIMMA)
             messages.success(request, 'Add new inference successful.', extra_tags='primary')
             return inference(request, analysis_id)
         else:
@@ -359,14 +356,16 @@ def get_updated_json_data(analysis_data, data_type, case, control, result_df):
     return json_data
 
 
-def update_analysis_data_and_history(analysis_data, new_json_data, new_display_name, new_metadata, new_data_type, inference_type):
+def update_analysis_data_and_history(analysis_data, new_json_data, new_display_name, new_metadata, inference_type):
     # update analysis data with the new data
     ts = timezone.localtime()
     analysis_data.json_data = new_json_data
     analysis_data.timestamp = ts
-    analysis_data.data_type = new_data_type
-    if analysis_data.metadata is not None and new_metadata is not None:
-        analysis_data.metadata.update(new_metadata)
+    if new_metadata is not None:
+        if analysis_data.metadata is not None:
+            analysis_data.metadata.update(new_metadata)
+        else:
+            analysis_data.metadata = new_metadata
     analysis_data.save()
 
     # also create an analysis history
@@ -402,8 +401,7 @@ def inference_pca(request, analysis_id):
                     'pca_var_exp': jsonpickle.dumps(var_exp)
                 }
                 display_name = 'PCA: %s components' % n_components
-                data_type = analysis_data.data_type
-                update_analysis_data_and_history(analysis_data, analysis_data.json_data, display_name, metadata, data_type,
+                update_analysis_data_and_history(analysis_data, analysis_data.json_data, display_name, metadata,
                                                  INFERENCE_PCA)
                 messages.success(request, 'Add new inference successful.', extra_tags='primary')
             else:
@@ -567,8 +565,7 @@ def inference_pals(request, analysis_id):
             pathway_analysis_data = get_last_analysis_data(analysis, PATHWAYS)
             new_json_data = update_pathway_analysis_data(pathway_analysis_data, pals_df)
             new_display_name = 'PLAGE %s: %s_vs_%s' % (pals_data_source.database_name, case, control)
-            data_type = pathway_analysis_data.data_type
-            update_analysis_data_and_history(pathway_analysis_data, new_json_data, new_display_name, None, data_type,
+            update_analysis_data_and_history(pathway_analysis_data, new_json_data, new_display_name, None,
                                              INFERENCE_PALS)
             messages.success(request, 'Add new inference successful.', extra_tags='primary')
             return inference(request, analysis_id)
@@ -607,8 +604,7 @@ def inference_ora(request, analysis_id):
             new_json_data = update_pathway_analysis_data(pathway_analysis_data, pals_df)
             new_display_name = 'ORA %s: %s_vs_%s' % (pals_data_source.database_name,
                                                      case, control)
-            data_type = pathway_analysis_data.data_type
-            update_analysis_data_and_history(pathway_analysis_data, new_json_data, new_display_name, None, data_type,
+            update_analysis_data_and_history(pathway_analysis_data, new_json_data, new_display_name, None,
                                              INFERENCE_ORA)
             messages.success(request, 'Add new inference successful.', extra_tags='primary')
             return inference(request, analysis_id)
@@ -647,8 +643,7 @@ def inference_gsea(request, analysis_id):
             new_json_data = update_pathway_analysis_data(pathway_analysis_data, pals_df)
             new_display_name = 'GSEA %s: %s_vs_%s' % (pals_data_source.database_name,
                                                       case, control)
-            data_type = pathway_analysis_data.data_type
-            update_analysis_data_and_history(pathway_analysis_data, new_json_data, new_display_name, None, data_type,
+            update_analysis_data_and_history(pathway_analysis_data, new_json_data, new_display_name, None,
                                              INFERENCE_GSEA)
             messages.success(request, 'Add new inference successful.', extra_tags='primary')
             return inference(request, analysis_id)
@@ -739,7 +734,6 @@ def inference_reactome(request, analysis_id):
                     new_json_data = update_pathway_analysis_data(pathway_analysis_data, pathways_df)
 
                     # save the updated analysis data to database
-                    new_data_type = pathway_analysis_data.data_type
                     display_data_type = ','.join([AddNewDataDict[dt] for dt in used_dtypes])
                     new_display_name = 'Reactome Analysis Service (%s): %s' % (display_data_type, first_colname)
                     new_metadata = {
@@ -748,7 +742,7 @@ def inference_reactome(request, analysis_id):
                         REACTOME_EXPR_TOKEN: expr_token,
                         REACTOME_EXPR_URL: expr_reactome_url
                     }
-                    update_analysis_data_and_history(analysis_data, new_json_data, new_display_name, new_metadata, new_data_type,
+                    update_analysis_data_and_history(pathway_analysis_data, new_json_data, new_display_name, new_metadata,
                                                      INFERENCE_REACTOME)
                     messages.success(request, 'Add new inference successful.', extra_tags='primary')
                     return inference(request, analysis_id)
