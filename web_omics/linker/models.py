@@ -114,6 +114,7 @@ class AnalysisHistory(models.Model):
     display_name = models.CharField(max_length=1000, blank=True, null=True)
     analysis_data = models.ForeignKey(AnalysisData, on_delete=models.CASCADE)
     inference_type = models.IntegerField(choices=InferenceTypeChoices, blank=True, null=True)
+    inference_data = JSONField()
     timestamp = models.DateTimeField(default=timezone.localtime, null=False)
 
     class Meta:

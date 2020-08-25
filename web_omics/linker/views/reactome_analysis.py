@@ -9,7 +9,8 @@ from loguru import logger
 from sklearn import preprocessing
 
 from linker.constants import PKS, FC_COL_PREFIX, NA, AddNewDataDict, SELECT_WIDGET_ATTRS, PADJ_COL_PREFIX, \
-    REACTOME_PVALUE_COLNAME, REACTOME_FOLD_CHANGE_COLNAME
+    REACTOME_PVALUE_COLNAME, REACTOME_FOLD_CHANGE_COLNAME, INFERENCE_T_TEST, INFERENCE_DESEQ, INFERENCE_LIMMA
+from linker.models import AnalysisHistory
 from linker.views.functions import get_last_analysis_data, get_dataframes
 
 
@@ -39,8 +40,17 @@ def get_omics_data(analysis, data_types, form):
 def populate_reactome_choices(analysis_data, data_type, selected_form):
     data_df, design_df = get_dataframes(analysis_data, PKS)
     if design_df is not None:
-        comparisons = [col for col in data_df.columns if col.startswith(FC_COL_PREFIX)]
-        comparisons = list(map(lambda comp: comp.replace(FC_COL_PREFIX, ''), comparisons))
+        # find all the comparisons for this analysis data
+        analysis_histories = AnalysisHistory.objects.filter(analysis_data=analysis_data).order_by(
+            'timestamp')
+        comparisons = set()
+        for history in analysis_histories:
+            if history.inference_type in [INFERENCE_T_TEST, INFERENCE_DESEQ, INFERENCE_LIMMA]:
+                case = history.inference_data['case']
+                control = history.inference_data['control']
+                comp = '%s_vs_%s' % (case, control)
+                comparisons.add(comp)
+
         comparison_choices = ((None, NA),) + tuple(zip(comparisons, comparisons))
         data_type_comp_fieldname = '%s_comparison' % AddNewDataDict[data_type]
         selected_form.fields[data_type_comp_fieldname] = forms.ChoiceField(required=False, choices=comparison_choices,
