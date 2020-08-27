@@ -44,6 +44,7 @@ urlpatterns = [
     path('inference/ora/<int:analysis_id>', views.inference_ora, name='inference_ora'),
     path('inference/gsea/<int:analysis_id>', views.inference_gsea, name='inference_gsea'),
     path('inference/reactome/<int:analysis_id>', views.inference_reactome, name='inference_reactome'),
+    path('delete_analysis_history/<int:pk>', views.DeleteAnalysisHistoryView.as_view(), name='delete_analysis_history'),
 
     # summary page
     path('summary/<int:analysis_id>', views.summary, name='summary'),

@@ -4,9 +4,9 @@ from django import forms
 from django.contrib import messages
 from django.forms import TextInput, DecimalField
 from django.shortcuts import render, get_object_or_404
-from django.urls import reverse
+from django.urls import reverse, reverse_lazy
 from django.utils import timezone
-from django.views.generic import TemplateView
+from django.views.generic import TemplateView, DeleteView
 from django_select2.forms import Select2Widget
 from loguru import logger
 from sklearn.decomposition import PCA as skPCA
@@ -720,3 +720,19 @@ def inference_reactome(request, analysis_id):
             messages.warning(request, 'Add new inference failed.')
 
     return inference(request, analysis_id)
+
+
+class DeleteAnalysisHistoryView(DeleteView):
+    model = AnalysisHistory
+    success_url = reverse_lazy('inference')
+    template_name = 'linker/confirm_delete_analysis_history.html'
+    success_message = "Analysis history was successfully deleted."
+
+    # https://stackoverflow.com/questions/24822509/success-message-in-deleteview-not-shown/42656041#42656041
+    def delete(self, request, *args, **kwargs):
+        messages.success(self.request, self.success_message)
+        return super(DeleteAnalysisHistoryView, self).delete(request, *args, **kwargs)
+
+    def get_success_url(self):
+        return reverse_lazy('inference', kwargs={'analysis_id': self.object.analysis_data.analysis.pk})
+
