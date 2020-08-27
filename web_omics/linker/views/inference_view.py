@@ -193,10 +193,9 @@ def get_list_data(analysis_id, analysis_history_list):
 
         # when clicked, go to Reactome
         elif inference_type == INFERENCE_REACTOME:
-            analysis_data = analysis_history.analysis_data
-            if REACTOME_ORA_URL in analysis_data.metadata and REACTOME_EXPR_URL in analysis_data.metadata:
-                click_url_1 = analysis_data.metadata[REACTOME_ORA_URL]
-                click_url_2 = analysis_data.metadata[REACTOME_EXPR_URL]
+            if REACTOME_ORA_URL in analysis_history.inference_data and REACTOME_EXPR_URL in analysis_history.inference_data:
+                click_url_1 = analysis_history.inference_data[REACTOME_ORA_URL]
+                click_url_2 = analysis_history.inference_data[REACTOME_EXPR_URL]
 
         item = [analysis_history, click_url_1, click_url_2]
         list_data.append(item)

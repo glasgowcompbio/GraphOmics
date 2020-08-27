@@ -18,10 +18,10 @@ def merge_json_data(json_data, data_type, case, control, result_df):
         item = new_json_data[i]
         if padj_label in item:
             del item[padj_label]
-            logger.debug('Removed old padj value')
+            # logger.debug('Removed old padj value')
         if fc_label in item:
             del item[fc_label]
-            logger.debug('Removed old FC value')
+            # logger.debug('Removed old FC value')
 
     # set new DE result to json_data
     for i in range(len(new_json_data)):

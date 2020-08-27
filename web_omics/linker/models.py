@@ -130,7 +130,7 @@ class AnalysisHistory(models.Model):
             return ''
 
     def __str__(self):
-        return '%s (%s)' % (self.display_name, self.analysis_data,)
+        return '%s (%s) timestamp=%s' % (self.display_name, self.analysis_data, self.timestamp.strftime("%Y-%m-%d %H:%M:%S"))
 
 
 class AnalysisAnnotation(models.Model):

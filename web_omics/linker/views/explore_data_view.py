@@ -54,11 +54,13 @@ def get_firdi_data(request, analysis_id):
                     inference_type = history.inference_type
                     inference_data = history.inference_data
                     if inference_type in [INFERENCE_T_TEST, INFERENCE_DESEQ, INFERENCE_LIMMA]:
+                        logger.debug('Merging %s' % history)
                         case = inference_data['case']
                         control = inference_data['control']
                         result_df = pd.read_json(inference_data['result_df'])
                         json_data = merge_json_data(json_data, data_type, case, control, result_df)
                     elif inference_type in [INFERENCE_PALS, INFERENCE_ORA, INFERENCE_GSEA, INFERENCE_REACTOME]:
+                        logger.debug('Merging %s' % history)
                         result_df = pd.read_json(inference_data['result_df'])
                         json_data = update_pathway_analysis_data(json_data, result_df)
 
