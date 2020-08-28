@@ -5,7 +5,6 @@ from django.contrib import messages
 from django.forms import TextInput, DecimalField
 from django.shortcuts import render, get_object_or_404
 from django.urls import reverse, reverse_lazy
-from django.utils import timezone
 from django.views.generic import TemplateView, DeleteView
 from django_select2.forms import Select2Widget
 from loguru import logger
@@ -15,10 +14,9 @@ from linker.constants import *
 from linker.forms import BaseInferenceForm
 from linker.models import Analysis, AnalysisData, AnalysisHistory
 from linker.views.functions import get_last_analysis_data, get_groups, get_dataframes, get_standardized_df, \
-    get_group_members, fig_to_div
+    get_group_members, fig_to_div, get_inference_data, save_analysis_history
 from linker.views.pathway_analysis import get_pals_data_source, run_pals, run_ora, \
     run_gsea
-from linker.views.merge import update_pathway_analysis_data
 from linker.views.pipelines import WebOmicsInference
 from linker.views.reactome_analysis import get_omics_data, populate_reactome_choices, get_used_dtypes, get_data, \
     to_expression_tsv, get_analysis_first_species, parse_reactome_json, send_to_reactome, get_first_colname, to_ora_tsv
@@ -315,27 +313,6 @@ def inference_limma(request, analysis_id):
             messages.warning(request, 'Add new inference failed.')
 
     return inference(request, analysis_id)
-
-
-def get_inference_data(data_type, case, control, result_df, metadata=None):
-    inference_data = { 'data_type': data_type }
-    if case is not None:
-        inference_data.update({'case': case})
-    if control is not None:
-        inference_data.update({'control': control})
-    if result_df is not None:
-        inference_data.update({'result_df': result_df.to_json()})
-    if metadata is not None:
-        inference_data.update(metadata)
-    return inference_data
-
-
-def save_analysis_history(analysis_data, inference_data, new_display_name, inference_type):
-    ts = timezone.localtime()
-    analysis_history = AnalysisHistory(analysis=analysis_data.analysis, analysis_data=analysis_data,
-                                       display_name=new_display_name, inference_type=inference_type, timestamp=ts,
-                                       inference_data=inference_data)
-    analysis_history.save()
 
 
 def inference_pca(request, analysis_id):

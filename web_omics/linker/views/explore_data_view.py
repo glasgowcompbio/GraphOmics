@@ -53,7 +53,7 @@ def get_firdi_data(request, analysis_id):
                 for history in analysis_histories:
                     inference_type = history.inference_type
                     inference_data = history.inference_data
-                    if inference_type in [INFERENCE_T_TEST, INFERENCE_DESEQ, INFERENCE_LIMMA]:
+                    if inference_type in [INFERENCE_LOADED, INFERENCE_T_TEST, INFERENCE_DESEQ, INFERENCE_LIMMA]:
                         logger.debug('Merging %s' % history)
                         case = inference_data['case']
                         control = inference_data['control']

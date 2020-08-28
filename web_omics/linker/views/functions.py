@@ -11,12 +11,13 @@ import requests
 from clustergrammer import Network
 from django.conf import settings
 from django.urls import reverse
+from django.utils import timezone
 from loguru import logger
 
 from linker.common import load_obj
 from linker.constants import *
 from linker.metadata import get_gene_names, get_compound_metadata, clean_label, get_species_name_to_id
-from linker.models import Analysis, AnalysisData, Share
+from linker.models import Analysis, AnalysisData, Share, AnalysisHistory
 from linker.reactome import ensembl_to_uniprot, uniprot_to_reaction, compound_to_reaction, \
     reaction_to_pathway, reaction_to_uniprot, reaction_to_compound, uniprot_to_ensembl
 from linker.reactome import get_reaction_df
@@ -250,27 +251,95 @@ def save_analysis(analysis_name, analysis_desc,
         REACTIONS_TO_PATHWAYS: (results[REACTIONS_TO_PATHWAYS], 'reaction_pathways_json', None),
     }
     data = {}
-    for k, v in datatype_json.items():
+    for data_type, data_value in datatype_json.items():
 
-        # v is a tuple defined in the datatype_json dictionary above
-        json_str, ui_label, group_info = v
+        # data_value is a tuple defined in the datatype_json dictionary above
+        json_str, ui_label, group_info = data_value
         data[ui_label] = json_str
 
-        # create a new analysis data and save it
         json_data = json.loads(json_str)
         json_design = json.loads(group_info.to_json()) if group_info is not None else None
+
+        # key: comparison_name, value: a list of comparison results (p-values and FCs), if any
+        comparison_data = defaultdict(list)
+
+        # if it's a measurement data
+        if data_type in PKS:
+
+            # check the first row in json_data to see if there are any comparison results (p-values and FCs)
+            comparison_names = []
+            first_row = json_data[0]
+            for col_name, col_value in first_row.items():
+                if col_name.startswith(PADJ_COL_PREFIX): # assume if we have the p-value column, there's also the FC column
+                    comparison_name = col_name.replace(PADJ_COL_PREFIX, '', 1)
+                    comparison_names.append(comparison_name)
+
+            # collect all measurement and comparison data
+            pk_col = PKS[data_type]
+            measurement_data = []
+            for row in json_data:
+
+                # separate the measurement data and the comparison data
+                new_measurement_row = {}
+                new_comparison_rows = defaultdict(dict) # key: comparison_name, value: a comparison row (a dict of key: value pair)
+                for col_name, col_value in row.items():
+
+                    # insert id columns into both comparison and measurement rows
+                    if col_name == pk_col:
+                        new_measurement_row[col_name] = col_value
+                        for comparison_name in comparison_names:
+                            new_comparison_rows[comparison_name].update({col_name: col_value})
+
+                    # insert p-value column into comparison row
+                    elif col_name.startswith(PADJ_COL_PREFIX):
+                        comparison_name = col_name.replace(PADJ_COL_PREFIX, '', 1)
+                        new_comparison_rows[comparison_name].update({'padj': col_value})
+
+                    # insert FC column into comparison row
+                    elif col_name.startswith(FC_COL_PREFIX):
+                        comparison_name = col_name.replace(FC_COL_PREFIX, '', 1)
+                        new_comparison_rows[comparison_name].update({'log2FoldChange': col_value})
+
+                    # insert everything else into measuremnet rows
+                    else:
+                        new_measurement_row[col_name] = col_value
+
+                measurement_data.append(new_measurement_row)
+                for comparison_name in new_comparison_rows:
+                    new_comparison_row = new_comparison_rows[comparison_name]
+                    comparison_data[comparison_name].append(new_comparison_row)
+
+        else: # if it's other linking data, just store it directly
+            measurement_data = json_data
+
+        # create a new analysis data and save it
         analysis_data = AnalysisData(analysis=analysis,
-                                     json_data=json_data,
+                                     json_data=measurement_data,
                                      json_design=json_design,
-                                     data_type=k)
+                                     data_type=data_type)
+
         # make clustergrammer if we have data
-        if k in [GENOMICS, PROTEOMICS, METABOLOMICS]:
-            cluster_json = get_clusters(analysis_data, k)
+        if data_type in [GENOMICS, PROTEOMICS, METABOLOMICS]:
+            cluster_json = get_clusters(analysis_data, data_type)
             analysis_data.metadata = {
                 'clustergrammer': cluster_json
             }
         analysis_data.save()
         logger.info('Saved analysis data %d for analysis %d' % (analysis_data.pk, analysis.pk))
+
+        # save each comparison separately into an AnalysisHistory
+        for comparison_name in comparison_data:
+            comparisons = comparison_data[comparison_name]
+            result_df = pd.DataFrame(comparisons)
+            pk_col = [col for col in result_df.columns if col in PKS.values()][0]
+            result_df.set_index(pk_col, inplace=True)
+
+            tokens = comparison_name.split('_vs_')
+            case = tokens[0]
+            control = tokens[1]
+            display_name = 'Loaded: %s_vs_%s' % (case, control)
+            inference_data = get_inference_data(data_type, case, control, result_df)
+            save_analysis_history(analysis_data, inference_data, display_name, INFERENCE_LOADED)
 
         # if settings.DEBUG:
         #     save_json_string(v[0], 'static/data/debugging/' + v[1] + '.json')
@@ -817,3 +886,25 @@ def get_group_members(analysis_data):
 def fig_to_div(fig):
     div = opy.plot(fig, auto_open=False, output_type='div')  # output plotly graph as html div
     return div
+
+
+def get_inference_data(data_type, case, control, result_df, metadata=None):
+    inference_data = { 'data_type': data_type }
+    if case is not None:
+        inference_data.update({'case': case})
+    if control is not None:
+        inference_data.update({'control': control})
+    if result_df is not None:
+        inference_data.update({'result_df': result_df.to_json()})
+    if metadata is not None:
+        inference_data.update(metadata)
+    return inference_data
+
+
+def save_analysis_history(analysis_data, inference_data, new_display_name, inference_type):
+    ts = timezone.localtime()
+    analysis_history = AnalysisHistory(analysis=analysis_data.analysis, analysis_data=analysis_data,
+                                       display_name=new_display_name, inference_type=inference_type, timestamp=ts,
+                                       inference_data=inference_data)
+    analysis_history.save()
+    logger.debug('Saved analysis history %s for analysis data %s' % (analysis_history, analysis_data))

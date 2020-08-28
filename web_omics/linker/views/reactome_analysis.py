@@ -9,7 +9,8 @@ from loguru import logger
 from sklearn import preprocessing
 
 from linker.constants import PKS, FC_COL_PREFIX, NA, AddNewDataDict, SELECT_WIDGET_ATTRS, PADJ_COL_PREFIX, \
-    REACTOME_PVALUE_COLNAME, REACTOME_FOLD_CHANGE_COLNAME, INFERENCE_T_TEST, INFERENCE_DESEQ, INFERENCE_LIMMA
+    REACTOME_PVALUE_COLNAME, REACTOME_FOLD_CHANGE_COLNAME, INFERENCE_T_TEST, INFERENCE_DESEQ, INFERENCE_LIMMA, \
+    INFERENCE_LOADED
 from linker.models import AnalysisHistory
 from linker.views.functions import get_last_analysis_data, get_dataframes
 
@@ -46,7 +47,7 @@ def populate_reactome_choices(analysis_data, data_type, selected_form):
         history_display_names = []
         history_ids = []
         for history in analysis_histories:
-            if history.inference_type in [INFERENCE_T_TEST, INFERENCE_DESEQ, INFERENCE_LIMMA]:
+            if history.inference_type in [INFERENCE_LOADED, INFERENCE_T_TEST, INFERENCE_DESEQ, INFERENCE_LIMMA]:
                 display_name = '%s' % history.display_name
                 history_display_names.append(display_name)
                 history_ids.append(history.id)
