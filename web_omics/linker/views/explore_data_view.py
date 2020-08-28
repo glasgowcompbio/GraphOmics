@@ -514,16 +514,17 @@ def get_reactome_pathway_info(request, analysis_id):
         analysis_data = get_last_analysis_data(analysis, PATHWAYS)
         analysis_histories = AnalysisHistory.objects.filter(analysis_data=analysis_data,
                                                             inference_type=INFERENCE_REACTOME).order_by(
-            'timestamp')  # ascending
-
-        if analysis_data.metadata:
-            if REACTOME_ORA_TOKEN in analysis_data.metadata:
-                token = analysis_data.metadata[REACTOME_ORA_TOKEN]
+            '-timestamp')  # descending
+        if len(analysis_histories) > 0:
+            last_analysis_history = analysis_histories[0]
+            inference_data = last_analysis_history.inference_data
+            if REACTOME_ORA_TOKEN in inference_data:
+                token = inference_data[REACTOME_ORA_TOKEN]
                 data.update({REACTOME_ORA_TOKEN: token})
                 logger.debug('Found reactome expression token %s' % token)
 
-            if REACTOME_EXPR_TOKEN in analysis_data.metadata:
-                token = analysis_data.metadata[REACTOME_EXPR_TOKEN]
+            if REACTOME_EXPR_TOKEN in inference_data:
+                token = inference_data[REACTOME_EXPR_TOKEN]
                 data.update({REACTOME_EXPR_TOKEN: token})
                 logger.debug('Found reactome expression token %s' % token)
 
