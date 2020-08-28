@@ -177,9 +177,9 @@ def parse_reactome_json(json_response):
     return pathways_df, reactome_url, token
 
 
-def get_first_colname(form_data, omics_data, used_dtypes):
+def get_first_analysis_history_id(form_data, omics_data, used_dtypes):
     first_dtype = used_dtypes[0]
     res = omics_data[first_dtype]
     fieldname = res['fieldname']
-    first_colname = form_data[fieldname]
-    return first_colname
+    first_analysis_history_id = form_data[fieldname]
+    return first_analysis_history_id

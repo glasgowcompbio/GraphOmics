@@ -19,7 +19,7 @@ from linker.views.pathway_analysis import get_pals_data_source, run_pals, run_or
     run_gsea
 from linker.views.pipelines import WebOmicsInference
 from linker.views.reactome_analysis import get_omics_data, populate_reactome_choices, get_used_dtypes, get_data, \
-    to_expression_tsv, get_analysis_first_species, parse_reactome_json, send_to_reactome, get_first_colname, to_ora_tsv
+    to_expression_tsv, get_analysis_first_species, parse_reactome_json, send_to_reactome, get_first_analysis_history_id, to_ora_tsv
 
 
 def inference(request, analysis_id):
@@ -665,19 +665,23 @@ def inference_reactome(request, analysis_id):
                 _, expr_reactome_url, expr_token = parse_reactome_json(expr_json_response)
 
                 if not pathways_df.empty:
-                    first_colname = get_first_colname(form_data, omics_data, used_dtypes)
+                    first_analysis_history_id = get_first_analysis_history_id(form_data, omics_data, used_dtypes)
+                    first_analysis_history = AnalysisHistory.objects.get(pk=first_analysis_history_id)
+                    case = first_analysis_history.inference_data['case']
+                    control = first_analysis_history.inference_data['control']
+                    comparison_name = '%s_vs_%s' % (case, control)
 
                     # as a quick hack, we put pathways df in the same format as PALS output
                     # this will let us use the update_pathway_analysis_data() method below
                     pathways_df = pathways_df[['stId', 'name', 'entities_fdr']].set_index('stId').rename(columns={
                         'name': 'pw_name',
-                        'entities_fdr': 'REACTOME %s comb_p' % (first_colname)
+                        'entities_fdr': 'REACTOME %s comb_p' % (comparison_name)
                     })
                     pathway_analysis_data = get_last_analysis_data(analysis, PATHWAYS)
 
                     # save the updated analysis data to database
                     display_data_type = ','.join([AddNewDataDict[dt] for dt in used_dtypes])
-                    display_name = 'Reactome Analysis Service (%s): %s' % (display_data_type, first_colname)
+                    display_name = 'Reactome Analysis Service (%s): %s' % (display_data_type, comparison_name)
                     metadata = {
                         REACTOME_ORA_TOKEN: ora_token,
                         REACTOME_ORA_URL: ora_reactome_url,
