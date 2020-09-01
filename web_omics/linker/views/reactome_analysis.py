@@ -9,7 +9,9 @@ from loguru import logger
 from sklearn import preprocessing
 
 from linker.constants import PKS, FC_COL_PREFIX, NA, AddNewDataDict, SELECT_WIDGET_ATTRS, PADJ_COL_PREFIX, \
-    REACTOME_PVALUE_COLNAME, REACTOME_FOLD_CHANGE_COLNAME
+    REACTOME_PVALUE_COLNAME, REACTOME_FOLD_CHANGE_COLNAME, INFERENCE_T_TEST, INFERENCE_DESEQ, INFERENCE_LIMMA, \
+    INFERENCE_LOADED
+from linker.models import AnalysisHistory
 from linker.views.functions import get_last_analysis_data, get_dataframes
 
 
@@ -39,9 +41,18 @@ def get_omics_data(analysis, data_types, form):
 def populate_reactome_choices(analysis_data, data_type, selected_form):
     data_df, design_df = get_dataframes(analysis_data, PKS)
     if design_df is not None:
-        comparisons = [col for col in data_df.columns if col.startswith(FC_COL_PREFIX)]
-        comparisons = list(map(lambda comp: comp.replace(FC_COL_PREFIX, ''), comparisons))
-        comparison_choices = ((None, NA),) + tuple(zip(comparisons, comparisons))
+        # find all the comparisons for this analysis data
+        analysis_histories = AnalysisHistory.objects.filter(analysis_data=analysis_data).order_by(
+            'timestamp')
+        history_display_names = []
+        history_ids = []
+        for history in analysis_histories:
+            if history.inference_type in [INFERENCE_LOADED, INFERENCE_T_TEST, INFERENCE_DESEQ, INFERENCE_LIMMA]:
+                display_name = '%s' % history.display_name
+                history_display_names.append(display_name)
+                history_ids.append(history.id)
+
+        comparison_choices = ((None, NA),) + tuple(zip(history_ids, history_display_names))
         data_type_comp_fieldname = '%s_comparison' % AddNewDataDict[data_type]
         selected_form.fields[data_type_comp_fieldname] = forms.ChoiceField(required=False, choices=comparison_choices,
                                                                            widget=Select2Widget(SELECT_WIDGET_ATTRS))
@@ -64,14 +75,17 @@ def get_data(form_data, omics_data, used_dtypes, threshold):
     dfs = []
     for dtype in used_dtypes:
         res = omics_data[dtype]
-        df = res['df']
+        # df = res['df']
         fieldname = res['fieldname']
 
-        colname = form_data[fieldname]
-        padj_colname = PADJ_COL_PREFIX + colname
-        fc_colname = FC_COL_PREFIX + colname
-        df = df[[padj_colname, fc_colname]]
-        df = df.rename(columns={
+        # get the analysis history selected from the form
+        analysis_history_id = int(form_data[fieldname])
+        analysis_history = AnalysisHistory.objects.get(pk=analysis_history_id)
+        result_df = pd.read_json(analysis_history.inference_data['result_df'])
+
+        padj_colname = 'padj'
+        fc_colname = 'log2FoldChange'
+        df = result_df.rename(columns={
             padj_colname: REACTOME_PVALUE_COLNAME,
             fc_colname: REACTOME_FOLD_CHANGE_COLNAME
         })
@@ -163,9 +177,9 @@ def parse_reactome_json(json_response):
     return pathways_df, reactome_url, token
 
 
-def get_first_colname(form_data, omics_data, used_dtypes):
+def get_first_analysis_history_id(form_data, omics_data, used_dtypes):
     first_dtype = used_dtypes[0]
     res = omics_data[first_dtype]
     fieldname = res['fieldname']
-    first_colname = form_data[fieldname]
-    return first_colname
+    first_analysis_history_id = form_data[fieldname]
+    return first_analysis_history_id

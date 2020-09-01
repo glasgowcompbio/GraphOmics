@@ -1,0 +1,35 @@
+{% extends 'base.html' %}
+
+{% load static %}
+
+{% block body_block %}
+    <div class="container-fluid m-2 mb-5">
+        <h3>Delete Inference Result</h3>
+        <div class="m-1 mb-3">
+            <form method="post">{% csrf_token %}
+                <p>Are you sure you want to delete the following inference result?</p>
+                <table class="table table-bordered table-hover">
+                    <tbody>
+                        <tr>
+                            <th scope="row">Name</th>
+                            <td>{{ object.display_name }}</td>
+                        </tr>
+                        <tr>
+                            <th scope="row">Data Type</th>
+                            <td>{{ object.get_data_type_str }}</td>
+                        </tr>
+                        <tr>
+                            <th scope="row">Inference Type</th>
+                            <td>{{ object.get_inference_type_str }}</td>
+                        </tr>
+                        <tr>
+                            <th scope="row">Date</th>
+                            <td>{{ object.timestamp|date:"jS F Y H:i" }}</td>
+                        </tr>
+                    </tbody>
+                </table>
+                <input type="submit" class="btn btn-danger" value="Confirm">
+            </form>
+        </div>
+    </div>
+{% endblock %}

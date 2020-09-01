@@ -4,9 +4,8 @@ from django import forms
 from django.contrib import messages
 from django.forms import TextInput, DecimalField
 from django.shortcuts import render, get_object_or_404
-from django.urls import reverse
-from django.utils import timezone
-from django.views.generic import TemplateView
+from django.urls import reverse, reverse_lazy
+from django.views.generic import TemplateView, DeleteView
 from django_select2.forms import Select2Widget
 from loguru import logger
 from sklearn.decomposition import PCA as skPCA
@@ -15,12 +14,12 @@ from linker.constants import *
 from linker.forms import BaseInferenceForm
 from linker.models import Analysis, AnalysisData, AnalysisHistory
 from linker.views.functions import get_last_analysis_data, get_groups, get_dataframes, get_standardized_df, \
-    get_group_members, fig_to_div
-from linker.views.pathway_analysis import get_pals_data_source, run_pals, update_pathway_analysis_data, run_ora, \
+    get_group_members, fig_to_div, get_inference_data, save_analysis_history
+from linker.views.pathway_analysis import get_pals_data_source, run_pals, run_ora, \
     run_gsea
 from linker.views.pipelines import WebOmicsInference
 from linker.views.reactome_analysis import get_omics_data, populate_reactome_choices, get_used_dtypes, get_data, \
-    to_expression_tsv, get_analysis_first_species, parse_reactome_json, send_to_reactome, get_first_colname, to_ora_tsv
+    to_expression_tsv, get_analysis_first_species, parse_reactome_json, send_to_reactome, get_first_analysis_history_id, to_ora_tsv
 
 
 def inference(request, analysis_id):
@@ -186,15 +185,15 @@ def get_list_data(analysis_id, analysis_history_list):
         elif inference_type == INFERENCE_PCA:
             click_url_1 = reverse('pca_result', kwargs={
                 'analysis_id': analysis_id,
-                'analysis_data_id': analysis_history.analysis_data.id
+                'analysis_data_id': analysis_history.analysis_data.id,
+                'analysis_history_id': analysis_history.id
             })
 
         # when clicked, go to Reactome
         elif inference_type == INFERENCE_REACTOME:
-            analysis_data = analysis_history.analysis_data
-            if REACTOME_ORA_URL in analysis_data.metadata and REACTOME_EXPR_URL in analysis_data.metadata:
-                click_url_1 = analysis_data.metadata[REACTOME_ORA_URL]
-                click_url_2 = analysis_data.metadata[REACTOME_EXPR_URL]
+            if REACTOME_ORA_URL in analysis_history.inference_data and REACTOME_EXPR_URL in analysis_history.inference_data:
+                click_url_1 = analysis_history.inference_data[REACTOME_ORA_URL]
+                click_url_2 = analysis_history.inference_data[REACTOME_EXPR_URL]
 
         item = [analysis_history, click_url_1, click_url_2]
         list_data.append(item)
@@ -223,12 +222,11 @@ def inference_t_test(request, analysis_id):
                 min_replace = MIN_REPLACE_PROTEOMICS_METABOLOMICS
             wi = WebOmicsInference(data_df, design_df, data_type, min_value=min_replace)
             result_df = wi.run_ttest(case, control)
-            json_data = get_updated_json_data(analysis_data, data_type, case, control, result_df)
 
             # create a new analysis data
             display_name = 't-test: %s_vs_%s' % (case, control)
-            metadata = None
-            update_analysis_data_and_history(analysis_data, json_data, display_name, metadata, INFERENCE_T_TEST)
+            inference_data = get_inference_data(data_type, case, control, result_df)
+            save_analysis_history(analysis_data, inference_data, display_name, INFERENCE_T_TEST)
             messages.success(request, 'Add new inference successful.', extra_tags='primary')
             return inference(request, analysis_id)
         else:
@@ -265,7 +263,6 @@ def inference_deseq(request, analysis_id):
                 messages.warning(request, 'Add new inference failed.')
                 return inference(request, analysis_id)
             result_df = pd_df[['padj', 'log2FoldChange']]
-            json_data = get_updated_json_data(analysis_data, data_type, case, control, result_df)
 
             # create a new analysis data
             display_name = 'DESeq2: %s_vs_%s' % (case, control)
@@ -273,7 +270,8 @@ def inference_deseq(request, analysis_id):
                 'rld_df': rld_df.to_json(),
                 'res_ordered': jsonpickle.encode(res_ordered)
             }
-            update_analysis_data_and_history(analysis_data, json_data, display_name, metadata, INFERENCE_DESEQ)
+            inference_data = get_inference_data(data_type, case, control, result_df, metadata=metadata)
+            save_analysis_history(analysis_data, inference_data, display_name, INFERENCE_DESEQ)
             messages.success(request, 'Add new inference successful.', extra_tags='primary')
             return inference(request, analysis_id)
         else:
@@ -304,12 +302,11 @@ def inference_limma(request, analysis_id):
                 min_replace = MIN_REPLACE_PROTEOMICS_METABOLOMICS
             wi = WebOmicsInference(data_df, design_df, data_type, min_value=min_replace)
             result_df = wi.run_limma(case, control)
-            json_data = get_updated_json_data(analysis_data, data_type, case, control, result_df)
 
             # create a new analysis data
             display_name = 'limma: %s_vs_%s' % (case, control)
-            metadata = None
-            update_analysis_data_and_history(analysis_data, json_data, display_name, metadata, INFERENCE_LIMMA)
+            inference_data = get_inference_data(data_type, case, control, result_df)
+            save_analysis_history(analysis_data, inference_data, display_name, INFERENCE_LIMMA)
             messages.success(request, 'Add new inference successful.', extra_tags='primary')
             return inference(request, analysis_id)
         else:
@@ -317,61 +314,6 @@ def inference_limma(request, analysis_id):
 
     return inference(request, analysis_id)
 
-
-def get_updated_json_data(analysis_data, data_type, case, control, result_df):
-    res = result_df.to_dict()
-    json_data = analysis_data.json_data
-    label = '%s_vs_%s' % (case, control)
-    padj_label = 'padj_%s' % label
-    fc_label = 'FC_%s' % label
-
-    #  remove the previous DE result if exists
-    for i in range(len(json_data)):
-        item = json_data[i]
-        if padj_label in item:
-            del item[padj_label]
-            logger.debug('Removed old padj value')
-        if fc_label in item:
-            del item[fc_label]
-            logger.debug('Removed old FC value')
-
-    # set new DE result to json_data
-    for i in range(len(json_data)):
-        item = json_data[i]
-        key = item[PKS[data_type]]
-        try:
-            padj = res['padj'][key]
-            if np.isnan(padj):
-                padj = None
-        except KeyError:
-            padj = None
-        try:
-            lfc = res['log2FoldChange'][key]
-            if np.isnan(lfc) or np.isinf(lfc):
-                lfc = None
-        except KeyError:
-            lfc = None
-        item[padj_label] = padj
-        item[fc_label] = lfc
-    return json_data
-
-
-def update_analysis_data_and_history(analysis_data, new_json_data, new_display_name, new_metadata, inference_type):
-    # update analysis data with the new data
-    ts = timezone.localtime()
-    analysis_data.json_data = new_json_data
-    analysis_data.timestamp = ts
-    if new_metadata is not None:
-        if analysis_data.metadata is not None:
-            analysis_data.metadata.update(new_metadata)
-        else:
-            analysis_data.metadata = new_metadata
-    analysis_data.save()
-
-    # also create an analysis history
-    analysis_history = AnalysisHistory(analysis=analysis_data.analysis, analysis_data=analysis_data,
-                                       display_name=new_display_name, inference_type=inference_type, timestamp=ts)
-    analysis_history.save()
 
 def inference_pca(request, analysis_id):
     if request.method == 'POST':
@@ -401,8 +343,8 @@ def inference_pca(request, analysis_id):
                     'pca_var_exp': jsonpickle.dumps(var_exp)
                 }
                 display_name = 'PCA: %s components' % n_components
-                update_analysis_data_and_history(analysis_data, analysis_data.json_data, display_name, metadata,
-                                                 INFERENCE_PCA)
+                inference_data = get_inference_data(data_type, None, None, None, metadata)
+                save_analysis_history(analysis_data, inference_data, display_name, INFERENCE_PCA)
                 messages.success(request, 'Add new inference successful.', extra_tags='primary')
             else:
                 messages.warning(request, 'Add new inference failed. No data found.')
@@ -436,12 +378,15 @@ class PCAResult(TemplateView):
     def get_context_data(self, **kwargs):
         analysis_id = self.kwargs['analysis_id']
         analysis_data_id = self.kwargs['analysis_data_id']
+        analysis_history_id = self.kwargs['analysis_history_id']
         analysis_data = AnalysisData.objects.get(pk=analysis_data_id)
+        analysis_history = AnalysisHistory.objects.get(pk=analysis_history_id)
+        inference_data = analysis_history.inference_data
 
-        n_components = jsonpickle.loads(analysis_data.metadata['pca_n_components'])
-        X_std_index = jsonpickle.loads(analysis_data.metadata['pca_X_std_index'])
-        X_proj = jsonpickle.loads(analysis_data.metadata['pca_X_proj'])
-        var_exp = jsonpickle.loads(analysis_data.metadata['pca_var_exp'])
+        n_components = jsonpickle.loads(inference_data['pca_n_components'])
+        X_std_index = jsonpickle.loads(inference_data['pca_X_std_index'])
+        X_proj = jsonpickle.loads(inference_data['pca_X_proj'])
+        var_exp = jsonpickle.loads(inference_data['pca_var_exp'])
 
         # make pca plot
         fig = self.get_pca_plot(analysis_data, X_std_index, X_proj)
@@ -563,10 +508,9 @@ def inference_pals(request, analysis_id):
 
             # update PALS results to database
             pathway_analysis_data = get_last_analysis_data(analysis, PATHWAYS)
-            new_json_data = update_pathway_analysis_data(pathway_analysis_data, pals_df)
-            new_display_name = 'PLAGE %s: %s_vs_%s' % (pals_data_source.database_name, case, control)
-            update_analysis_data_and_history(pathway_analysis_data, new_json_data, new_display_name, None,
-                                             INFERENCE_PALS)
+            inference_data = get_inference_data(data_type, case, control, pals_df)
+            display_name = 'PLAGE %s: %s_vs_%s' % (pals_data_source.database_name, case, control)
+            save_analysis_history(pathway_analysis_data, inference_data, display_name, INFERENCE_PALS)
             messages.success(request, 'Add new inference successful.', extra_tags='primary')
             return inference(request, analysis_id)
 
@@ -599,13 +543,12 @@ def inference_ora(request, analysis_id):
 
             # run ora
             pals_df = run_ora(pals_data_source)
+
             # update ORA results to database
             pathway_analysis_data = get_last_analysis_data(analysis, PATHWAYS)
-            new_json_data = update_pathway_analysis_data(pathway_analysis_data, pals_df)
-            new_display_name = 'ORA %s: %s_vs_%s' % (pals_data_source.database_name,
-                                                     case, control)
-            update_analysis_data_and_history(pathway_analysis_data, new_json_data, new_display_name, None,
-                                             INFERENCE_ORA)
+            inference_data = get_inference_data(data_type, case, control, pals_df)
+            display_name = 'ORA %s: %s_vs_%s' % (pals_data_source.database_name, case, control)
+            save_analysis_history(pathway_analysis_data, inference_data, display_name, INFERENCE_ORA)
             messages.success(request, 'Add new inference successful.', extra_tags='primary')
             return inference(request, analysis_id)
 
@@ -636,15 +579,15 @@ def inference_gsea(request, analysis_id):
                 messages.warning(request, 'Add new inference failed. No data found.')
                 return inference(request, analysis_id)
 
-            # run ora
+            # run gse
             pals_df = run_gsea(pals_data_source)
-            # update ORA results to database
+
+            # update GSEA results to database
             pathway_analysis_data = get_last_analysis_data(analysis, PATHWAYS)
-            new_json_data = update_pathway_analysis_data(pathway_analysis_data, pals_df)
-            new_display_name = 'GSEA %s: %s_vs_%s' % (pals_data_source.database_name,
-                                                      case, control)
-            update_analysis_data_and_history(pathway_analysis_data, new_json_data, new_display_name, None,
-                                             INFERENCE_GSEA)
+            inference_data = get_inference_data(data_type, case, control, pals_df)
+            display_name = 'GSEA %s: %s_vs_%s' % (pals_data_source.database_name, case, control)
+            save_analysis_history(pathway_analysis_data, inference_data, display_name, INFERENCE_GSEA)
+
             messages.success(request, 'Add new inference successful.', extra_tags='primary')
             return inference(request, analysis_id)
 
@@ -722,28 +665,31 @@ def inference_reactome(request, analysis_id):
                 _, expr_reactome_url, expr_token = parse_reactome_json(expr_json_response)
 
                 if not pathways_df.empty:
-                    first_colname = get_first_colname(form_data, omics_data, used_dtypes)
+                    first_analysis_history_id = get_first_analysis_history_id(form_data, omics_data, used_dtypes)
+                    first_analysis_history = AnalysisHistory.objects.get(pk=first_analysis_history_id)
+                    case = first_analysis_history.inference_data['case']
+                    control = first_analysis_history.inference_data['control']
+                    comparison_name = '%s_vs_%s' % (case, control)
 
                     # as a quick hack, we put pathways df in the same format as PALS output
                     # this will let us use the update_pathway_analysis_data() method below
                     pathways_df = pathways_df[['stId', 'name', 'entities_fdr']].set_index('stId').rename(columns={
                         'name': 'pw_name',
-                        'entities_fdr': 'REACTOME %s comb_p' % (first_colname)
+                        'entities_fdr': 'REACTOME %s comb_p' % (comparison_name)
                     })
                     pathway_analysis_data = get_last_analysis_data(analysis, PATHWAYS)
-                    new_json_data = update_pathway_analysis_data(pathway_analysis_data, pathways_df)
 
                     # save the updated analysis data to database
                     display_data_type = ','.join([AddNewDataDict[dt] for dt in used_dtypes])
-                    new_display_name = 'Reactome Analysis Service (%s): %s' % (display_data_type, first_colname)
-                    new_metadata = {
+                    display_name = 'Reactome Analysis Service (%s): %s' % (display_data_type, comparison_name)
+                    metadata = {
                         REACTOME_ORA_TOKEN: ora_token,
                         REACTOME_ORA_URL: ora_reactome_url,
                         REACTOME_EXPR_TOKEN: expr_token,
                         REACTOME_EXPR_URL: expr_reactome_url
                     }
-                    update_analysis_data_and_history(pathway_analysis_data, new_json_data, new_display_name, new_metadata,
-                                                     INFERENCE_REACTOME)
+                    inference_data = get_inference_data(data_type, None, None, pathways_df, metadata=metadata)
+                    save_analysis_history(pathway_analysis_data, inference_data, display_name, INFERENCE_REACTOME)
                     messages.success(request, 'Add new inference successful.', extra_tags='primary')
                     return inference(request, analysis_id)
 
@@ -755,3 +701,19 @@ def inference_reactome(request, analysis_id):
             messages.warning(request, 'Add new inference failed.')
 
     return inference(request, analysis_id)
+
+
+class DeleteAnalysisHistoryView(DeleteView):
+    model = AnalysisHistory
+    success_url = reverse_lazy('inference')
+    template_name = 'linker/confirm_delete_analysis_history.html'
+    success_message = "Analysis history was successfully deleted."
+
+    # https://stackoverflow.com/questions/24822509/success-message-in-deleteview-not-shown/42656041#42656041
+    def delete(self, request, *args, **kwargs):
+        messages.success(self.request, self.success_message)
+        return super(DeleteAnalysisHistoryView, self).delete(request, *args, **kwargs)
+
+    def get_success_url(self):
+        return reverse_lazy('inference', kwargs={'analysis_id': self.object.analysis_data.analysis.pk})
+

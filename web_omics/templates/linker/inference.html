@@ -15,6 +15,14 @@
 
         {% include 'linker/navbar.html' with show_selection_group=False active='inference' %}
 
+        {% if messages %}
+            {% for message in messages %}
+                <div class="mt-3 mb-3 alert alert-{{ message.tags }}" role="alert">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        {% endif %}
+
         {% if list_data %}
             <div class="m-1 mb-3">
                 <div class="card">
@@ -29,8 +37,9 @@
                             <tr>
                                 <th>Name</th>
                                 <th>Data Type</th>
-                                <th>Type</th>
+                                <th>Inference Type</th>
                                 <th>Date</th>
+                                <th>Action</th>
                             </tr>
                             {% for item in list_data %}
                                 <tr>
@@ -49,6 +58,12 @@
                                         <td>{{ item.0.get_data_type_str }}</td>
                                         <td>{{ item.0.get_inference_type_str }}</td>
                                         <td>{{ item.0.timestamp|date:"jS F Y H:i" }}</td>
+                                        <td class="text-center">
+                                            <a href="{% url 'delete_analysis_history' pk=item.0.pk %}"
+                                               style="text-decoration: none">
+                                                🗑️
+                                            </a>
+                                        </td>
 
                                     {% else %}
                                         {# Any other analysis #}
@@ -61,6 +76,13 @@
                                         <td>{{ item.0.get_data_type_str }}</td>
                                         <td>{{ item.0.get_inference_type_str }}</td>
                                         <td>{{ item.0.timestamp|date:"jS F Y H:i" }}</td>
+                                        <td class="text-center">
+                                            <a href="{% url 'delete_analysis_history' pk=item.0.pk %}"
+                                               style="text-decoration: none">
+                                                🗑️
+                                            </a>
+                                        </td>
+
                                     {% endif %}
 
                                 </tr>
@@ -75,13 +97,6 @@
             <div class="card">
                 <div class="card-body">
                     <h5>Create a new inference</h5>
-                    {% if messages %}
-                        {% for message in messages %}
-                            <div class="alert alert-{{ message.tags }}" role="alert">
-                                {{ message }}
-                            </div>
-                        {% endfor %}
-                    {% endif %}
                     <form id="inference_form"
                           method="post"
                           action="{{ action_url }}"

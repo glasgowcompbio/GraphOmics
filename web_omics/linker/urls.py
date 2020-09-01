@@ -39,11 +39,12 @@ urlpatterns = [
     path('inference/deseq/<int:analysis_id>', views.inference_deseq, name='inference_deseq'),
     path('inference/limma/<int:analysis_id>', views.inference_limma, name='inference_limma'),
     path('inference/pca/<int:analysis_id>', views.inference_pca, name='inference_pca'),
-    path('inference/pca/results/<int:analysis_id>/<int:analysis_data_id>/', views.PCAResult.as_view(), name='pca_result'),
+    path('inference/pca/results/<int:analysis_id>/<int:analysis_data_id>/<int:analysis_history_id>', views.PCAResult.as_view(), name='pca_result'),
     path('inference/pals/<int:analysis_id>', views.inference_pals, name='inference_pals'),
     path('inference/ora/<int:analysis_id>', views.inference_ora, name='inference_ora'),
     path('inference/gsea/<int:analysis_id>', views.inference_gsea, name='inference_gsea'),
     path('inference/reactome/<int:analysis_id>', views.inference_reactome, name='inference_reactome'),
+    path('delete_analysis_history/<int:pk>', views.DeleteAnalysisHistoryView.as_view(), name='delete_analysis_history'),
 
     # summary page
     path('summary/<int:analysis_id>', views.summary, name='summary'),

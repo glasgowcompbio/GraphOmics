@@ -11,11 +11,12 @@ from loguru import logger
 from linker.constants import *
 from linker.metadata import get_single_ensembl_metadata_online, get_single_uniprot_metadata_online, \
     get_single_compound_metadata_online
-from linker.models import Analysis, AnalysisAnnotation
+from linker.models import Analysis, AnalysisAnnotation, AnalysisHistory
 from linker.reactome import get_reactome_description, get_reaction_entities, pathway_to_reactions
 from linker.views.functions import change_column_order, recur_dictify, get_context, \
     get_last_data, get_last_analysis_data
 from .harmonizomeapi import Harmonizome, Entity
+from .merge import merge_json_data, update_pathway_analysis_data
 
 
 def truncate(my_str):
@@ -42,11 +43,34 @@ def get_firdi_data(request, analysis_id):
         data_fields = {}
         for k, v in DataRelationType:
             try:
+                # get the latest analysis data by timestamp
                 analysis_data = get_last_data(analysis, k)
+                json_data = analysis_data.json_data
+                data_type = analysis_data.data_type
+
+                # merge analysis histories, if any
+                analysis_histories = AnalysisHistory.objects.filter(analysis_data=analysis_data).order_by('timestamp') # ascending
+                for history in analysis_histories:
+                    inference_type = history.inference_type
+                    inference_data = history.inference_data
+                    if inference_type in [INFERENCE_LOADED, INFERENCE_T_TEST, INFERENCE_DESEQ, INFERENCE_LIMMA]:
+                        logger.debug('Merging %s' % history)
+                        case = inference_data['case']
+                        control = inference_data['control']
+                        result_df = pd.read_json(inference_data['result_df'])
+                        json_data = merge_json_data(json_data, data_type, case, control, result_df)
+                    elif inference_type in [INFERENCE_PALS, INFERENCE_ORA, INFERENCE_GSEA, INFERENCE_REACTOME]:
+                        logger.debug('Merging %s' % history)
+                        result_df = pd.read_json(inference_data['result_df'])
+                        json_data = update_pathway_analysis_data(json_data, result_df)
+
                 label = MAPPING[k]
-                table_data[label] = analysis_data.json_data
+                table_data[label] = json_data
+
+                # also load json design, if any
                 if analysis_data.json_design:
                     data_fields[TABLE_IDS[k]] = list(set(pd.DataFrame(analysis_data.json_design)[SAMPLE_COL]))
+
             except IndexError:
                 continue
             except KeyError:
@@ -488,14 +512,19 @@ def get_reactome_pathway_info(request, analysis_id):
         # get reactome token if available
         analysis = get_object_or_404(Analysis, pk=analysis_id)
         analysis_data = get_last_analysis_data(analysis, PATHWAYS)
-        if analysis_data.metadata:
-            if REACTOME_ORA_TOKEN in analysis_data.metadata:
-                token = analysis_data.metadata[REACTOME_ORA_TOKEN]
+        analysis_histories = AnalysisHistory.objects.filter(analysis_data=analysis_data,
+                                                            inference_type=INFERENCE_REACTOME).order_by(
+            '-timestamp')  # descending
+        if len(analysis_histories) > 0:
+            last_analysis_history = analysis_histories[0]
+            inference_data = last_analysis_history.inference_data
+            if REACTOME_ORA_TOKEN in inference_data:
+                token = inference_data[REACTOME_ORA_TOKEN]
                 data.update({REACTOME_ORA_TOKEN: token})
                 logger.debug('Found reactome expression token %s' % token)
 
-            if REACTOME_EXPR_TOKEN in analysis_data.metadata:
-                token = analysis_data.metadata[REACTOME_EXPR_TOKEN]
+            if REACTOME_EXPR_TOKEN in inference_data:
+                token = inference_data[REACTOME_EXPR_TOKEN]
                 data.update({REACTOME_EXPR_TOKEN: token})
                 logger.debug('Found reactome expression token %s' % token)
 

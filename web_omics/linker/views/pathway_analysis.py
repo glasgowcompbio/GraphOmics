@@ -7,7 +7,7 @@ from pals.common import DATABASE_REACTOME_KEGG, DATABASE_REACTOME_CHEBI, DATABAS
     DATABASE_REACTOME_ENSEMBL
 from pals.feature_extraction import DataSource
 
-from linker.constants import PKS, COMPOUND_DATABASE_KEGG, COMPOUND_DATABASE_CHEBI, PATHWAY_PK, NA, METABOLOMICS, \
+from linker.constants import PKS, COMPOUND_DATABASE_KEGG, COMPOUND_DATABASE_CHEBI, METABOLOMICS, \
     PROTEOMICS, GENOMICS, MIN_REPLACE_PROTEOMICS_METABOLOMICS, MIN_REPLACE_GENOMICS, PALS_NUM_RESAMPLES
 from linker.views.functions import get_group_members, get_standardized_df
 
@@ -113,49 +113,3 @@ def run_gsea(ds):
     return pathway_df
 
 
-def update_pathway_analysis_data(analysis_data, pathway_df):
-    # select the columns containing the results ('ending with comb_p')
-    result_cols = list(filter(lambda x: x.endswith('comb_p'), pathway_df.columns))
-    pals_df = pathway_df[result_cols]
-
-    # remove 'comb_p' from the column names and turn it to dictionary
-    pals_df = pals_df.rename(columns={
-        col: '_'.join(col.split(' ')[0:-1]).strip() for col in pals_df.columns
-    })
-    pals_dict = pals_df.to_dict()
-    new_json_data = analysis_data.json_data
-
-    #  remove the previous PALS if exists
-    for pathway_dict in new_json_data:
-        for comparison in pals_dict:
-            key = comparison_to_key(comparison)
-            if key in pathway_dict:
-                del pathway_dict[key]
-
-    # get pathway analysis data and modify its json_data to include the PALS results
-    hits = 0
-    for pathway_dict in new_json_data:
-        pathway_pk = pathway_dict[PATHWAY_PK]
-        found = False
-        for comparison in pals_dict:
-            key = comparison_to_key(comparison)
-            try:
-                pals_results = pals_dict[comparison]
-                pathway_dict[key] = pals_results[pathway_pk]
-                found = True
-            except KeyError:  # pathway is not present in dataset, so it isn't included in PALS results
-                pathway_dict[key] = NA
-        if found:
-            hits += 1
-    logger.debug('Updated %d pathways' % hits)
-    return new_json_data
-
-
-def comparison_to_key(comparison):
-    # remove space and last underscore from the comparison name if comparison ends with '_'
-    if comparison.endswith('_'):
-        key = comparison.strip().rsplit('_', 1)[0]
-    else:
-        key = comparison
-    # key = 'PLAGE_%s' % key
-    return key

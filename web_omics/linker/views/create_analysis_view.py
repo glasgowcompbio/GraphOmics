@@ -63,7 +63,7 @@ class UploadAnalysisView(FormView):
 class DeleteAnalysisView(DeleteView):
     model = Analysis
     success_url = reverse_lazy('experiment_list_view')
-    template_name = 'linker/confirm_delete.html'
+    template_name = 'linker/confirm_delete_analysis.html'
     success_message = "Analysis was successfully deleted."
 
     # https://stackoverflow.com/questions/24822509/success-message-in-deleteview-not-shown/42656041#42656041
