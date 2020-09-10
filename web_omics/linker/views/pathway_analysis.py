@@ -8,7 +8,8 @@ from pals.common import DATABASE_REACTOME_KEGG, DATABASE_REACTOME_CHEBI, DATABAS
 from pals.feature_extraction import DataSource
 
 from linker.constants import PKS, COMPOUND_DATABASE_KEGG, COMPOUND_DATABASE_CHEBI, METABOLOMICS, \
-    PROTEOMICS, GENOMICS, MIN_REPLACE_PROTEOMICS_METABOLOMICS, MIN_REPLACE_GENOMICS, PALS_NUM_RESAMPLES
+    PROTEOMICS, GENOMICS, MIN_REPLACE_PROTEOMICS_METABOLOMICS, MIN_REPLACE_GENOMICS, PLAGE_NUM_RESAMPLES, \
+    PLAGE_RANDOM_SEED
 from linker.views.functions import get_group_members, get_standardized_df
 
 
@@ -94,7 +95,7 @@ def get_comparison(case, control):
 
 def run_pals(ds):
     logger.info('Running PALS')
-    pals = PLAGE(ds, num_resamples=PALS_NUM_RESAMPLES)
+    pals = PLAGE(ds, num_resamples=PLAGE_NUM_RESAMPLES, seed=PLAGE_RANDOM_SEED)
     pathway_df = pals.get_pathway_df(standardize=False)
     return pathway_df
 
