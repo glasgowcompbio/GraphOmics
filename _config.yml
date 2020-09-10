@@ -1,1 +1,4 @@
 theme: jekyll-theme-minimal
+description: A dashboard to integrate and explore different -omics data
+logo: https://github.com/glasgowcompbio/WebOmics/raw/master/web_omics/static/images/transparent_banner.png
+show_downloads: "true"
