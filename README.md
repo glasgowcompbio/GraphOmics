@@ -1,4 +1,3 @@
-# WebOmics
 WebOmics is a dashboard to integrate and explore different types of biological -omics data. 
 Using this tool, you can map transcriptomics, proteomics and metabolomics data onto metabolic pathways. 
 WebOmics uses [Reactome](https://reactome.org/) as the knowledge base to map entities across different omics.
@@ -39,3 +38,7 @@ Finally the **Inference** tab allows user to create and set-up various statistic
 
 The pathway analysis functionalities used in WebOmics have been separated into a stand-alone Python library **PALS** that can be used outside this project. This includes pathway analysis using ORA, GSEA and PLAGE on transcripts (Ensembl ID), proteins (UniProt ID)
 and compound (KEGG or ChEBI IDs) from the Reactome or KEGG database. For more details, please refer to [PALS](http://pals.glasgowcompbio.org)
+
+Integrated analysis spanning multiple omics data is also possible through [Reactome Analysis Service](https://reactome.org/dev/analysis).
+
+## Other functionalities
