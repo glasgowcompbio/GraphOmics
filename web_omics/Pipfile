@@ -12,7 +12,7 @@ django-extensions = "*"
 gunicorn = "*"
 whitenoise = "*"
 ipython = "*"
-numpy = "*"
+numpy = "==1.19.3" # https://stackoverflow.com/questions/64729944/runtimeerror-the-current-numpy-installation-fails-to-pass-a-sanity-check-due-to
 scipy = "*"
 pandas = "==0.25"
 seaborn = "*"
