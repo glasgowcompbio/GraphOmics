@@ -18,39 +18,6 @@
 
         {% include 'linker/navbar.html' with show_selection_group=False active='settings' %}
 
-        <!-- div class="m-1 mb-3">
-            <div class="card">
-                <div class="card-body">
-                    <h5>Add Data</h5>
-                    <p>
-                        To add a new data point, enter its database identifiers below.
-                    </p>
-                    <ul>
-                        <li>
-                            For gene data, this should be the <strong>Ensembl</strong> ID.
-                        </li>
-                        <li>
-                            For protein data, this should be the <strong>Uniprot</strong> ID.
-                        </li>
-                        <li>
-                            For compound data, this should be the <strong>KEGG</strong> ID.
-                        </li>
-                    </ul>
-                    <form id="add_data_form"
-                          method="post"
-                          action="{% url 'add_data' analysis_id=analysis_id %}"
-                          enctype="multipart/form-data">
-                        {% csrf_token %}
-                        <table>
-                            {{ form_1.as_table }}
-                        </table>
-                        <br/>
-                        <input type="submit" name="submit" value="Save" class="btn btn-primary"/>
-                    </form>
-                </div>
-            </div>
-        </div -->
-
         <div class="m-1 mb-3">
             <div class="card">
                 <div class="card-body">
@@ -73,7 +40,7 @@
                           enctype="multipart/form-data">
                         {% csrf_token %}
                         <table>
-                            {{ form_2.as_table }}
+                            {{ share_analysis_form.as_table }}
                         </table>
                         <br/>
                         <input type="submit" name="submit" value="Save" class="btn btn-primary"/>

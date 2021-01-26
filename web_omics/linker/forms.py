@@ -91,20 +91,6 @@ class UploadAnalysisForm(forms.ModelForm):
                   'compound_data', 'compound_design')
 
 
-class AddDataForm(forms.Form):
-    database_id = forms.CharField(required=True, widget=forms.TextInput(attrs={'size': 100}))
-    species = forms.ChoiceField(required=True, choices=SPECIES_CHOICES,
-                                widget=Select2Widget)
-    data_type = forms.ChoiceField(required=True, choices=AddNewDataChoices, widget=Select2Widget())
-
-
-class AddPathwayForm(forms.Form):
-    analysis_name = forms.CharField(required=False, widget=forms.TextInput(attrs={'style': 'width: 100%'}))
-    analysis_description = forms.CharField(required=False, widget=forms.TextInput(attrs={'style': 'width: 100%'}))
-    pathways = forms.MultipleChoiceField(required=True, choices=PATHWAY_CHOICES, initial=mus_musculus[0],
-                                        widget=Select2MultipleWidget)
-
-
 class BaseInferenceForm(forms.Form):
     data_type = forms.ChoiceField(required=True, choices=AddNewDataChoices, widget=Select2Widget(attrs=SELECT_WIDGET_ATTRS))
     inference_type = forms.ChoiceField(required=True, choices=InferenceTypeChoices, widget=Select2Widget(attrs=SELECT_WIDGET_ATTRS))

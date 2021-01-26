@@ -8,7 +8,6 @@ urlpatterns = [
     path('create_analysis', views.CreateAnalysisView.as_view(), name='create_analysis'),
     path('upload_analysis', views.UploadAnalysisView.as_view(), name='upload_analysis'),
     path('delete_analysis/<int:pk>', views.DeleteAnalysisView.as_view(), name='delete_analysis'),
-    path('add_pathway', views.AddPathwayView.as_view(), name='add_pathway'),
 
     # explore data views
     path('explore_data/<int:analysis_id>', views.explore_data, name='explore_data'),
@@ -52,7 +51,6 @@ urlpatterns = [
 
     # settings page
     path('settings/<int:analysis_id>', views.settings, name='settings'),
-    path('settings/add_data/<int:analysis_id>', views.add_data, name='add_data'),
     path('settings/add_share/<int:analysis_id>', views.add_share, name='add_share'),
     path('settings/delete_share/<int:analysis_id>/<int:share_id>', views.delete_share, name='delete_share'),
 

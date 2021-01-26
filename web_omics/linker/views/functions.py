@@ -25,12 +25,12 @@ from linker.views.pipelines import WebOmicsInference
 Relation = collections.namedtuple('Relation', 'keys values mapping_list')
 
 
-def reactome_mapping(request, genes_str, proteins_str, compounds_str, compound_database_str, species_list,
-                     metabolic_pathway_only):
+def reactome_mapping(observed_gene_df, observed_protein_df, observed_compound_df,
+                     compound_database_str, species_list, metabolic_pathway_only):
+
     ### all the ids that we have from the user ###
-    observed_gene_df, group_gene_df, observed_gene_ids = csv_to_dataframe(genes_str)
-    observed_protein_df, group_protein_df, observed_protein_ids = csv_to_dataframe(proteins_str)
-    observed_compound_df, group_compound_df, observed_compound_ids = csv_to_dataframe(compounds_str)
+    observed_gene_ids = get_ids_from_dataframe(observed_gene_df)
+    observed_protein_ids = get_ids_from_dataframe(observed_protein_df)
 
     # try to convert all kegg ids to chebi ids, if possible
     logger.info('Converting kegg ids -> chebi ids')
@@ -193,9 +193,6 @@ def reactome_mapping(request, genes_str, proteins_str, compounds_str, compound_d
         PROTEINS_TO_REACTIONS: protein_2_reactions_json,
         COMPOUNDS_TO_REACTIONS: compound_2_reactions_json,
         REACTIONS_TO_PATHWAYS: reaction_2_pathways_json,
-        'group_gene_df': group_gene_df,
-        'group_protein_df': group_protein_df,
-        'group_compound_df': group_compound_df
     }
     return results
 
@@ -518,10 +515,8 @@ def csv_to_dataframe(csv_str):
                 rename[col_name] = new_col_name
         data_df = data_df.rename(columns=rename)
         data_df.iloc[:, 0] = data_df.iloc[:, 0].astype(str)  # assume id is in the first column and is a string
-        id_list = data_df.iloc[:, 0].values.tolist()
     except pd.errors.EmptyDataError:
         data_df = None
-        id_list = []
 
     # create grouping dataframe
     group_df = None
@@ -552,7 +547,7 @@ def csv_to_dataframe(csv_str):
             group_df = pd.DataFrame(list(zip(filtered_sample_data, filtered_group_data)),
                                     columns=[SAMPLE_COL, GROUP_COL])
 
-    return data_df, group_df, id_list
+    return data_df, group_df
 
 
 def get_ids_from_dataframe(df):

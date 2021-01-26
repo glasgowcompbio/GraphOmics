@@ -5,11 +5,10 @@ from django.urls import reverse_lazy
 from django.views.generic.edit import FormView, DeleteView
 
 from linker.constants import *
-from linker.forms import CreateAnalysisForm, UploadAnalysisForm, AddPathwayForm, pathway_species_dict
+from linker.forms import CreateAnalysisForm, UploadAnalysisForm
 from linker.models import Analysis
-from linker.reactome import get_species_dict, pathway_to_reactions, reaction_to_uniprot, reaction_to_compound, \
-    uniprot_to_ensembl
-from linker.views.functions import reactome_mapping, save_analysis, change_column_order, get_context
+from linker.reactome import get_species_dict
+from linker.views.functions import reactome_mapping, save_analysis, change_column_order, get_context, csv_to_dataframe
 
 
 class CreateAnalysisView(FormView):
@@ -29,7 +28,7 @@ class CreateAnalysisView(FormView):
         species_list = [species_dict[x] for x in form.cleaned_data['species']]
         current_user = self.request.user
 
-        analysis = get_data(self.request, analysis_desc, analysis_name, compounds_str,
+        analysis = get_data(analysis_desc, analysis_name, compounds_str,
                             compound_database_str, current_user, genes_str, proteins_str,
                             species_list, metabolic_pathway_only)
         context = get_context(analysis, current_user)
@@ -53,7 +52,7 @@ class UploadAnalysisView(FormView):
         species_list = [species_dict[x] for x in form.cleaned_data['species']]
         current_user = self.request.user
 
-        analysis = get_data(self.request, analysis_desc, analysis_name, compounds_str,
+        analysis = get_data(analysis_desc, analysis_name, compounds_str,
                             compound_database_str, current_user, genes_str, proteins_str,
                             species_list, metabolic_pathway_only)
         context = get_context(analysis, current_user)
@@ -72,53 +71,23 @@ class DeleteAnalysisView(DeleteView):
         return super(DeleteAnalysisView, self).delete(request, *args, **kwargs)
 
 
-class AddPathwayView(FormView):
-    template_name = 'linker/add_pathway.html'
-    form_class = AddPathwayForm
-    success_url = 'linker/explore_data.html'
-
-    def form_valid(self, form):
-        analysis_name = form.cleaned_data['analysis_name']
-        analysis_desc = form.cleaned_data['analysis_description']
-        pathway_list = form.cleaned_data['pathways']
-        species_list = list(set([pathway_species_dict[x] for x in pathway_list]))
-        compound_database_str = COMPOUND_DATABASE_KEGG
-        metabolic_pathway_only = False
-
-        # get reactions under pathways
-        pathway_2_reactions, _ = pathway_to_reactions(pathway_list)
-        all_reactions = get_unique_items(pathway_2_reactions)
-
-        # get proteins and compounds under reactions
-        reaction_2_proteins, _ = reaction_to_uniprot(all_reactions, species_list)
-        reaction_2_compounds, _ = reaction_to_compound(all_reactions, species_list)
-        all_proteins = get_unique_items(reaction_2_proteins)
-        all_compounds = get_unique_items(reaction_2_compounds)
-
-        # get genes under proteins
-        protein_2_genes, _ = uniprot_to_ensembl(all_proteins, species_list)
-        all_genes = get_unique_items(protein_2_genes)
-
-        current_user = self.request.user
-        genes_str = '\n'.join(['identifier'] + all_genes)
-        proteins_str = '\n'.join(['identifier'] + all_proteins)
-        compounds_str = '\n'.join(['identifier'] + all_compounds)
-
-        current_user = self.request.user
-        analysis = get_data(self.request, analysis_desc, analysis_name, compounds_str, compound_database_str,
-                            current_user, genes_str, proteins_str, species_list, metabolic_pathway_only)
-        context = get_context(analysis, current_user)
-        return render(self.request, self.success_url, context)
-
-
-def get_data(request, analysis_desc, analysis_name, compounds_str, compound_database_str,
+def get_data(analysis_desc, analysis_name, compounds_str, compound_database_str,
              current_user, genes_str, proteins_str, species_list, metabolic_pathway_only):
     try:
         metabolic_pathway_only = metabolic_pathway_only.lower() in ("yes", "true", "t", "1")  # convert string to bool
     except AttributeError:
         pass
-    results = reactome_mapping(request, genes_str, proteins_str, compounds_str,
+
+    observed_gene_df, group_gene_df = csv_to_dataframe(genes_str)
+    observed_protein_df, group_protein_df = csv_to_dataframe(proteins_str)
+    observed_compound_df, group_compound_df = csv_to_dataframe(compounds_str)
+
+    results = reactome_mapping(observed_gene_df, observed_protein_df, observed_compound_df,
                                compound_database_str, species_list, metabolic_pathway_only)
+    results['group_gene_df'] = group_gene_df
+    results['group_protein_df'] = group_protein_df
+    results['group_compound_df'] = group_compound_df
+
     analysis = save_analysis(analysis_name, analysis_desc,
                              genes_str, proteins_str, compounds_str, compound_database_str,
                              results, species_list, current_user, metabolic_pathway_only)
