@@ -12,9 +12,9 @@ django-extensions = "*"
 gunicorn = "*"
 whitenoise = "*"
 ipython = "*"
-numpy = "==1.19.3" # https://stackoverflow.com/questions/64729944/runtimeerror-the-current-numpy-installation-fails-to-pass-a-sanity-check-due-to
+numpy = "*"
 scipy = "*"
-pandas = "==0.25"
+pandas = "*"
 seaborn = "*"
 scikit-learn = "*"
 matplotlib = "*"
@@ -24,7 +24,6 @@ bioservices = "*"
 jsonfield = "*"
 jsonpickle = "*"
 rpy2 = {version = "*",sys_platform = "!= 'win32'"}
-rpy2_win = {path = "./whl/rpy2-2.9.5-cp37-cp37m-win_amd64.whl",sys_platform = "== 'win32'"}
 tzlocal = "*"
 django-webpack-loader = "*"
 clustergrammer = "*"
@@ -36,12 +35,8 @@ loguru = "*"
 pals-pathway = "*"
 jupyterlab = "*"
 django-grappelli = "*"
-gseapy = "*"
-pyzmq = "==18.1.1"
 
 [dev-packages]
-pyqt5 = "*"
-qtconsole = "*"
 
 [requires]
 python_version = "3.7"
