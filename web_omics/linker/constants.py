@@ -55,6 +55,12 @@ COMPOUND_PK = 'compound_pk'
 REACTION_PK = 'reaction_pk'
 PATHWAY_PK = 'pathway_pk'
 
+GENE_ID = 'gene_id'
+PROTEIN_ID = 'protein_id'
+COMPOUND_ID = 'compound_id'
+REACTION_ID = 'reaction_id'
+PATHWAY_ID = 'pathway_id'
+
 GENOMICS = 0
 TRANSCRIPTOMICS = 1
 PROTEOMICS = 2
@@ -111,14 +117,18 @@ MAPPING = {
 }
 
 PKS = {
-    GENOMICS: 'gene_pk',
-    PROTEOMICS: 'protein_pk',
-    METABOLOMICS: 'compound_pk'
+    GENOMICS: GENE_PK,
+    PROTEOMICS: PROTEIN_PK,
+    METABOLOMICS: COMPOUND_PK,
+    REACTIONS: REACTION_PK,
+    PATHWAYS: PATHWAY_PK
 }
 IDS = {
-    GENOMICS: 'gene_id',
-    PROTEOMICS: 'protein_id',
-    METABOLOMICS: 'compound_id'
+    GENOMICS: GENE_ID,
+    PROTEOMICS: PROTEIN_ID,
+    METABOLOMICS: COMPOUND_ID,
+    REACTIONS: REACTION_ID,
+    PATHWAYS: PATHWAY_ID
 }
 IDENTIFIER_COL = 'identifier'
 PADJ_COL_PREFIX = 'padj_'
