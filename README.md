@@ -5,6 +5,8 @@ Methods to rank pathway and highlight interesting connection are also included.
 
 **Live demo is available at [https://webomics.glasgowcompbio.org/app/](https://webomics.glasgowcompbio.org/app/)**
 
+**Python package to perform multi-omics data linking and analysis is available at [https://github.com/glasgowcompbio/pyMultiOmics](https://github.com/glasgowcompbio/pyMultiOmics)**
+
 ## How to install?
 
 Refer to the [setup guide](setup_guide.md).
