@@ -1,11 +1,11 @@
-WebOmics is a dashboard to integrate and explore different types of biological -omics data. 
+GraphOmics is a dashboard to integrate and explore different types of biological -omics data. 
 Using this tool, you can map transcriptomics, proteomics and metabolomics data onto metabolic pathways. 
-WebOmics uses [Reactome](https://reactome.org/) as the knowledge base to map entities across different omics.
+GraphOmics uses [Reactome](https://reactome.org/) as the knowledge base to map entities across different omics.
 Methods to rank pathway and highlight interesting connection are also included.
 
-**Live demo is available at [https://webomics.glasgowcompbio.org/app/](https://webomics.glasgowcompbio.org/app/)**
+**Live demo is available at [https://graphomics.glasgowcompbio.org/app/](https://graphomics.glasgowcompbio.org/app/)**
 
-**Python package to perform multi-omics data linking and analysis is available at [https://github.com/glasgowcompbio/pyMultiOmics](https://github.com/glasgowcompbio/pyMultiOmics)**
+**A Python package to perform multi-omics data linking and analysis is available at [https://github.com/glasgowcompbio/pyMultiOmics](https://github.com/glasgowcompbio/pyMultiOmics)**. This is the same code used in this Web application but available for stand-alone use in your own application.
 
 ## How to install?
 
@@ -22,9 +22,9 @@ The **Data Browser** tab shows all the interconnected transcripts, proteins, met
 
 ![Data Explorer](web_omics/images/screenshot1.PNG?raw=true "Data Explorer")
 
-For **interactive heatmap visualisation**, WebOmics uses [Clustergrammer](https://amp.pharm.mssm.edu/clustergrammer/), a web-based tool for visualizing and analyzing high-dimensional data as interactive clustered heatmaps.
+For **interactive heatmap visualisation**, GraphOmics uses [Clustergrammer](https://amp.pharm.mssm.edu/clustergrammer/), a web-based tool for visualizing and analyzing high-dimensional data as interactive clustered heatmaps.
 The heatmap is linked to the Data Browser such that anything that is clicked on one will also be selected on the other.
-A cluster can also be selected from the heatmap in Clustergrammer and be used to create selection group for further analysis in WebOmics.
+A cluster can also be selected from the heatmap in Clustergrammer and be used to create selection group for further analysis in GraphOmics.
 
 ![Heatmap](web_omics/images/screenshot2.PNG?raw=true "Heatmap")
 
@@ -38,7 +38,7 @@ Finally the **Inference** tab allows user to create and set-up various statistic
 
 ## Pathway Analysis
 
-The pathway analysis functionalities used in WebOmics have been separated into a stand-alone Python library **PALS** that can be used outside this project. This includes pathway analysis using ORA, GSEA and PLAGE on transcripts (Ensembl ID), proteins (UniProt ID)
+The pathway analysis functionalities used in GraphOmics have been separated into a stand-alone Python library **PALS** that can be used outside this project. This includes pathway analysis using ORA, GSEA and PLAGE on transcripts (Ensembl ID), proteins (UniProt ID)
 and compound (KEGG or ChEBI IDs) from the Reactome or KEGG database. For more details, please refer to [PALS](http://pals.glasgowcompbio.org)
 
 Integrated analysis spanning multiple omics data is also possible through [Reactome Analysis Service](https://reactome.org/dev/analysis).
