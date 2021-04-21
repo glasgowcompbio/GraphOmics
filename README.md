@@ -20,21 +20,21 @@ Refer to the [setup guide](setup_guide.md).
 
 The **Data Browser** tab shows all the interconnected transcripts, proteins, metabolites, reactions and pathways in your data, alongside their fold-change measurements colour-coded by their p-value significance.
 
-![Data Explorer](web_omics/images/screenshot1.PNG?raw=true "Data Explorer")
+![Data Explorer](graphomics/images/screenshot1.PNG?raw=true "Data Explorer")
 
 For **interactive heatmap visualisation**, GraphOmics uses [Clustergrammer](https://amp.pharm.mssm.edu/clustergrammer/), a web-based tool for visualizing and analyzing high-dimensional data as interactive clustered heatmaps.
 The heatmap is linked to the Data Browser such that anything that is clicked on one will also be selected on the other.
 A cluster can also be selected from the heatmap in Clustergrammer and be used to create selection group for further analysis in GraphOmics.
 
-![Heatmap](web_omics/images/screenshot2.PNG?raw=true "Heatmap")
+![Heatmap](graphomics/images/screenshot2.PNG?raw=true "Heatmap")
 
 A **selection group** can be created from the Data Browser or the Clustergrammer heatmap for further analysis. At the moment, users can create a boxplot or perform gene ontology analysis on a group.
 
-![Group Analysis](web_omics/images/screenshot3.PNG?raw=true "Group Analysis")
+![Group Analysis](graphomics/images/screenshot3.PNG?raw=true "Group Analysis")
 
 Finally the **Inference** tab allows user to create and set-up various statistical inference such as DEseq2, t-test, PCA and pathway ranking analysis.
 
-![Inference](web_omics/images/screenshot4.PNG?raw=true "Inference")
+![Inference](graphomics/images/screenshot4.PNG?raw=true "Inference")
 
 ## Pathway Analysis
 
@@ -44,3 +44,5 @@ and compound (KEGG or ChEBI IDs) from the Reactome or KEGG database. For more de
 Integrated analysis spanning multiple omics data is also possible through [Reactome Analysis Service](https://reactome.org/dev/analysis).
 
 ## Other functionalities
+
+Gene Ontology Analysis, PCA, heatmaps and various other plots can also be generated from GraphOmics.

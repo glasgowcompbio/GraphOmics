@@ -1,0 +1,82 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load render_bundle from webpack_loader %}
+
+{% block title %}GraphOmics{% endblock %}
+
+{% block head_block %}
+    {% render_bundle 'explore_data' 'css' %}
+    <script type="text/javascript" language="javascript" src="https://reactome.org/DiagramJs/diagram/diagram.nocache.js"></script>
+{% endblock %}
+
+{% block body_block %}
+
+    <div class="container-fluid mt-2">
+
+        {% include 'linker/navbar.html' with show_selection_group=True active='explore_data' read_only=read_only %}
+
+        <div class="m-1 mb-3 mt-2">
+            <ul class="nav nav-pills mb-3" id="pills-tab" role="tablist">
+                <li class="nav-item">
+                    <a class="nav-link active" id="pills-browser-tab" data-toggle="pill" href="#pills-browser" role="tab"
+                       aria-controls="pills-browser" aria-selected="true">Data Browser</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" id="pills-heatmap-tab" data-toggle="pill" href="#pills-heatmap" role="tab"
+                       aria-controls="pills-heatmap" aria-selected="false">Heatmap</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link d-none" id="pills-factor-tab" data-toggle="pill" href="#pills-factor" role="tab"
+                       aria-controls="pills-factor" aria-selected="false">Group Analysis</a>
+                </li>
+            </ul>
+            <div class="tab-content" id="pills-tabContent">
+                {% include "linker/explore_data_browser.html" %}
+                {% include "linker/explore_data_heatmap.html" %}
+                {% include "linker/explore_data_factor.html" %}
+            </div>
+        </div>
+
+        <div id="annotationDialog" title="Update Annotation" style="display: none">
+            <form id="annotationForm" action="">
+                <div class="form-group">
+                    <input type="hidden" id="annotationId"/>
+                    <input type="hidden" id="displayName" name="displayName"/>
+                    <label for="annotationValue">Annotation</label>
+                    <textarea class="form-control" rows="5" id="annotationValue" name="annotationValue"></textarea>
+                </div>
+                <input type="button" id="annotationSubmit" name="submit" value="Save" class="btn btn-primary"/>
+            </form>
+        </div>
+
+        <div id="saveGroupDialog" title="Save Group" style="display: none">
+            <form id="saveGroupForm" action="">
+                <div class="form-group">
+                    <label for="groupName">Group Name</label>
+                    <input type="text" class="form-control" id="groupName" name="groupName"/>
+                </div>
+                <div class="form-group">
+                    <label for="groupDesc">Group Description</label>
+                    <textarea class="form-control" rows="5" id="groupDesc" name="groupDesc"></textarea>
+                </div>
+                <input type="button" id="groupSubmit" name="submit" value="Save" class="btn btn-primary"/>
+            </form>
+        </div>
+
+        <div id="reactomeWidgetDialog" title="Reactome Viewer" style="display: none">
+            <div id="diagramHolder"></div>
+        </div>
+
+    </div>
+
+{% endblock %}
+
+{% block js_block %}
+    <script>
+        // const data = JSON.parse('{{ data|escapejs }}');
+        // const data_fields = JSON.parse('{{ data_fields|escapejs }}');
+        // const clusterJson = JSON.parse('{{ cluster_json|escapejs }}');
+        const viewNames = JSON.parse('{{ view_names|escapejs }}')
+    </script>
+    {% render_bundle 'explore_data' 'js' %}
+{% endblock %}

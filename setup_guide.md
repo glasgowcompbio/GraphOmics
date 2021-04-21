@@ -1,9 +1,9 @@
-# WebOmics Setup Guide
+# GraphOmics Setup Guide
 
-WebOmics can be somewhat tricky to install due to its large number of dependencies. Please follow all the steps below carefully.
-In the future, we will prepare dockerised image of WebOmics that is ready to run.
+GraphOmics can be somewhat tricky to install due to its large number of dependencies. Please follow all the steps below carefully.
+In the future, we will prepare dockerised image of GraphOmics that is ready to run.
 
-The following are the instructions to get WebOmics running on Ubuntu 18.04.
+The following are the instructions to get GraphOmics running on Ubuntu 18.04.
 
 ### 1. Install Java 8
 
@@ -64,7 +64,7 @@ Check that the neo4j service is running with the following command. If it is not
 $ sudo service neo4j status
 ```
 
-For graph database connection in WebOmics, be sure to set the following environmental variables:
+For graph database connection in GraphOmics, be sure to set the following environmental variables:
 - `NEO4J_SERVER`: your Neo4j server (default: bolt://localhost:7687)
 - `NEO4J_USER`: your Neo4j user name (default: neo4j)
 - `NEO4J_PASSWORD`: your Neo4j password (default: neo4j)
@@ -98,8 +98,8 @@ Note: Django 2.0 requires Python 3. If you also have Python 2 installed, the
 $ sudo apt update
 $ sudo apt install python3-pip python3-tk
 $ sudo pip install pipenv
-$ git clone https://github.com/joewandy/WebOmics.git
-$ cd WebOmics/web_omics
+$ git clone https://github.com/joewandy/GraphOmics.git
+$ cd GraphOmics/graphomics
 $ touch .env
 ```
 
@@ -126,7 +126,7 @@ Note2: the Django project template is based on https://github.com/jpadilla/djang
 
 ### 6. Install front-end dependencies
 
-Now we need to install the front-end dependencies of WebOmics. The Javascript packages required by WebOmics are managed by Node.js.
+Now we need to install the front-end dependencies of GraphOmics. The Javascript packages required by GraphOmics are managed by Node.js.
 First, install Node.js for your platform: https://nodejs.org/en. You can choose the LTS version for this.
 
 Once Node.js is installed, you need to get a package manager. Here we use Yarn (alternatively you can use npm). Below is the instructions for Ubuntu (for other platforms, refer to https://yarnpkg.com/en/docs/install).
@@ -135,7 +135,7 @@ $ curl -sS https://dl.yarnpkg.com/debian/pubkey.gpg | sudo apt-key add -
 $ echo "deb https://dl.yarnpkg.com/debian/ stable main" | sudo tee /etc/apt/sources.list.d/yarn.list
 $ sudo apt-get update && sudo apt-get install yarn
 ```
-In the `WebOmics/web_omics` directory where `package.json` can be found, type the following to download all the front-end packages:
+In the `GraphOmics/graphomics` directory where `package.json` can be found, type the following to download all the front-end packages:
 ```bash
 $ yarn
 ```
@@ -152,9 +152,9 @@ $ yarn run build
 
 JQuery, D3.js and React are already configured in the project, and they can be readily used.
 
-### 7. Start WebOmics
+### 7. Start GraphOmics
 
-Now you can start the WebOmics app in Django. Do a migration the first time to create the database tables
+Now you can start the GraphOmics app in Django. Do a migration the first time to create the database tables
 ```bash
 $ python manage.py migrate
 ```
@@ -175,6 +175,6 @@ $ jupyter notebook
 ```
 
 You might need to do the following configurations to make the notebook work properly:
-1. Add the environmental variables `DJANGO_CONFIGURATION=Development`, `DJANGO_SETTINGS_MODULE=web_omics.settings` and `PYTHONPATH=<root of webomics python project>`
+1. Add the environmental variables `DJANGO_CONFIGURATION=Development`, `DJANGO_SETTINGS_MODULE=graphomics.settings` and `PYTHONPATH=<root of GraphOmics python project>`
 2. Make sure that django-configuration is setup properly when launched from notebook, see https://django-configurations.readthedocs.io/en/latest/cookbook/#ipython-notebooks.
 This is used to let Jupyter notebook load Django objects directly.
