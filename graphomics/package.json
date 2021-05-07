@@ -76,7 +76,7 @@
     "react": "^16.5.2",
     "react-dom": "^16.5.2",
     "save-svg-as-png": "^1.4.6",
-    "underscore": "^1.9.1",
+    "underscore": "^1.12.1",
     "webpack-jquery-ui": "^2.0.1"
   }
 }
