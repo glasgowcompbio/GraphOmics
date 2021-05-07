@@ -94,6 +94,7 @@ class Common(Configuration):
         'django.contrib.auth.middleware.AuthenticationMiddleware',
         'django.contrib.messages.middleware.MessageMiddleware',
         'django.middleware.clickjacking.XFrameOptionsMiddleware',
+        'django.middleware.gzip.GZipMiddleware',
     ]
 
     ROOT_URLCONF = 'graphomics.urls'
@@ -173,7 +174,6 @@ class Common(Configuration):
     # to let save group function work
     DATA_UPLOAD_MAX_MEMORY_SIZE = 5242880
 
-
 class Development(Common):
     """
     The in-development settings and the default configuration.
@@ -187,34 +187,17 @@ class Development(Common):
         '127.0.0.1'
     ]
 
-    MIDDLEWARE = Common.MIDDLEWARE + [
-        'django.middleware.gzip.GZipMiddleware',
-    ]
+    # for https and proxy stuff
+    # FIXME: these should be placed under the Production config
+    USE_X_FORWARDED_HOST = True
+    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+    SECURE_SSL_REDIRECT = True
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+    CSRF_TRUSTED_ORIGINS = ['graphomics.glasgowcompbio.org']
 
-
-class Staging(Common):
+class Production(Common):
     """
-    The in-staging settings.
-    """
-    # Security
-    SESSION_COOKIE_SECURE = values.BooleanValue(True)
-    CSRF_COOKIE_SECURE = values.BooleanValue(True)
-    SECURE_BROWSER_XSS_FILTER = values.BooleanValue(True)
-    SECURE_CONTENT_TYPE_NOSNIFF = values.BooleanValue(True)
-    SECURE_HSTS_INCLUDE_SUBDOMAINS = values.BooleanValue(True)
-    SECURE_HSTS_SECONDS = values.IntegerValue(31536000)
-    SECURE_REDIRECT_EXEMPT = values.ListValue([])
-    SECURE_SSL_HOST = values.Value(None)
-    SECURE_SSL_REDIRECT = values.BooleanValue(True)
-    SECURE_PROXY_SSL_HEADER = values.TupleValue(
-        ('HTTP_X_FORWARDED_PROTO', 'https')
-    )
-    X_FRAME_OPTIONS = 'DENY'
-    ALLOWED_HOSTS = values.ListValue(['*'])
-    ADMINS = values.SingleNestedTupleValue(())
-
-class Production(Staging):
-    """
-    The in-production settings.
+    The production settings.
     """
     pass
