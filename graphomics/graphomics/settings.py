@@ -187,17 +187,15 @@ class Development(Common):
         '127.0.0.1'
     ]
 
+
+class Production(Common):
+    """
+    The production settings.
+    """
     # for https and proxy stuff
-    # FIXME: these should be placed under the Production config
     USE_X_FORWARDED_HOST = True
     SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
     SECURE_SSL_REDIRECT = True
     SESSION_COOKIE_SECURE = True
     CSRF_COOKIE_SECURE = True
     CSRF_TRUSTED_ORIGINS = ['graphomics.glasgowcompbio.org']
-
-class Production(Common):
-    """
-    The production settings.
-    """
-    pass
