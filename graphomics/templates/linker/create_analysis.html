@@ -28,7 +28,6 @@
             <div>
                 <p>
                     Create a new data integration analysis by entering its data below in comma-separated values format.
-                    To see an example data, <a href="#" onClick="showExample();" value="here">click here</a>.
                 </p>
                 <ul>
                     <li>Analysis description is optional and can be left blank.</li>
@@ -48,6 +47,8 @@
                         </li>
                     </ul>
                 </ul>
+                <a class="btn btn-success mt-1 mb-3" href="#" onClick="showExample();" value="here">Load Example Data</a>
+
                 <form id="analysis_form"
                       method="post"
                       action="{% url 'create_analysis' %}"
@@ -83,7 +84,7 @@
 
         function showExample() {
             name.val('Example analysis');
-            description.val('Mouse data in a Leishmania parasite experiment.')
+            description.val('Example Covid19 data')
             genes.val(exampleGenes);
             proteins.val(exampleProteins);
             compounds.val(exampleCompounds);

@@ -145,8 +145,8 @@ CompoundDatabaseChoices = (
     (COMPOUND_DATABASE_CHEBI, 'ChEBI identifiers'),
 )
 MetabolicPathwayOnlyChoices = (
-    (True, 'Only metabolic pathways'),
     (False, 'All pathways'),
+    (True, 'Only metabolic pathways'),
 )
 ShareReadOnlyChoices = (
     (True, 'Read only'),

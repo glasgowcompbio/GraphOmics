@@ -19,20 +19,16 @@ def load_example_data(file_path):
     return example_data
 
 
-example_genes = load_example_data('../static/data/uploads/gene_data_example.csv')
-example_proteins = ""
+example_genes = ""
+example_proteins = load_example_data('../static/data/uploads/protein_data_example.csv')
 example_compounds = load_example_data('../static/data/uploads/compound_data_example.csv')
 
-# example_genes = load_example_data('../static/data/gene_data.csv')
-# example_proteins = ""
-# example_compounds = load_example_data('../static/data/compound_data.csv')
-
 SPECIES_CHOICES = []
-mus_musculus = None
+initial = None
 for k, v in get_species_dict().items():
     SPECIES_CHOICES.append((k, v,))
-    if v == 'Mus musculus':
-        mus_musculus = (k, v,)
+    if v == 'Homo sapiens':
+        initial = (k, v,)
 
 
 default_pathways = get_all_pathways(DEFAULT_SPECIES)
@@ -48,7 +44,7 @@ for i, item in enumerate(default_pathways):
 class CreateAnalysisForm(forms.Form):
     analysis_name = forms.CharField(required=False, widget=forms.TextInput(attrs={'style': 'width: 100%'}))
     analysis_description = forms.CharField(required=False, widget=forms.TextInput(attrs={'style': 'width: 100%'}))
-    species = forms.MultipleChoiceField(required=True, choices=SPECIES_CHOICES, initial=mus_musculus[0],
+    species = forms.MultipleChoiceField(required=True, choices=SPECIES_CHOICES, initial=initial[0],
                                         widget=Select2MultipleWidget)
     genes = forms.CharField(required=False,
                             widget=forms.Textarea(attrs={'rows': 6, 'cols': 100, 'style': 'width: 100%'}),
