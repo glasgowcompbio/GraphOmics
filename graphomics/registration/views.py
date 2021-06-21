@@ -6,6 +6,7 @@ from django.http import HttpResponse, HttpResponseRedirect
 from django.shortcuts import render
 from django.urls import reverse, reverse_lazy
 from django.views.generic.edit import UpdateView
+from django.contrib import messages
 
 from registration.forms import UserForm
 
@@ -47,15 +48,17 @@ def user_login(request):
                 login(request, user)
                 return HttpResponseRedirect(reverse('experiment_list_view'))
             else:
-                return HttpResponse("Your account is disabled.")
+                error_message = "Account {0} has been disabled".format(username)
+                messages.warning(request, error_message)
+                return render(request, 'registration/login.html', {})
         else:
             if username == 'guest': # auto-create if not there
                 guest_user = User.objects.create_user(username='guest', password='guest')
                 login(request, guest_user)
                 return HttpResponseRedirect(reverse('experiment_list_view'))
             else:
-                logger.debug("Invalid login details: {0}".format(username))
-                return HttpResponse("Invalid login details supplied.")
+                error_message = "Invalid login details for {0}".format(username)
+                messages.warning(request, error_message)
                 return render(request, 'registration/login.html', {})
 
     else: # GET
