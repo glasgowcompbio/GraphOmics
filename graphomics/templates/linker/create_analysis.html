@@ -1,6 +1,7 @@
 {% extends 'base.html' %}
 
 {% load static %}
+{% load render_bundle from webpack_loader %}
 
 {% block head_block %}
     {{ form.media.css }}
@@ -12,7 +13,7 @@
 {% endblock %}
 
 {% block body_block %}
-    <div class="container-fluid m-2 mb-5">
+    <div id="container" class="container-fluid m-2 mb-5">
         <h3>Create Analysis - Enter Data</h3>
         <div>
             <ul class="nav nav-tabs">
@@ -24,42 +25,84 @@
                 </li>
             </ul>
         </div>
-        <div class="m-1 mb-3">
+        <div id="main" class="m-1 mt-3 mb-3">
             <div>
                 <p>
-                    Create a new data integration analysis by entering its data below in comma-separated values format.
+                    <a class="btn btn-outline-primary" data-toggle="collapse" href="#collapseExample1" role="button"
+                       aria-expanded="false" aria-controls="collapseExample1">
+                        Data Format
+                    </a>
+                    <a class="btn btn-outline-primary" data-toggle="collapse" href="#collapseExample2" role="button"
+                       aria-expanded="false" aria-controls="collapseExample2">
+                        Example Data
+                    </a>
                 </p>
-                <ul>
-                    <li>Analysis description is optional and can be left blank.</li>
-                    <li>Other fields for the data should be provided in a comma-separated
-                        format.
-                    </li>
-                    <li>For each -omics data:
-                    </li>
-                    <ul>
-                        <li>The first row is the header, and the first column is always used as the
-                            identifier column.
-                        </li>
-                        <li>Other columns are taken as the sample measurements.</li>
-                        <li>If present, a second row that begins with <strong>group</strong> can also be
-                            provided
-                            to specify the grouping information.
-                        </li>
-                    </ul>
-                </ul>
-                <a class="btn btn-success mt-1 mb-3" href="#" onClick="showExample();" value="here">Load Example Data</a>
-
-                <form id="analysis_form"
-                      method="post"
-                      action="{% url 'create_analysis' %}"
-                      enctype="multipart/form-data">
-                    {% csrf_token %}
-                    <table>
-                        {{ form.as_table }}
-                    </table>
-                    <br/>
-                    <input type="submit" name="submit" value="Submit Your Analysis" class="btn btn-primary"/>
-                </form>
+                <div class="collapse" id="collapseExample1">
+                    <div class="card border-dark mt-3 mb-3">
+                        <div class="card-header text-white bg-primary">
+                            Data Format
+                        </div>
+                        <div class="card-body">
+                            <p>
+                                Create a new data integration analysis by entering its data below in comma-separated
+                                values format.
+                            </p>
+                            <ul>
+                                <li>
+                                    Analysis description is optional and can be left blank.
+                                </li>
+                                <li>
+                                    Other fields for the data should be provided in a comma-separated
+                                    format.
+                                </li>
+                                <li>For each -omics data:
+                                </li>
+                                <ul>
+                                    <li>The first row is the header, and the first column is always used as the
+                                        identifier column.
+                                    </li>
+                                    <li>Other columns are taken as the sample measurements.</li>
+                                    <li>If present, a second row that begins with <strong>group</strong> can also be
+                                        provided
+                                        to specify the grouping information.
+                                    </li>
+                                </ul>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                <div class="collapse" id="collapseExample2">
+                    <div class="card border-dark mt-3 mb-3">
+                        <div class="card-header text-white bg-primary">
+                            Example Data
+                        </div>
+                        <div class="card-body">
+                            To load an example data, click the following button:
+                            <a class="btn btn-success mt-1 mb-3" style="width: 200px" href="#" onClick="showExample();"
+                               value="here">Load
+                                Example Data</a>
+                        </div>
+                    </div>
+                </div>
+                <div id="main-form" class="card border-dark mt-3 mb-3">
+                    <div class="card-header text-white bg-primary">
+                        Submission Form
+                    </div>
+                    <div class="card-body">
+                        <form id="analysis_form"
+                              method="post"
+                              action="{% url 'create_analysis' %}"
+                              enctype="multipart/form-data">
+                            {% csrf_token %}
+                            <table>
+                                {{ form.as_table }}
+                            </table>
+                            <br/>
+                            <input id="submitBtn" type="submit" name="btnSubmit" value="Submit Your Analysis"
+                                   class="btn btn-primary"/>
+                        </form>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -88,8 +131,12 @@
             genes.val(exampleGenes);
             proteins.val(exampleProteins);
             compounds.val(exampleCompounds);
-            species.val(exampleSpecies).trigger('change');
+
+            // no idea why below doesn't work
+            // species.val(exampleSpecies).trigger('change');
+            $('#id_species').val(exampleSpecies).trigger('change');
         }
     </script>
+    {% render_bundle 'submit_analysis' 'js' %}
     {{ form.media.js }}
 {% endblock %}

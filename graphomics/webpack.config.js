@@ -10,6 +10,7 @@ module.exports = {
 
     entry: {
         base: './static/js/base',
+        submit_analysis: './static/js/submit_analysis',
         explore_data: './static/js/explore_data',
         summary: './static/js/summary',
         inference: './static/js/inference'

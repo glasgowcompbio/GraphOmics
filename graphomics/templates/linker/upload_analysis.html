@@ -1,6 +1,7 @@
 {% extends 'base.html' %}
 
 {% load static %}
+{% load render_bundle from webpack_loader %}
 
 {% block head_block %}
     {{ form.media.css }}
@@ -12,7 +13,7 @@
 {% endblock %}
 
 {% block body_block %}
-    <div class="container-fluid m-2 mb-5">
+    <div id="container" class="container-fluid m-2 mb-5">
         <h3>Create Analysis - Upload Data</h3>
         <div>
             <ul class="nav nav-tabs">
@@ -24,42 +25,101 @@
                 </li>
             </ul>
         </div>
-        <div class="m-1 mb-3">
+        <div id="main" class="m-1 mt-3 mb-3">
             <div>
                 <p>
-                    Create a new data integration analysis by uploading data.
-                    Analysis description is optional and can be left blank.
-                    Other fields for the data should be provided in a comma-separated
-                    format. For each omics data available, the following two files should be provided,
-                    otherwise they can be left blank.
+                    <a class="btn btn-outline-primary" data-toggle="collapse" href="#collapseExample1" role="button"
+                       aria-expanded="false" aria-controls="collapseExample1">
+                        Data Format
+                    </a>
+                    <a class="btn btn-outline-primary" data-toggle="collapse" href="#collapseExample2" role="button"
+                       aria-expanded="false" aria-controls="collapseExample2">
+                        Example Data
+                    </a>
                 </p>
-                <ul>
-                    <li>
-                        Example <a href="{% static 'data/uploads/compound_data.csv' %}">measurements CSV</a>
-                    </li>
-                    <li>
-                        Example <a href="{% static 'data/uploads/compound_design.csv' %}">design matrix CSV</a>
-                    </li>
-                    <li>
-                        Example <a href="{% static 'data/uploads/zebrafish_data.zip' %}">Zebrafish dataset</a>
-                        <sup><a href="https://www.pnas.org/content/114/5/E717" target="_blank">[1]</a></sup>
-                    </li>
-                    <li>
-                        Example <a href="{% static 'data/uploads/covid19_data.zip' %}">Covid19 dataset</a>
-                        <sup><a href="https://www.cell.com/cell/fulltext/S0092-8674(20)30627-9" target="_blank">[2]</a></sup>
-                    </li>
-                </ul>
-                <form id="analysis_form"
-                      method="post"
-                      action="{% url 'upload_analysis' %}"
-                      enctype="multipart/form-data">
-                    {% csrf_token %}
-                    <table>
-                        {{ form.as_table }}
-                    </table>
-                    <br/>
-                    <input type="submit" name="submit" value="Submit Your Analysis" class="btn btn-primary"/>
-                </form>
+                <div class="collapse" id="collapseExample1">
+                    <div class="card border-dark mt-3 mb-3">
+                        <div class="card-header text-white bg-primary">
+                            Data Format
+                        </div>
+                        <div class="card-body">
+                            <p>
+                                Create a new data integration analysis by uploading data following the example format
+                                below.
+                            </p>
+                            <ul>
+                                <li>
+                                    Analysis description is optional and can be left blank.
+                                </li>
+                                <li>
+                                    Other fields for the data should be provided in a comma-separated
+                                    format.
+                                </li>
+                                <li>
+                                    For each omics data available, the
+                                    following two files should be provided, otherwise they can be left blank.
+                                </li>
+                                <ol>
+                                    <li>
+                                        <a href="{% static 'data/uploads/compound_data.csv' %}">Measurements in CSV
+                                            format</a>
+                                    </li>
+                                    <li>
+                                        <a href="{% static 'data/uploads/compound_design.csv' %}">Design matrix in
+                                            CSV format</a>
+                                    </li>
+                                </ol>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                <div class="collapse" id="collapseExample2">
+                    <div class="card border-dark mt-3 mb-3">
+                        <div class="card-header text-white bg-primary">
+                            Example Data
+                        </div>
+                        <div class="card-body">
+                            <p>
+                                The following are some example data used to test GraphOmics in the paper.
+                                Please download the respective zip file to your computer, extract it and
+                                upload the data to GraphOmics.
+                                For the Zebrafish and Covid19 datasets, please enter <strong>Danio rerio</strong>
+                                and <strong>Homo sapiens</strong> respectively as the species in the form below.
+                            </p>
+                            <ul>
+                                <li>
+                                    Example <a href="{% static 'data/uploads/zebrafish_data.zip' %}">Zebrafish
+                                    dataset</a>
+                                    <sup><a href="https://www.pnas.org/content/114/5/E717" target="_blank">[1]</a></sup>
+                                </li>
+                                <li>
+                                    Example <a href="{% static 'data/uploads/covid19_data.zip' %}">Covid19 dataset</a>
+                                    <sup><a href="https://www.cell.com/cell/fulltext/S0092-8674(20)30627-9"
+                                            target="_blank">[2]</a></sup>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                <div id="main-form" class="card border-dark mt-3 mb-3">
+                    <div class="card-header text-white bg-primary">
+                        Submission Form
+                    </div>
+                    <div class="card-body">
+                        <form id="analysis_form"
+                              method="post"
+                              action="{% url 'upload_analysis' %}"
+                              enctype="multipart/form-data">
+                            {% csrf_token %}
+                            <table>
+                                {{ form.as_table }}
+                            </table>
+                            <br/>
+                            <input id="submitBtn" type="submit" name="btnSubmit" value="Submit Your Analysis"
+                                   class="btn btn-primary"/>
+                        </form>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -91,5 +151,6 @@
             species.val(exampleSpecies).trigger('change');
         }
     </script>
+    {% render_bundle 'submit_analysis' 'js' %}
     {{ form.media.js }}
 {% endblock %}
