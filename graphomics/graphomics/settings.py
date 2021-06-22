@@ -178,6 +178,7 @@ class Development(Common):
     """
     The in-development settings and the default configuration.
     """
+    print('Using Development settings')
     DEBUG = True
     MESSAGE_LEVEL = message_constants.DEBUG
 
@@ -192,6 +193,8 @@ class Production(Common):
     """
     The production settings.
     """
+    print('Using Production settings')
+
     # for https and proxy stuff
     USE_X_FORWARDED_HOST = True
     SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
@@ -199,3 +202,4 @@ class Production(Common):
     SESSION_COOKIE_SECURE = True
     CSRF_COOKIE_SECURE = True
     CSRF_TRUSTED_ORIGINS = ['graphomics.glasgowcompbio.org']
+    ALLOWED_HOSTS = ['127.0.0.1']
