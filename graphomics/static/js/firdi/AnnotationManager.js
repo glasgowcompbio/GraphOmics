@@ -24,23 +24,25 @@ class AnnotationManager {
     }
 
     getReactomeOraViewerLink() {
-        if (this.reactomeOraToken) {
-            const reactomeViewerLink = $('<button/>', {
-                text: '🔍 Show Pathway (with Reactome ORA results)',
-                type: 'button',
-                style: 'margin-top: 5px',
-                class: 'btn btn-primary btn-sm',
-                click: () => {
-                    this.showReactomeViewerDialog(this.reactomeOraToken);
-                }
-            });
-            return reactomeViewerLink;
-        } else {
-            return undefined;
+        if (this.reactomeOraToken === undefined) {
+            return;
         }
+        const reactomeViewerLink = $('<button/>', {
+            text: '🔍 Show Pathway (with Reactome ORA results)',
+            type: 'button',
+            style: 'margin-top: 5px',
+            class: 'btn btn-primary btn-sm',
+            click: () => {
+                this.showReactomeViewerDialog(this.reactomeOraToken);
+            }
+        });
+        return reactomeViewerLink;
     }
 
     getReactomeExprViewerLink() {
+        if (this.reactomeExprToken === undefined) {
+            return;
+        }
         let text = '🔍 Show Pathway';
         if (this.reactomeExprToken) {
             text = '🔍 Show Pathway (with expression data)'
