@@ -2,6 +2,7 @@ import jsonpickle
 import numpy as np
 from django import forms
 from django.contrib import messages
+from django.core.exceptions import PermissionDenied
 from django.forms import TextInput, DecimalField
 from django.shortcuts import render, get_object_or_404
 from django.urls import reverse, reverse_lazy
@@ -10,6 +11,7 @@ from django_select2.forms import Select2Widget
 from loguru import logger
 from sklearn.decomposition import PCA as skPCA
 
+from linker.common import access_allowed
 from linker.constants import *
 from linker.forms import BaseInferenceForm
 from linker.models import Analysis, AnalysisData, AnalysisHistory
@@ -24,6 +26,9 @@ from linker.views.reactome_analysis import get_omics_data, populate_reactome_cho
 
 def inference(request, analysis_id):
     analysis = get_object_or_404(Analysis, pk=analysis_id)
+    if not access_allowed(analysis, request):
+        raise PermissionDenied()
+
     analysis_history_list = AnalysisHistory.objects.filter(analysis=analysis).order_by(
         'timestamp')
     list_data = get_list_data(analysis_id, analysis_history_list)

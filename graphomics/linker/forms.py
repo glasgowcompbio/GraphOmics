@@ -109,3 +109,7 @@ class ShareAnalysisForm(forms.Form):
     username = forms.CharField(required=True, widget=forms.TextInput(attrs={'size': 100}))
     share_type = forms.ChoiceField(required=True, choices=ShareReadOnlyChoices,
                                    widget=Select2Widget(attrs=SELECT_WIDGET_ATTRS))
+
+
+class MakePublicForm(forms.Form):
+    make_public = forms.BooleanField(required=False)

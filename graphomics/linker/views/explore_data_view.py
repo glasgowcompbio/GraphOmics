@@ -2,6 +2,7 @@ import collections
 
 import pandas as pd
 from django.core.exceptions import ObjectDoesNotExist
+from django.core.exceptions import PermissionDenied
 from django.http import JsonResponse
 from django.shortcuts import render, get_object_or_404
 from django.urls import reverse
@@ -17,6 +18,7 @@ from linker.views.functions import change_column_order, recur_dictify, get_conte
     get_last_data, get_last_analysis_data
 from .harmonizomeapi import Harmonizome, Entity
 from .merge import merge_json_data, update_pathway_analysis_data
+from ..common import access_allowed
 
 
 def truncate(my_str):
@@ -27,6 +29,8 @@ def truncate(my_str):
 def explore_data(request, analysis_id):
     analysis = get_object_or_404(Analysis, pk=analysis_id)
     current_user = request.user
+    if not access_allowed(analysis, request):
+        raise PermissionDenied()
     context = get_context(analysis, current_user)
     return render(request, 'linker/explore_data.html', context)
 
@@ -49,7 +53,8 @@ def get_firdi_data(request, analysis_id):
                 data_type = analysis_data.data_type
 
                 # merge analysis histories, if any
-                analysis_histories = AnalysisHistory.objects.filter(analysis_data=analysis_data).order_by('timestamp') # ascending
+                analysis_histories = AnalysisHistory.objects.filter(analysis_data=analysis_data).order_by(
+                    'timestamp')  # ascending
                 for history in analysis_histories:
                     inference_type = history.inference_type
                     inference_data = history.inference_data
@@ -102,18 +107,13 @@ def get_heatmap_data(request, analysis_id):
 
 def inference(request, analysis_id):
     analysis = get_object_or_404(Analysis, pk=analysis_id)
+    if not access_allowed(analysis, request):
+        raise PermissionDenied()
+
     context = {
         'analysis_id': analysis.pk
     }
     return render(request, 'linker/inference.html', context)
-
-
-def settings(request, analysis_id):
-    analysis = get_object_or_404(Analysis, pk=analysis_id)
-    context = {
-        'analysis_id': analysis.pk
-    }
-    return render(request, 'linker/settings.html', context)
 
 
 def get_ensembl_gene_info(request, analysis_id):

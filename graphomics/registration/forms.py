@@ -5,12 +5,12 @@ User = get_user_model()
 
 
 class UserForm(forms.ModelForm):
-    password = forms.CharField(widget=forms.PasswordInput(attrs={'style': 'width: 100%', 'autocomplete': 'off'}))
+    password = forms.CharField(widget=forms.PasswordInput(attrs={'style': 'width: 100%'}))
 
     class Meta:
         model = User
         fields = ('username', 'email', 'password')
         widgets = {
-            'username': forms.TextInput(attrs={'style': 'width: 100%', 'autocomplete': 'off'}),
-            'email': forms.TextInput(attrs={'style': 'width: 100%', 'autocomplete': 'off'})
+            'username': forms.TextInput(attrs={'style': 'width: 100%'}),
+            'email': forms.TextInput(attrs={'style': 'width: 100%'})
         }

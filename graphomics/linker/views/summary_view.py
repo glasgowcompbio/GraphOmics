@@ -1,23 +1,19 @@
-from django.http import JsonResponse, HttpResponse
+import pandas as pd
+from django.core.exceptions import PermissionDenied
+from django.http import HttpResponse
 from django.shortcuts import render, get_object_or_404
 
+from linker.common import access_allowed
 from linker.constants import *
 from linker.models import Analysis, AnalysisData, AnalysisAnnotation
-
-import json
-import pandas as pd
-import numpy as np
-from .harmonizomeapi import Harmonizome, Entity
-
-from linker.views import get_last_analysis_data
-from linker.metadata import get_single_ensembl_metadata_online, get_single_uniprot_metadata_online, \
-    get_single_compound_metadata_online, get_entrez_summary
-from linker.views.functions import get_last_analysis_data, get_groups, get_dataframes
-from linker.constants import *
+from linker.views.functions import get_last_analysis_data
 
 
 def summary(request, analysis_id):
     analysis = get_object_or_404(Analysis, pk=analysis_id)
+    if not access_allowed(analysis, request):
+        raise PermissionDenied()
+
     observed_genes, inferred_genes, total_genes = get_counts(analysis, GENOMICS)
     observed_proteins, inferred_proteins, total_proteins = get_counts(analysis, PROTEOMICS)
     observed_compounds, inferred_compounds, total_compounds = get_counts(analysis, METABOLOMICS)
@@ -56,6 +52,9 @@ def summary(request, analysis_id):
 def download_list(request, analysis_id, data_type, observed, id_or_pk):
     observed = (observed == 'True')
     analysis = get_object_or_404(Analysis, pk=analysis_id)
+    if not access_allowed(analysis, request):
+        raise PermissionDenied()
+
     observed_list, inferred_list = get_names(analysis, int(data_type), id_or_pk)
     if observed:
         content = '\n'.join(observed_list)
@@ -69,7 +68,7 @@ def get_counts(analysis, data_type):
     json_data = analysis_data.json_data
     df = pd.DataFrame(json_data)
     observed = df[df['obs'] == True].shape[0]
-    inferred = df[df['obs'] == False].shape[0] - 1 # -1 to account for dummy item
+    inferred = df[df['obs'] == False].shape[0] - 1  # -1 to account for dummy item
     total = observed + inferred
     return observed, inferred, total
 

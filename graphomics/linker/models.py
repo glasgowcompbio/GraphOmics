@@ -17,6 +17,7 @@ class Analysis(models.Model):
     publication = models.CharField(max_length=1000, null=True)
     publication_link = models.CharField(max_length=1000, null=True)
     timestamp = models.DateTimeField(default=timezone.localtime, null=False)
+    public = models.BooleanField(default=False)
     metadata = JSONField()
     users = models.ManyToManyField(User, through='Share')
 
@@ -52,6 +53,12 @@ class Analysis(models.Model):
         read_only = self.get_read_only_status(user)
         msg = 'Read Only' if read_only else 'Edit'
         return msg
+
+    def get_shared(self, user):
+        for share in self.share_set.all(): # search shares for this user
+            if share.user == user:
+                return True
+        return False
 
     def __str__(self):
         return self.name

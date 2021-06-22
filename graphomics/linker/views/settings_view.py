@@ -1,8 +1,10 @@
 from django.contrib import messages
 from django.contrib.auth import get_user_model
+from django.core.exceptions import PermissionDenied
 from django.shortcuts import render, get_object_or_404
 
-from linker.forms import ShareAnalysisForm
+from linker.common import access_allowed
+from linker.forms import ShareAnalysisForm, MakePublicForm
 from linker.models import Analysis, Share
 
 User = get_user_model()
@@ -10,10 +12,15 @@ User = get_user_model()
 
 def settings(request, analysis_id):
     analysis = get_object_or_404(Analysis, pk=analysis_id)
+    if not access_allowed(analysis, request):
+        raise PermissionDenied()
+
+    make_public_form = MakePublicForm(initial={'make_public': analysis.public})
     share_analysis_form = ShareAnalysisForm()
     shares = Share.objects.filter(analysis=analysis)
     context = {
         'analysis_id': analysis.pk,
+        'make_public_form': make_public_form,
         'share_analysis_form': share_analysis_form,
         'shares': shares
     }
@@ -65,4 +72,18 @@ def delete_share(request, analysis_id, share_id):
     share = get_object_or_404(Share, pk=share_id)
     share.delete()
     messages.success(request, 'Share was successfully deleted', extra_tags='primary')
+    return settings(request, analysis_id)
+
+
+def make_public(request, analysis_id):
+    if request.method == 'POST':
+        analysis = get_object_or_404(Analysis, pk=analysis_id)
+        form = MakePublicForm(request.POST, request.FILES)
+        if form.is_valid():
+            analysis.public = form.cleaned_data['make_public']
+            analysis.save()
+            if analysis.public:
+                messages.success(request, 'Analysis set to public mode')
+            else:
+                messages.success(request, 'Analysis set to private mode')
     return settings(request, analysis_id)

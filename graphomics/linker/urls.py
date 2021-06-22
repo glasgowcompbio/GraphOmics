@@ -53,6 +53,7 @@ urlpatterns = [
     path('settings/<int:analysis_id>', views.settings, name='settings'),
     path('settings/add_share/<int:analysis_id>', views.add_share, name='add_share'),
     path('settings/delete_share/<int:analysis_id>/<int:share_id>', views.delete_share, name='delete_share'),
+    path('settings/make_public/<int:analysis_id>', views.make_public, name='make_public'),
 
     # TODO: to be removed
     path('clustergrammer_demo/', views.clustergrammer_demo, name='clustergrammer_demo'),

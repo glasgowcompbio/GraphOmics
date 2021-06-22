@@ -73,3 +73,16 @@ def extract_zip_file(in_file, delete=True):
     if delete:
         logger.info('Deleting %s' % in_file)
         os.remove(in_file)
+
+
+def access_allowed(analysis, request):
+    allowed = False
+    if request.user.is_anonymous:
+        # anonymous user can only view public experiment
+        if analysis.public:
+            allowed = True
+    else:
+        # otherwise check if this analysis is shared/owned by this user
+        if analysis.get_shared(request.user):
+            allowed = True
+    return allowed

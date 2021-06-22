@@ -19,17 +19,44 @@
         {% include 'linker/navbar.html' with show_selection_group=False active='settings' %}
 
         <div class="m-1 mb-3">
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }}" role="alert">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+        </div>
+
+        <div class="m-1 mb-3">
+            <div class="card">
+                <div class="card-body">
+                    <h5>Public Access</h5>
+
+                    <p>
+                        Allow this analysis to be accessed publicly. Public analysis can be viewed
+                        by directly typing their URL (without sharing).
+                    </p>
+                    <form id="share_analysis_form"
+                          method="post"
+                          action="{% url 'make_public' analysis_id=analysis_id %}"
+                          enctype="multipart/form-data">
+                        {% csrf_token %}
+                        <table>
+                            {{ make_public_form.as_table }}
+                        </table>
+                        <br/>
+                        <input type="submit" name="submit" value="Save" class="btn btn-primary"/>
+                    </form>
+
+                </div>
+            </div>
+        </div>
+
+        <div class="m-1 mb-3">
             <div class="card">
                 <div class="card-body">
                     <h5>Share Analysis</h5>
-
-                    {% if messages %}
-                        {% for message in messages %}
-                            <div class="alert alert-{{ message.tags }}" role="alert">
-                                {{ message }}
-                            </div>
-                        {% endfor %}
-                    {% endif %}
 
                     <p>
                         Enter the username to share this analysis with.
