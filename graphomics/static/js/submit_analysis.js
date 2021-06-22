@@ -17,6 +17,8 @@ $(document).ready(function () {
         const myForm = document.getElementById('analysis_form');
         if (isFormHtml5Valid(myForm)) {
             buttonElem.attr("disabled", true);
+            $('#collapseExample1').removeClass('show');
+            $('#collapseExample2').removeClass('show');
             blockUI('#main-form');
             myForm.submit();
         }
