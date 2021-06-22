@@ -152,3 +152,18 @@ button.dt-button {
     background-color: #205cb7;
     border-color: #1e56ad;
 }
+
+/* https://24ways.org/2012/how-to-make-your-site-look-half-decent/ */
+
+h1, h2, h3, h4, h5, h6, p, div {
+    font-family: "Noto Sans", sans-serif;
+}
+
+.jumbotron {
+    background: rgba(224, 255, 255, 0.5);
+}
+
+#jumbotron-title {
+    font-family: "Noto Sans", sans-serif;
+    text-shadow: 1px 1px 1px #ccc;
+}

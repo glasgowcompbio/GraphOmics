@@ -126,31 +126,6 @@
 {% endblock %}
 
 {% block js_block %}
-    <script type='text/javascript'>
-        const name = $('#id_analysis_name');
-        const description = $('#id_analysis_description');
-        const genes = $('#id_genes');
-        const proteins = $('#id_proteins');
-        const compounds = $('#id_compounds');
-        const species = $('#id_species');
-        const exampleGenes = genes.val();
-        const exampleProteins = proteins.val();
-        const exampleCompounds = compounds.val();
-        const exampleSpecies = species.val();
-        genes.val('');
-        proteins.val('');
-        compounds.val('');
-        species.val('');
-
-        function showExample() {
-            name.val('Example analysis');
-            description.val('Mouse data in a Leishmania parasite experiment.')
-            genes.val(exampleGenes);
-            proteins.val(exampleProteins);
-            compounds.val(exampleCompounds);
-            species.val(exampleSpecies).trigger('change');
-        }
-    </script>
     {% render_bundle 'submit_analysis' 'js' %}
     {{ form.media.js }}
 {% endblock %}

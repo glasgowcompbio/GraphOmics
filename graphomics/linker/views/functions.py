@@ -208,7 +208,8 @@ def get_mapping(observed_compound_df):
 
 def save_analysis(analysis_name, analysis_desc,
                   genes_str, proteins_str, compounds_str, compound_database_str,
-                  results, species_list, current_user, metabolic_pathway_only):
+                  results, species_list, current_user, metabolic_pathway_only,
+                  publication, publication_link):
     metadata = {
         'genes_str': genes_str,
         'proteins_str': proteins_str,
@@ -219,7 +220,9 @@ def save_analysis(analysis_name, analysis_desc,
     }
     analysis = Analysis.objects.create(name=analysis_name,
                                        description=analysis_desc,
-                                       metadata=metadata)
+                                       metadata=metadata,
+                                       publication=publication,
+                                       publication_link=publication_link)
     share = Share(user=current_user, analysis=analysis, read_only=False, owner=True)
     share.save()
     logger.info('Saved analysis %d (%s)' % (analysis.pk, species_list))
@@ -414,6 +417,8 @@ def get_context(analysis, current_user):
         'analysis_name': analysis.name,
         'analysis_description': analysis.description,
         'analysis_species': analysis.get_species_str(),
+        'publication': analysis.publication,
+        'publication_link': analysis.publication_link,
         'view_names': json.dumps(view_names),
         'show_gene_data': show_data_table(analysis, GENOMICS),
         'show_protein_data': show_data_table(analysis, PROTEOMICS),

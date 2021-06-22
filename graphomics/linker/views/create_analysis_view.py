@@ -19,6 +19,8 @@ class CreateAnalysisView(FormView):
     def form_valid(self, form):
         analysis_name = form.cleaned_data['analysis_name']
         analysis_desc = form.cleaned_data['analysis_description']
+        publication = form.cleaned_data['publication']
+        publication_link = form.cleaned_data['publication_link']
         genes_str = form.cleaned_data['genes']
         proteins_str = form.cleaned_data['proteins']
         compounds_str = form.cleaned_data['compounds']
@@ -30,7 +32,7 @@ class CreateAnalysisView(FormView):
 
         analysis = get_data(analysis_desc, analysis_name, compounds_str,
                             compound_database_str, current_user, genes_str, proteins_str,
-                            species_list, metabolic_pathway_only)
+                            species_list, metabolic_pathway_only, publication, publication_link)
         context = get_context(analysis, current_user)
         return render(self.request, self.success_url, context)
 
@@ -43,6 +45,8 @@ class UploadAnalysisView(FormView):
     def form_valid(self, form):
         analysis_name = form.cleaned_data['analysis_name']
         analysis_desc = form.cleaned_data['analysis_description']
+        publication = form.cleaned_data['publication']
+        publication_link = form.cleaned_data['publication_link']
         genes_str = get_uploaded_data(form.cleaned_data, 'gene_data', 'gene_design')
         proteins_str = get_uploaded_data(form.cleaned_data, 'protein_data', 'protein_design')
         compounds_str = get_uploaded_data(form.cleaned_data, 'compound_data', 'compound_design')
@@ -54,7 +58,7 @@ class UploadAnalysisView(FormView):
 
         analysis = get_data(analysis_desc, analysis_name, compounds_str,
                             compound_database_str, current_user, genes_str, proteins_str,
-                            species_list, metabolic_pathway_only)
+                            species_list, metabolic_pathway_only, publication, publication_link)
         context = get_context(analysis, current_user)
         return render(self.request, self.success_url, context)
 
@@ -72,7 +76,8 @@ class DeleteAnalysisView(DeleteView):
 
 
 def get_data(analysis_desc, analysis_name, compounds_str, compound_database_str,
-             current_user, genes_str, proteins_str, species_list, metabolic_pathway_only):
+             current_user, genes_str, proteins_str, species_list, metabolic_pathway_only,
+             publication, publication_link):
     try:
         metabolic_pathway_only = metabolic_pathway_only.lower() in ("yes", "true", "t", "1")  # convert string to bool
     except AttributeError:
@@ -90,7 +95,8 @@ def get_data(analysis_desc, analysis_name, compounds_str, compound_database_str,
 
     analysis = save_analysis(analysis_name, analysis_desc,
                              genes_str, proteins_str, compounds_str, compound_database_str,
-                             results, species_list, current_user, metabolic_pathway_only)
+                             results, species_list, current_user, metabolic_pathway_only,
+                             publication, publication_link)
     return analysis
 
 

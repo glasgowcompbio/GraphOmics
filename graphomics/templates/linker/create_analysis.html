@@ -77,10 +77,10 @@
                             Example Data
                         </div>
                         <div class="card-body">
-                            To load an example data, click the following button:
-                            <a class="btn btn-success mt-1 mb-3" style="width: 200px" href="#" onClick="showExample();"
-                               value="here">Load
-                                Example Data</a>
+                            To load an example dataset, click the following button:
+                            <a class="btn btn-success mt-1 mb-3" style="width: 200px" href="#" onClick="showExample();" value="here">
+                                Load Example Data
+                            </a> and click the <strong>Submit Your Analysis</strong> button at the bottom of the page.
                         </div>
                     </div>
                 </div>
@@ -112,6 +112,8 @@
     <script type='text/javascript'>
         const name = $('#id_analysis_name');
         const description = $('#id_analysis_description');
+        const publication = $('#id_publication');
+        const publication_link = $('#id_publication_link');
         const genes = $('#id_genes');
         const proteins = $('#id_proteins');
         const compounds = $('#id_compounds');
@@ -126,8 +128,10 @@
         species.val('');
 
         function showExample() {
-            name.val('Example analysis');
-            description.val('Example Covid19 data')
+            name.val('Example multi-omics analysis using GraphOmics');
+            description.val('Integrated proteomics and metabolomics data from COVID-19 patient sera')
+            publication.val('Proteomic and Metabolomic Characterization of COVID-19 Patient Sera')
+            publication_link.val('https://www.cell.com/cell/fulltext/S0092-8674(20)30627-9')
             genes.val(exampleGenes);
             proteins.val(exampleProteins);
             compounds.val(exampleCompounds);

@@ -5,8 +5,9 @@ from django_select2.forms import Select2Widget, Select2MultipleWidget
 
 from linker.constants import AddNewDataChoices, InferenceTypeChoices, CompoundDatabaseChoices, \
     MetabolicPathwayOnlyChoices, SELECT_WIDGET_ATTRS, DEFAULT_SPECIES, ShareReadOnlyChoices
+from linker.models import AnalysisUpload
 from linker.reactome import get_species_dict, get_all_pathways
-from linker.models import Analysis, AnalysisUpload
+
 
 def load_example_data(file_path):
     __location__ = os.path.realpath(
@@ -30,7 +31,6 @@ for k, v in get_species_dict().items():
     if v == 'Homo sapiens':
         initial = (k, v,)
 
-
 default_pathways = get_all_pathways(DEFAULT_SPECIES)
 pathway_species_dict = {}
 PATHWAY_CHOICES = []
@@ -44,6 +44,10 @@ for i, item in enumerate(default_pathways):
 class CreateAnalysisForm(forms.Form):
     analysis_name = forms.CharField(required=False, widget=forms.TextInput(attrs={'style': 'width: 100%'}))
     analysis_description = forms.CharField(required=False, widget=forms.TextInput(attrs={'style': 'width: 100%'}))
+    publication = forms.CharField(required=False, widget=forms.TextInput(attrs={'style': 'width: 100%'}),
+                                  help_text='<div style="color: gray"><small>Publication title, if any</small></div>')
+    publication_link = forms.CharField(required=False, widget=forms.TextInput(attrs={'style': 'width: 100%'}),
+                                       help_text='<div style="color: gray"><small>Link to publication, if any</small></div>')
     species = forms.MultipleChoiceField(required=True, choices=SPECIES_CHOICES, initial=initial[0],
                                         widget=Select2MultipleWidget)
     genes = forms.CharField(required=False,
@@ -56,42 +60,52 @@ class CreateAnalysisForm(forms.Form):
                                 widget=forms.Textarea(attrs={'rows': 6, 'cols': 100, 'style': 'width: 100%'}),
                                 initial=example_compounds)
     metabolic_pathway_only = forms.ChoiceField(required=True, choices=MetabolicPathwayOnlyChoices,
-                                widget=Select2Widget,
-                                label='Limit to',
-                                help_text='<div style="color: gray"><small>Whether to limit the selected pathways to only metabolic pathways.</small></div>')
+                                               widget=Select2Widget,
+                                               label='Limit to',
+                                               help_text='<div style="color: gray"><small>Whether to limit the selected pathways to only metabolic pathways.</small></div>')
     compound_database = forms.ChoiceField(required=True, choices=CompoundDatabaseChoices,
-                                widget=Select2Widget,
-                                label='Query compounds by',
-                                help_text='<div style="color: gray"><small>When querying the Reactome knowledge base, '
-                                          'compounds will be matched using the identifiers specified above.</small></div>')
+                                          widget=Select2Widget,
+                                          label='Query compounds by',
+                                          help_text='<div style="color: gray"><small>When querying the Reactome knowledge base, '
+                                                    'compounds will be matched using the identifiers specified above.</small></div>')
 
 
 class UploadAnalysisForm(forms.ModelForm):
     analysis_name = forms.CharField(required=False, widget=forms.TextInput(attrs={'style': 'width: 100%'}))
     analysis_description = forms.CharField(required=False, widget=forms.TextInput(attrs={'style': 'width: 100%'}))
+    publication = forms.CharField(required=False, widget=forms.TextInput(attrs={'style': 'width: 100%'}),
+                                  help_text='<div style="color: gray"><small>Publication title, if any</small></div>')
+    publication_link = forms.CharField(required=False, widget=forms.TextInput(attrs={'style': 'width: 100%'}),
+                                       help_text='<div style="color: gray"><small>Link to publication, if any</small></div>')
     species = forms.MultipleChoiceField(required=True, choices=SPECIES_CHOICES, widget=Select2MultipleWidget)
     metabolic_pathway_only = forms.ChoiceField(required=True, choices=MetabolicPathwayOnlyChoices,
-                                widget=Select2Widget,
-                                label='Limit to',
-                                help_text='<div style="color: gray"><small>Whether to limit the selected pathways to only metabolic pathways.</small></div>')
+                                               widget=Select2Widget,
+                                               label='Limit to',
+                                               help_text='<div style="color: gray"><small>Whether to limit the selected pathways to only metabolic pathways.</small></div>')
     compound_database = forms.ChoiceField(required=True, choices=CompoundDatabaseChoices,
-                                widget=Select2Widget,
-                                label='Query compounds by',
-                                help_text='<div style="color: gray"><small>When querying the Reactome knowledge base, '
-                                          'compounds will be matched using the identifiers specified above.</small></div>')
+                                          widget=Select2Widget,
+                                          label='Query compounds by',
+                                          help_text='<div style="color: gray"><small>When querying the Reactome knowledge base, '
+                                                    'compounds will be matched using the identifiers specified above.</small></div>')
+
     class Meta:
         model = AnalysisUpload
-        fields = ('analysis_name', 'analysis_description', 'species',
+        fields = ('analysis_name', 'analysis_description',
+                  'publication', 'publication_link',
+                  'species',
                   'gene_data', 'gene_design',
                   'protein_data', 'protein_design',
                   'compound_data', 'compound_design')
 
 
 class BaseInferenceForm(forms.Form):
-    data_type = forms.ChoiceField(required=True, choices=AddNewDataChoices, widget=Select2Widget(attrs=SELECT_WIDGET_ATTRS))
-    inference_type = forms.ChoiceField(required=True, choices=InferenceTypeChoices, widget=Select2Widget(attrs=SELECT_WIDGET_ATTRS))
+    data_type = forms.ChoiceField(required=True, choices=AddNewDataChoices,
+                                  widget=Select2Widget(attrs=SELECT_WIDGET_ATTRS))
+    inference_type = forms.ChoiceField(required=True, choices=InferenceTypeChoices,
+                                       widget=Select2Widget(attrs=SELECT_WIDGET_ATTRS))
 
 
 class ShareAnalysisForm(forms.Form):
     username = forms.CharField(required=True, widget=forms.TextInput(attrs={'size': 100}))
-    share_type = forms.ChoiceField(required=True, choices=ShareReadOnlyChoices, widget=Select2Widget(attrs=SELECT_WIDGET_ATTRS))
+    share_type = forms.ChoiceField(required=True, choices=ShareReadOnlyChoices,
+                                   widget=Select2Widget(attrs=SELECT_WIDGET_ATTRS))

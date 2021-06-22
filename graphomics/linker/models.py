@@ -14,6 +14,8 @@ from linker.constants import DataType, DataRelationType, InferenceTypeChoices
 class Analysis(models.Model):
     name = models.CharField(max_length=100, null=True)
     description = models.CharField(max_length=1000, null=True)
+    publication = models.CharField(max_length=1000, null=True)
+    publication_link = models.CharField(max_length=1000, null=True)
     timestamp = models.DateTimeField(default=timezone.localtime, null=False)
     metadata = JSONField()
     users = models.ManyToManyField(User, through='Share')

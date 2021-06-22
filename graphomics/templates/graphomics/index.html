@@ -15,15 +15,16 @@
                 </p>
                 <table class="table table-bordered table-hover">
                     <thead class="thead-light">
-                        <tr>
-                            <th>Analysis Name</th>
-                            <th>Analysis Description</th>
-                            <th>Species</th>
-                            <th>Create Date</th>
-                            <th>Owner</th>
-                            <th>Status</th>
-                            <th>Action</th>
-                        </tr>
+                    <tr>
+                        <th>Analysis Name</th>
+                        <th>Analysis Description</th>
+                        <th>Publication</th>
+                        <th>Species</th>
+                        <th>Create Date</th>
+                        <th>Owner</th>
+                        <th>Status</th>
+                        <th>Action</th>
+                    </tr>
                     </thead>
                     {% for analysis in object_list %}
                         <tr>
@@ -32,6 +33,17 @@
                                 <a href="{% url 'explore_data' analysis_id=analysis.pk %}">{{ analysis.name }}</a>
                             </td>
                             <td>{{ analysis.description }}</td>
+                            <td>
+                                {% if analysis.publication %}
+                                    {% if analysis.publication_link %}
+                                        <a href="{{ analysis.publication_link }}" target="_blank">
+                                            {{ analysis.publication }}
+                                        </a>
+                                    {% else %}
+                                        {{ analysis.publication }}
+                                    {% endif %}
+                                {% endif %}
+                            </td>
                             <td>{{ analysis.get_species_str }}</td>
                             <td>{{ analysis.timestamp|date:"jS F Y H:i" }}</td>
                             <td>{{ analysis.get_owner }}</td>
