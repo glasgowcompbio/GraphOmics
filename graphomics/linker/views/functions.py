@@ -397,6 +397,7 @@ def get_last_data(analysis, data_type):
 
 
 def get_context(analysis, current_user):
+    show_selection_group = True if not current_user.is_anonymous else False
     view_names = {
         TABLE_IDS[GENOMICS]: get_reverse_url('get_ensembl_gene_info', analysis),
         TABLE_IDS[PROTEOMICS]: get_reverse_url('get_uniprot_protein_info', analysis),
@@ -410,7 +411,7 @@ def get_context(analysis, current_user):
         'load_group': get_reverse_url('load_group', analysis),
         'list_groups': get_reverse_url('list_groups', analysis),
         'get_boxplot': get_reverse_url('get_boxplot', analysis),
-        'get_gene_ontology': get_reverse_url('get_gene_ontology', analysis)
+        'get_gene_ontology': get_reverse_url('get_gene_ontology', analysis),
     }
     context = {
         'analysis_id': analysis.pk,
@@ -423,7 +424,8 @@ def get_context(analysis, current_user):
         'show_gene_data': show_data_table(analysis, GENOMICS),
         'show_protein_data': show_data_table(analysis, PROTEOMICS),
         'show_compound_data': show_data_table(analysis, METABOLOMICS),
-        'read_only': analysis.get_read_only_status(current_user)
+        'read_only': analysis.get_read_only_status(current_user),
+        'show_selection_group': show_selection_group
     }
     return context
 

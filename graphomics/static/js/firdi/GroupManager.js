@@ -110,10 +110,13 @@ class GroupManager {
 
     updateList() {
         loadData(this.listUrl).then(data => {
+            const elem = document.getElementById(this.selectBoxId);
+            if (elem === null) {
+                return;
+            }
             if (this.awesomeplete) {
                 this.awesomeplete.destroy();
             }
-            const elem = document.getElementById(this.selectBoxId);
             const myList = data.list;
             const selectBox = new Awesomplete(elem, {
                 list: myList,
@@ -284,8 +287,10 @@ class GroupManager {
     }
 
     checkLoadButtonStatus(elem) {
-        const disabled = elem.value === '' ? true : false;
-        this.loadButtonElem.prop('disabled', disabled);
+        if (elem !== null) {
+            const disabled = elem.value === '' ? true : false;
+            this.loadButtonElem.prop('disabled', disabled);
+        }
     }
 
 }
