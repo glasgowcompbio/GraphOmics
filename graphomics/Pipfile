@@ -12,9 +12,13 @@ django-extensions = "*"
 gunicorn = "*"
 whitenoise = "*"
 ipython = "*"
-numpy = "==1.19.3" # https://stackoverflow.com/questions/64729944/runtimeerror-the-current-numpy-installation-fails-to-pass-a-sanity-check-due-to
+numpy = "*"
 scipy = "*"
-pandas = "==0.25" # required for clustergrammer to work since it uses .ix, which is deprecated in later versions
+
+# see https://github.com/glasgowcompbio/GraphOmics/issues/113
+# pandas = "==0.25"     # required for clustergrammer to work since it uses .ix, which is deprecated in later versions
+pandas = "*"            # temporary fix
+
 seaborn = "*"
 scikit-learn = "*"
 matplotlib = "*"
@@ -35,8 +39,10 @@ loguru = "*"
 pals-pathway = "*"
 jupyterlab = "*"
 django-grappelli = "*"
+pyMultiOmics = {editable = true, git = "git+https://github.com/glasgowcompbio/pyMultiOmics"}
+mofax = "*"
 
 [dev-packages]
 
 [requires]
-python_version = "3.7"
+python_version = "3"

@@ -95,7 +95,11 @@ class UploadAnalysisForm(forms.ModelForm):
                   'species',
                   'gene_data', 'gene_design',
                   'protein_data', 'protein_design',
-                  'compound_data', 'compound_design')
+                  'compound_data', 'compound_design',
+                  'mofa_data')
+        labels = {
+            'mofa_data': 'MOFA data in hdf5 format'
+        }
 
 
 class BaseInferenceForm(forms.Form):

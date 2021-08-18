@@ -60,6 +60,16 @@ class Analysis(models.Model):
                 return True
         return False
 
+    def has_mofa_data(self):
+        file = self.analysisupload.mofa_data
+        return file.storage.exists(file.name)
+
+    def get_mofa_hdf5_path(self):
+        if self.has_mofa_data():
+            return self.analysisupload.mofa_data.path
+        else:
+            return None
+
     def __str__(self):
         return self.name
 
@@ -95,6 +105,7 @@ class AnalysisUpload(models.Model):
     protein_design = models.FileField(blank=True, null=True, upload_to=get_upload_folder)
     compound_data = models.FileField(blank=True, null=True, upload_to=get_upload_folder)
     compound_design = models.FileField(blank=True, null=True, upload_to=get_upload_folder)
+    mofa_data = models.FileField(blank=True, null=True, upload_to=get_upload_folder)
 
 
 class AnalysisData(models.Model):

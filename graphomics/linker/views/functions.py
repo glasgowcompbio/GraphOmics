@@ -12,6 +12,7 @@ from django.conf import settings
 from django.urls import reverse
 from django.utils import timezone
 from loguru import logger
+import mofax as mfx
 
 from linker.common import load_obj
 from linker.constants import *
@@ -27,7 +28,6 @@ Relation = collections.namedtuple('Relation', 'keys values mapping_list')
 
 def reactome_mapping(observed_gene_df, observed_protein_df, observed_compound_df,
                      compound_database_str, species_list, metabolic_pathway_only):
-
     ### all the ids that we have from the user ###
     observed_gene_ids = get_ids_from_dataframe(observed_gene_df)
     observed_protein_ids = get_ids_from_dataframe(observed_protein_df)
@@ -427,6 +427,19 @@ def get_context(analysis, current_user):
         'read_only': analysis.get_read_only_status(current_user),
         'show_selection_group': show_selection_group
     }
+    return context
+
+
+def get_mofa_context(old_context, analysis):
+    context = old_context.copy()
+    if analysis.has_mofa_data():
+        mofa_filepath = analysis.get_mofa_hdf5_path()
+        context['mofa_filepath'] = mofa_filepath
+
+        mofa = mfx.mofa_model(mofa_filepath)
+        df = mofa.get_top_features()
+        context['mofa_df'] = df
+
     return context
 
 

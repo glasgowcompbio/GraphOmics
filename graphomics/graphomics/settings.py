@@ -178,7 +178,6 @@ class Development(Common):
     """
     The in-development settings and the default configuration.
     """
-    print('Using Development settings')
     DEBUG = True
     MESSAGE_LEVEL = message_constants.DEBUG
 
@@ -193,7 +192,6 @@ class Production(Common):
     """
     The production settings.
     """
-    print('Using Production settings')
 
     # for https and proxy stuff
     USE_X_FORWARDED_HOST = True
