@@ -114,7 +114,7 @@ def inference(request, analysis_id):
                 selected_form.fields['inference_type'].initial = inference_type
 
                 if data_type == MULTI_OMICS:
-                    for dtype in [GENOMICS, PROTEOMICS, METABOLOMICS]:
+                    for dtype in [GENES, PROTEINS, COMPOUNDS]:
                         analysis_data = get_last_analysis_data(analysis, dtype)
                         populate_reactome_choices(analysis_data, dtype, selected_form)
                 else:
@@ -221,9 +221,9 @@ def inference_t_test(request, analysis_id):
             control = form.cleaned_data['control']
             data_df, design_df = get_dataframes(analysis_data, PKS)
 
-            if data_type == GENOMICS:
+            if data_type == GENES:
                 min_replace = MIN_REPLACE_GENOMICS
-            elif data_type == PROTEOMICS or data_type == METABOLOMICS:
+            elif data_type == PROTEINS or data_type == COMPOUNDS:
                 min_replace = MIN_REPLACE_PROTEOMICS_METABOLOMICS
             wi = GraphOmicsInference(data_df, design_df, data_type, min_value=min_replace)
             result_df = wi.run_ttest(case, control)
@@ -243,7 +243,7 @@ def inference_t_test(request, analysis_id):
 def inference_deseq(request, analysis_id):
     if request.method == 'POST':
         data_type = int(request.POST['data_type'])
-        if data_type == PROTEOMICS or data_type == METABOLOMICS:
+        if data_type == PROTEINS or data_type == COMPOUNDS:
             messages.warning(request, 'Add new inference failed. DESeq2 only works for discrete count data.')
             return inference(request, analysis_id)
 
@@ -301,9 +301,9 @@ def inference_limma(request, analysis_id):
             control = form.cleaned_data['control']
             data_df, design_df = get_dataframes(analysis_data, PKS)
 
-            if data_type == GENOMICS:
+            if data_type == GENES:
                 min_replace = MIN_REPLACE_GENOMICS
-            elif data_type == PROTEOMICS or data_type == METABOLOMICS:
+            elif data_type == PROTEINS or data_type == COMPOUNDS:
                 min_replace = MIN_REPLACE_PROTEOMICS_METABOLOMICS
             wi = GraphOmicsInference(data_df, design_df, data_type, min_value=min_replace)
             result_df = wi.run_limma(case, control)
@@ -607,11 +607,11 @@ def inference_reactome(request, analysis_id):
         analysis = get_object_or_404(Analysis, pk=analysis_id)
         form = BaseInferenceForm(request.POST)
 
-        # if data type is MULTI_OMICS, then turn it into GENOMICS, PROTEOMICS and METABOLOMICS
+        # if data type is MULTI_OMICS, then turn it into GENES, PROTEINS and COMPOUNDS
         data_type = int(request.POST['data_type'])
         data_types = [data_type]
         if data_type == MULTI_OMICS:
-            data_types = [GENOMICS, PROTEOMICS, METABOLOMICS]
+            data_types = [GENES, PROTEINS, COMPOUNDS]
 
         # make sure actually we have some data
         analysis_data, omics_data = get_omics_data(analysis, data_types, form)

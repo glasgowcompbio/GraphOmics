@@ -60,7 +60,7 @@ def load_group(request, analysis_id):
 def get_boxplot(request, analysis_id):
     analysis = Analysis.objects.get(id=analysis_id)
     data_type = int(request.POST['dataType'])
-    assert data_type in [GENOMICS, PROTEOMICS, METABOLOMICS]
+    assert data_type in [GENES, PROTEINS, COMPOUNDS]
 
     last_query_result = get_last_query_result(request)
     analysis_data = get_last_data(analysis, data_type)
@@ -135,7 +135,7 @@ def get_plotly_boxplot(x, y_df):
 
 def get_gene_ontology(request, analysis_id):
     analysis = Analysis.objects.get(id=analysis_id)
-    data_type = GENOMICS
+    data_type = GENES
     namespace = request.POST['namespace']
     assert namespace in GO_NAMESPACES
 

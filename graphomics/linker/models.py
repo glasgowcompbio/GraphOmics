@@ -8,7 +8,7 @@ from jsonfield import JSONField
 
 User = get_user_model()
 
-from linker.constants import DataType, DataRelationType, InferenceTypeChoices
+from linker.constants import DataRelationType, InferenceTypeChoices
 
 
 class Analysis(models.Model):
@@ -110,7 +110,7 @@ class AnalysisUpload(models.Model):
 
 class AnalysisData(models.Model):
     analysis = models.ForeignKey(Analysis, on_delete=models.CASCADE)
-    data_type = models.IntegerField(choices=DataRelationType)
+    data_type = models.CharField(max_length=100)
     json_data = JSONField()
     json_design = JSONField()
     metadata = JSONField(blank=True, null=True)
@@ -133,7 +133,7 @@ class AnalysisHistory(models.Model):
     analysis = models.ForeignKey(Analysis, on_delete=models.CASCADE)
     display_name = models.CharField(max_length=1000, blank=True, null=True)
     analysis_data = models.ForeignKey(AnalysisData, on_delete=models.CASCADE)
-    inference_type = models.IntegerField(choices=InferenceTypeChoices, blank=True, null=True)
+    inference_type = models.CharField(max_length=100, blank=True, null=True)
     inference_data = JSONField()
     timestamp = models.DateTimeField(default=timezone.localtime, null=False)
 
@@ -155,7 +155,7 @@ class AnalysisHistory(models.Model):
 
 class AnalysisAnnotation(models.Model):
     analysis = models.ForeignKey(Analysis, on_delete=models.CASCADE)
-    data_type = models.IntegerField(choices=DataType)
+    data_type = models.CharField(max_length=100)
     database_id = models.CharField(max_length=100)
     display_name = models.CharField(max_length=1000)
     annotation = models.CharField(max_length=1000)
@@ -179,4 +179,4 @@ class AnalysisGroup(models.Model):
         verbose_name_plural = "Analysis Groups"
 
     def __str__(self):
-        return '%s data_type=%d %s' % (self.analysis.name, self.data_type, self.display_name)
+        return '%s -- %s' % (self.analysis.name, self.display_name)

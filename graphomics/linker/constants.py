@@ -49,84 +49,67 @@ DEFAULT_SPECIES = [
 NA = '-'
 ALL = 'ALL'
 
+GENES = 'genes'
+PROTEINS = 'proteins'
+COMPOUNDS = 'compounds'
+REACTIONS = 'reactions'
+PATHWAYS = 'pathways'
+GENES_TO_PROTEINS = 'gene_proteins'
+PROTEINS_TO_REACTIONS = 'protein_reactions'
+COMPOUNDS_TO_REACTIONS = 'compound_reactions'
+REACTIONS_TO_PATHWAYS = 'reaction_pathways'
+MULTI_OMICS = 'multi_omics'
+OTHERS = 'others'
+
+InferenceDataTypeChoices = (
+    (None, NA),
+    (GENES, 'Gene Data'),
+    (PROTEINS, 'Protein Data'),
+    (COMPOUNDS, 'Compound Data'),
+    (MULTI_OMICS, 'Multi-omics Data')
+)
+AddNewDataDict = dict(InferenceDataTypeChoices)
+DataRelationType = (
+    (GENES, 'Genes'),
+    (PROTEINS, 'Proteins'),
+    (COMPOUNDS, 'Compounds'),
+    (REACTIONS, 'Reactions'),
+    (PATHWAYS, 'Pathways'),
+    (GENES_TO_PROTEINS, 'Genes to Proteins'),
+    (PROTEINS_TO_REACTIONS, 'Proteins to Reactions'),
+    (COMPOUNDS_TO_REACTIONS, 'Compounds to Reactions'),
+    (REACTIONS_TO_PATHWAYS, 'Reaction to Pathways')
+)
+TABLE_IDS = {
+    GENES: 'genes_table',
+    PROTEINS: 'proteins_table',
+    COMPOUNDS: 'compounds_table',
+    REACTIONS: 'reactions_table',
+    PATHWAYS: 'pathways_table'
+}
+
 GENE_PK = 'gene_pk'
 PROTEIN_PK = 'protein_pk'
 COMPOUND_PK = 'compound_pk'
 REACTION_PK = 'reaction_pk'
 PATHWAY_PK = 'pathway_pk'
+PKS = {
+    GENES: GENE_PK,
+    PROTEINS: PROTEIN_PK,
+    COMPOUNDS: COMPOUND_PK,
+    REACTIONS: REACTION_PK,
+    PATHWAYS: PATHWAY_PK
+}
 
 GENE_ID = 'gene_id'
 PROTEIN_ID = 'protein_id'
 COMPOUND_ID = 'compound_id'
 REACTION_ID = 'reaction_id'
 PATHWAY_ID = 'pathway_id'
-
-GENOMICS = 0
-TRANSCRIPTOMICS = 1
-PROTEOMICS = 2
-METABOLOMICS = 3
-REACTIONS = 4
-PATHWAYS = 5
-GENES_TO_PROTEINS = 6
-PROTEINS_TO_REACTIONS = 7
-COMPOUNDS_TO_REACTIONS = 8
-REACTIONS_TO_PATHWAYS = 9
-MULTI_OMICS = 10
-
-AddNewDataChoices = (
-    (None, NA),
-    (GENOMICS, 'Gene Data'),
-    (PROTEOMICS, 'Protein Data'),
-    (METABOLOMICS, 'Compound Data'),
-    (MULTI_OMICS, 'Multi-omics Data')
-)
-AddNewDataDict = dict(AddNewDataChoices)
-DataType = (
-    (GENOMICS, 'Genomics'),
-    (TRANSCRIPTOMICS, 'Transcriptomics'),
-    (PROTEOMICS, 'Proteomics'),
-    (METABOLOMICS, 'Metabolomics'),
-    (REACTIONS, 'Reactions'),
-    (PATHWAYS, 'Pathways')
-)
-DataTypeDict = dict(DataType)
-TABLE_IDS = {
-    GENOMICS: 'genes_table',
-    PROTEOMICS: 'proteins_table',
-    METABOLOMICS: 'compounds_table',
-    REACTIONS: 'reactions_table',
-    PATHWAYS: 'pathways_table'
-}
-
-DataRelationType = DataType + (
-    (GENES_TO_PROTEINS, 'Genes to Proteins'),
-    (PROTEINS_TO_REACTIONS, 'Proteins to Reactions'),
-    (COMPOUNDS_TO_REACTIONS, 'Compounds to Reactions'),
-    (REACTIONS_TO_PATHWAYS, 'Reaction to Pathways')
-)
-MAPPING = {
-    GENOMICS: 'genes',
-    PROTEOMICS: 'proteins',
-    METABOLOMICS: 'compounds',
-    REACTIONS: 'reactions',
-    PATHWAYS: 'pathways',
-    GENES_TO_PROTEINS: 'gene_proteins',
-    PROTEINS_TO_REACTIONS: 'protein_reactions',
-    COMPOUNDS_TO_REACTIONS: 'compound_reactions',
-    REACTIONS_TO_PATHWAYS: 'reaction_pathways'
-}
-
-PKS = {
-    GENOMICS: GENE_PK,
-    PROTEOMICS: PROTEIN_PK,
-    METABOLOMICS: COMPOUND_PK,
-    REACTIONS: REACTION_PK,
-    PATHWAYS: PATHWAY_PK
-}
 IDS = {
-    GENOMICS: GENE_ID,
-    PROTEOMICS: PROTEIN_ID,
-    METABOLOMICS: COMPOUND_ID,
+    GENES: GENE_ID,
+    PROTEINS: PROTEIN_ID,
+    COMPOUNDS: COMPOUND_ID,
     REACTIONS: REACTION_ID,
     PATHWAYS: PATHWAY_ID
 }
@@ -155,16 +138,16 @@ ShareReadOnlyChoices = (
 
 # Constants used in the Inference page
 
-INFERENCE_LOADED = 0
-INFERENCE_T_TEST = 1
-INFERENCE_CORRELATION = 2
-INFERENCE_PCA = 3
-INFERENCE_PALS = 4
-INFERENCE_ORA = 5
-INFERENCE_GSEA = 6
-INFERENCE_DESEQ = 7
-INFERENCE_LIMMA = 8
-INFERENCE_REACTOME = 9
+INFERENCE_LOADED = 'loaded'
+INFERENCE_T_TEST = 'ttest'
+INFERENCE_CORRELATION = 'correlation'
+INFERENCE_PCA = 'pca'
+INFERENCE_PALS = 'pals'
+INFERENCE_ORA = 'ora'
+INFERENCE_GSEA = 'gsea'
+INFERENCE_DESEQ = 'deseq2'
+INFERENCE_LIMMA = 'limma'
+INFERENCE_REACTOME = 'reactome'
 
 InferenceTypeChoices = (
     (None, NA),

@@ -14,13 +14,13 @@ def summary(request, analysis_id):
     if not access_allowed(analysis, request):
         raise PermissionDenied()
 
-    observed_genes, inferred_genes, total_genes = get_counts(analysis, GENOMICS)
-    observed_proteins, inferred_proteins, total_proteins = get_counts(analysis, PROTEOMICS)
-    observed_compounds, inferred_compounds, total_compounds = get_counts(analysis, METABOLOMICS)
+    observed_genes, inferred_genes, total_genes = get_counts(analysis, GENES)
+    observed_proteins, inferred_proteins, total_proteins = get_counts(analysis, PROTEINS)
+    observed_compounds, inferred_compounds, total_compounds = get_counts(analysis, COMPOUNDS)
     reaction_count, pathway_count = get_reaction_pathway_counts(analysis)
-    gene_samples = get_samples(analysis, GENOMICS)
-    protein_samples = get_samples(analysis, PROTEOMICS)
-    compound_samples = get_samples(analysis, METABOLOMICS)
+    gene_samples = get_samples(analysis, GENES)
+    protein_samples = get_samples(analysis, PROTEINS)
+    compound_samples = get_samples(analysis, COMPOUNDS)
     annotations = get_annotations(analysis)
     compound_database = analysis.metadata['compound_database_str']
     data = {
@@ -79,15 +79,15 @@ def get_names(analysis, data_type, id_or_pk):
     df = pd.DataFrame(json_data)
     if id_or_pk == 'id':
         id_names = {
-            GENOMICS: 'gene_id',
-            PROTEOMICS: 'protein_id',
-            METABOLOMICS: 'compound_id'
+            GENES: 'gene_id',
+            PROTEINS: 'protein_id',
+            COMPOUNDS: 'compound_id'
         }
     else:
         id_names = {
-            GENOMICS: 'gene_pk',
-            PROTEOMICS: 'protein_pk',
-            METABOLOMICS: 'compound_pk'
+            GENES: 'gene_pk',
+            PROTEINS: 'protein_pk',
+            COMPOUNDS: 'compound_pk'
         }
     id_name = id_names[data_type]
     observed = df[df['obs'] == True][id_name].tolist()
@@ -125,18 +125,18 @@ def get_annotations(analysis):
 
 
 def to_label(data_type):
-    keys = [GENOMICS, PROTEOMICS, METABOLOMICS, REACTIONS, PATHWAYS]
+    keys = [GENES, PROTEINS, COMPOUNDS, REACTIONS, PATHWAYS]
     values = ['Gene Data', 'Protein Data', 'Compound Data', 'Reaction Data', 'Pathway Data']
     mapping = dict(zip(keys, values))
     return mapping[data_type]
 
 
 def get_url(data_type, database_id):
-    if data_type == GENOMICS:
+    if data_type == GENES:
         return 'https://www.ensembl.org/id/' + database_id
-    elif data_type == PROTEOMICS:
+    elif data_type == PROTEINS:
         return 'http://www.uniprot.org/uniprot/' + database_id
-    elif data_type == METABOLOMICS:
+    elif data_type == COMPOUNDS:
         return 'https://www.ebi.ac.uk/chebi/searchId.do?chebiId=CHEBI:' + database_id
     elif data_type == REACTIONS or data_type == PATHWAYS:
         return 'https://reactome.org/content/detail/' + database_id

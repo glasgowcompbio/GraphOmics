@@ -70,7 +70,7 @@ def get_firdi_data(request, analysis_id):
                         result_df = pd.read_json(inference_data['result_df'])
                         json_data = update_pathway_analysis_data(json_data, result_df)
 
-                label = MAPPING[k]
+                label = k
                 table_data[label] = json_data
 
                 # also load json design, if any
@@ -97,7 +97,7 @@ def get_heatmap_data(request, analysis_id):
             try:
                 analysis_data = get_last_data(analysis, k)
                 if analysis_data.metadata and 'clustergrammer' in analysis_data.metadata:
-                    cluster_data[MAPPING[k]] = analysis_data.metadata['clustergrammer']
+                    cluster_data[k] = analysis_data.metadata['clustergrammer']
             except IndexError:
                 continue
             except KeyError:
@@ -169,8 +169,8 @@ def get_ensembl_gene_info(request, analysis_id):
         #     href = 'https://www.ensembl.org/id/' + x['id']
         #     links.append({'text': text, 'href': href})
 
-        annotation = get_annotation(analysis_id, ensembl_id, GENOMICS)
-        annotation_url = get_annotation_url(analysis_id, ensembl_id, GENOMICS)
+        annotation = get_annotation(analysis_id, ensembl_id, GENES)
+        annotation_url = get_annotation_url(analysis_id, ensembl_id, GENES)
         data = {
             'infos': infos,
             'images': images,
@@ -179,7 +179,7 @@ def get_ensembl_gene_info(request, analysis_id):
             'annotation_url': annotation_url,
             'annotation_id': ensembl_id
         }
-        measurements = get_grouped_measurements(analysis_id, ensembl_id, GENOMICS)
+        measurements = get_grouped_measurements(analysis_id, ensembl_id, GENES)
         if measurements is not None:
             data['plot_data'] = measurements
         return JsonResponse(data)
@@ -263,8 +263,8 @@ def get_uniprot_protein_info(request, analysis_id):
             }
         ]
 
-        annotation = get_annotation(analysis_id, uniprot_id, PROTEOMICS)
-        annotation_url = get_annotation_url(analysis_id, uniprot_id, PROTEOMICS)
+        annotation = get_annotation(analysis_id, uniprot_id, PROTEINS)
+        annotation_url = get_annotation_url(analysis_id, uniprot_id, PROTEINS)
         data = {
             'infos': infos,
             'images': images,
@@ -273,7 +273,7 @@ def get_uniprot_protein_info(request, analysis_id):
             'annotation_url': annotation_url,
             'annotation_id': uniprot_id
         }
-        measurements = get_grouped_measurements(analysis_id, uniprot_id, PROTEOMICS)
+        measurements = get_grouped_measurements(analysis_id, uniprot_id, PROTEINS)
         if measurements is not None:
             data['plot_data'] = measurements
         return JsonResponse(data)
@@ -368,8 +368,8 @@ def get_kegg_metabolite_info(request, analysis_id):
                 if value is not None:
                     infos.append({'key': key, 'value': value})
 
-        annotation = get_annotation(analysis_id, compound_id, METABOLOMICS)
-        annotation_url = get_annotation_url(analysis_id, compound_id, METABOLOMICS)
+        annotation = get_annotation(analysis_id, compound_id, COMPOUNDS)
+        annotation_url = get_annotation_url(analysis_id, compound_id, COMPOUNDS)
         data = {
             'infos': infos,
             'images': images,
@@ -378,7 +378,7 @@ def get_kegg_metabolite_info(request, analysis_id):
             'annotation_url': annotation_url,
             'annotation_id': compound_id
         }
-        measurements = get_grouped_measurements(analysis_id, compound_id, METABOLOMICS, peak_id=peak_id)
+        measurements = get_grouped_measurements(analysis_id, compound_id, COMPOUNDS, peak_id=peak_id)
         if measurements is not None:
             data['plot_data'] = measurements
         return JsonResponse(data)

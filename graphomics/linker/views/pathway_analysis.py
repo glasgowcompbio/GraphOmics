@@ -7,8 +7,8 @@ from pals.common import DATABASE_REACTOME_KEGG, DATABASE_REACTOME_CHEBI, DATABAS
     DATABASE_REACTOME_ENSEMBL
 from pals.feature_extraction import DataSource
 
-from linker.constants import PKS, COMPOUND_DATABASE_KEGG, COMPOUND_DATABASE_CHEBI, METABOLOMICS, \
-    PROTEOMICS, GENOMICS, MIN_REPLACE_PROTEOMICS_METABOLOMICS, MIN_REPLACE_GENOMICS, PLAGE_NUM_RESAMPLES, \
+from linker.constants import PKS, COMPOUND_DATABASE_KEGG, COMPOUND_DATABASE_CHEBI, COMPOUNDS, \
+    PROTEINS, GENES, MIN_REPLACE_PROTEOMICS_METABOLOMICS, MIN_REPLACE_GENOMICS, PLAGE_NUM_RESAMPLES, \
     PLAGE_RANDOM_SEED
 from linker.views.functions import get_group_members, get_standardized_df
 
@@ -70,16 +70,16 @@ def get_pals_data_source(analysis, analysis_data, case, control, min_hits):
 def _get_database_name(analysis, analysis_data):
     min_replace = None
     database_name = None
-    if analysis_data.data_type == METABOLOMICS:
+    if analysis_data.data_type == COMPOUNDS:
         if analysis.metadata['compound_database_str'] == COMPOUND_DATABASE_KEGG:
             database_name = DATABASE_REACTOME_KEGG
         elif analysis.metadata['compound_database_str'] == COMPOUND_DATABASE_CHEBI:
             database_name = DATABASE_REACTOME_CHEBI
         min_replace = MIN_REPLACE_PROTEOMICS_METABOLOMICS
-    elif analysis_data.data_type == PROTEOMICS:
+    elif analysis_data.data_type == PROTEINS:
         database_name = DATABASE_REACTOME_UNIPROT
         min_replace = MIN_REPLACE_PROTEOMICS_METABOLOMICS
-    elif analysis_data.data_type == GENOMICS:
+    elif analysis_data.data_type == GENES:
         database_name = DATABASE_REACTOME_ENSEMBL
         min_replace = MIN_REPLACE_GENOMICS
     return database_name, min_replace

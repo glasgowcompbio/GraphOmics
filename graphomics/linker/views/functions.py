@@ -184,9 +184,9 @@ def reactome_mapping(observed_gene_df, observed_protein_df, observed_compound_df
     reaction_2_pathways_json = json.dumps(reaction_2_pathways.mapping_list)
 
     results = {
-        GENOMICS: genes_json,
-        PROTEOMICS: proteins_json,
-        METABOLOMICS: compounds_json,
+        GENES: genes_json,
+        PROTEINS: proteins_json,
+        COMPOUNDS: compounds_json,
         REACTIONS: reactions_json,
         PATHWAYS: pathways_json,
         GENES_TO_PROTEINS: gene_2_proteins_json,
@@ -227,9 +227,9 @@ def save_analysis(analysis_name, analysis_desc,
     share.save()
     logger.info('Saved analysis %d (%s)' % (analysis.pk, species_list))
     datatype_json = {
-        GENOMICS: (results[GENOMICS], 'genes_json', results['group_gene_df']),
-        PROTEOMICS: (results[PROTEOMICS], 'proteins_json', results['group_protein_df']),
-        METABOLOMICS: (results[METABOLOMICS], 'compounds_json', results['group_compound_df']),
+        GENES: (results[GENES], 'genes_json', results['group_gene_df']),
+        PROTEINS: (results[PROTEINS], 'proteins_json', results['group_protein_df']),
+        COMPOUNDS: (results[COMPOUNDS], 'compounds_json', results['group_compound_df']),
         REACTIONS: (results[REACTIONS], 'reactions_json', None),
         PATHWAYS: (results[PATHWAYS], 'pathways_json', None),
         GENES_TO_PROTEINS: (results[GENES_TO_PROTEINS], 'gene_proteins_json', None),
@@ -308,7 +308,7 @@ def save_analysis(analysis_name, analysis_desc,
                                      data_type=data_type)
 
         # make clustergrammer if we have data
-        if data_type in [GENOMICS, PROTEOMICS, METABOLOMICS]:
+        if data_type in [GENES, PROTEINS, COMPOUNDS]:
             cluster_json = get_clusters(analysis_data, data_type)
             analysis_data.metadata = {
                 'clustergrammer': cluster_json
@@ -339,9 +339,9 @@ def get_clusters(analysis_data, data_type):
     axis = 1
     X_std, data_df, design_df = get_standardized_df(analysis_data, axis, pk_cols=IDS)
 
-    if data_type == GENOMICS:
+    if data_type == GENES:
         json_data = to_clustergrammer(X_std, design_df, run_enrichr=None, enrichrgram=True)
-    elif data_type == PROTEOMICS or data_type == METABOLOMICS:
+    elif data_type == PROTEINS or data_type == COMPOUNDS:
         json_data = to_clustergrammer(X_std, design_df)
     return json_data
 
@@ -352,10 +352,10 @@ def get_standardized_df(analysis_data, axis, pk_cols=PKS):
 
     # standardise data differently for genomics vs proteomics/metabolomics
     X_std = None
-    if data_type == GENOMICS:
+    if data_type == GENES:
         inference = GraphOmicsInference(data_df, design_df, data_type, min_value=MIN_REPLACE_GENOMICS)
         X_std = inference.standardize_df(inference.data_df, axis=axis)
-    elif data_type == PROTEOMICS or data_type == METABOLOMICS:
+    elif data_type == PROTEINS or data_type == COMPOUNDS:
         inference = GraphOmicsInference(data_df, design_df, data_type, min_value=MIN_REPLACE_PROTEOMICS_METABOLOMICS)
         X_std = inference.standardize_df(inference.data_df, log=True, axis=axis)
     return X_std, data_df, design_df
@@ -399,9 +399,9 @@ def get_last_data(analysis, data_type):
 def get_context(analysis, current_user):
     show_selection_group = True if not current_user.is_anonymous else False
     view_names = {
-        TABLE_IDS[GENOMICS]: get_reverse_url('get_ensembl_gene_info', analysis),
-        TABLE_IDS[PROTEOMICS]: get_reverse_url('get_uniprot_protein_info', analysis),
-        TABLE_IDS[METABOLOMICS]: get_reverse_url('get_kegg_metabolite_info', analysis),
+        TABLE_IDS[GENES]: get_reverse_url('get_ensembl_gene_info', analysis),
+        TABLE_IDS[PROTEINS]: get_reverse_url('get_uniprot_protein_info', analysis),
+        TABLE_IDS[COMPOUNDS]: get_reverse_url('get_kegg_metabolite_info', analysis),
         TABLE_IDS[REACTIONS]: get_reverse_url('get_reactome_reaction_info', analysis),
         TABLE_IDS[PATHWAYS]: get_reverse_url('get_reactome_pathway_info', analysis),
         'get_firdi_data': get_reverse_url('get_firdi_data', analysis),
@@ -421,9 +421,9 @@ def get_context(analysis, current_user):
         'publication': analysis.publication,
         'publication_link': analysis.publication_link,
         'view_names': json.dumps(view_names),
-        'show_gene_data': show_data_table(analysis, GENOMICS),
-        'show_protein_data': show_data_table(analysis, PROTEOMICS),
-        'show_compound_data': show_data_table(analysis, METABOLOMICS),
+        'show_gene_data': show_data_table(analysis, GENES),
+        'show_protein_data': show_data_table(analysis, PROTEINS),
+        'show_compound_data': show_data_table(analysis, COMPOUNDS),
         'read_only': analysis.get_read_only_status(current_user),
         'show_selection_group': show_selection_group
     }
