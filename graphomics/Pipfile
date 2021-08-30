@@ -19,6 +19,10 @@ scipy = "*"
 # pandas = "==0.25"     # required for clustergrammer to work since it uses .ix, which is deprecated in later versions
 pandas = "*"            # temporary fix
 
+# use the version in github where the .ix problem above has been fixed
+# clustergrammer = "*"
+clustergrammer = {editable = true, ref = "patch", git = "git+https://github.com/MaayanLab/clustergrammer-py"}
+
 seaborn = "*"
 scikit-learn = "*"
 matplotlib = "*"
@@ -30,7 +34,6 @@ jsonpickle = "*"
 rpy2 = {version = "*",sys_platform = "!= 'win32'"}
 tzlocal = "*"
 django-webpack-loader = "==0.7.0"
-clustergrammer = "*"
 goatools = "*"
 plotly = "*"
 tqdm = "*"
