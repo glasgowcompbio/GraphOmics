@@ -62,7 +62,7 @@ class Analysis(models.Model):
 
     def has_mofa_data(self):
         file = self.analysisupload.mofa_data
-        return file.storage.exists(file.name)
+        return file and file.storage.exists(file.name)
 
     def get_mofa_hdf5_path(self):
         if self.has_mofa_data():
