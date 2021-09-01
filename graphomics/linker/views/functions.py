@@ -14,6 +14,12 @@ from django.utils import timezone
 from loguru import logger
 import mofax as mfx
 
+from pyMultiOmics.base import *
+from pyMultiOmics.mapping import Mapper
+from pyMultiOmics.common import set_log_level_info, set_log_level_debug
+from pyMultiOmics.constants import *
+#from pyMultiOmics.mofax import *
+
 from linker.common import load_obj
 from linker.constants import *
 from linker.metadata import get_gene_names, get_compound_metadata, clean_label
@@ -437,8 +443,24 @@ def get_mofa_context(old_context, analysis):
         context['mofa_filepath'] = mofa_filepath
 
         mofa = mfx.mofa_model(mofa_filepath)
-        df = mofa.get_top_features()
-        context['mofa_df'] = df
+        df = mofa.get_top_features(views = 'transcriptome', factors = 1, n_features = 10,df = True)
+
+        json_records = df.reset_index().to_json(orient='records')
+        top_feature_df = []
+        top_feature_df = json.loads(json_records)
+
+        fig = mfx.plot_weights(mofa, factor=1, views='transcriptome', n_features=10,
+                               y_repel_coef=0.04, x_rank_offset=-150)
+
+        imgdata = StringIO()
+        fig.figure.savefig(imgdata, format='svg')
+        imgdata.seek(0)
+        #graph = fig_to_div(fig.figure)
+
+        context['mofa_df'] = top_feature_df
+        context['mofa_fig'] = imgdata.getvalue()
+        #context['mofa_fig'] = graph
+
 
     return context
 

@@ -6,7 +6,36 @@
         </p>
         <h3>Top Features</h3>
         <p>
-            {{ mofa_df }}
+            <div style="width:auto;height:100">
+                {{ mofa_fig|safe}}
+            </div>
+        </p>
+        <p>
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>Index</th>
+                        <th>Feature</th>
+                        <th>Factor</th>
+                        <th>Value</th>
+                        <th>View</th>
+                    </tr>
+                </thead>
+                <tbody>
+                <!-- jinja2 Technique -->
+                {% if mofa_df %}
+                {% for i in mofa_df %}
+                    <tr>
+                        <td>{{i.index}}</td>
+                        <td>{{i.feature}}</td>
+                        <td>{{i.factor}}</td>
+                        <td>{{i.value}}</td>
+                        <td>{{i.view}}</td>
+                    </tr>
+                {% endfor %}
+                {% endif %}
+                </tbody>
+            </table>
         </p>
     </div>
 </div>
