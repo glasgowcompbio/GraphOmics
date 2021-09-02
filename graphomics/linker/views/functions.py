@@ -14,11 +14,14 @@ from django.utils import timezone
 from loguru import logger
 import mofax as mfx
 
+import sys
+sys.path.append('/User/wangkeqing/pyMultiOmics')
+
 from pyMultiOmics.base import *
 from pyMultiOmics.mapping import Mapper
 from pyMultiOmics.common import set_log_level_info, set_log_level_debug
 from pyMultiOmics.constants import *
-#from pyMultiOmics.mofax import *
+from pyMultiOmics.mofax import *
 
 from linker.common import load_obj
 from linker.constants import *
@@ -435,32 +438,80 @@ def get_context(analysis, current_user):
     }
     return context
 
+def run_mofa(analysis):
+    if analysis.has_mofa_data() == False:
+        data = []
+        if analysis.has_gene_data():
+            gene_filepath = analysis.get_gene_data_path()
+            gene_design_filepath = analysis.get_gene_design_path()
+            gene_df = pd.read_csv(gene_filepath, index_col='Identifier')
+            gene_design_df = pd.read_csv(gene_design_filepath, index_col='sample')
+            gene_data = SingleOmicsData(GENES, gene_df, gene_design_df)
+            data.append(gene_data)
+
+        if analysis.has_protein_data():
+            protein_filepath = analysis.get_protein_data_path()
+            protein_design_filepath = analysis.get_protein_design_path()
+            protein_df = pd.read_csv(protein_filepath, index_col='Identifier')
+            protein_design_df = pd.read_csv(protein_design_filepath, index_col='sample')
+            protein_data = SingleOmicsData(PROTEINS, protein_df, protein_design_df)
+            data.append(protein_data)
+
+        if analysis.has_compound_data():
+            compound_filepath = analysis.get_compound_data_path()
+            compound_design_filepath = analysis.get_compound_design_path()
+            compound_df = pd.read_csv(compound_filepath, index_col='Identifier')
+            compound_design_df = pd.read_csv(compound_design_filepath, index_col='sample')
+            compound_data = SingleOmicsData(COMPOUNDS, compound_df, compound_design_df)
+            data.append(compound_data)
+
+        publication = analysis.publication
+        url = analysis.publication_link
+
+        mo = MultiOmicsData(publication=publication, url=url)
+        mo.add_data(data)
+
+        fileName = analysis.name + '_mofa_data.hdf5'
+        filePath = os.path.abspath(os.path.join(fileName))
+        #analysis.set_mofa_hdf5_path(filePath)
+
+        m = MofaPipeline(mo, filePath)
+        m.training()
+        m.save_model()
+
+        return m.filepath
+
 
 def get_mofa_context(old_context, analysis):
     context = old_context.copy()
+    mofa_filepath = ''
     if analysis.has_mofa_data():
         mofa_filepath = analysis.get_mofa_hdf5_path()
-        context['mofa_filepath'] = mofa_filepath
 
-        mofa = mfx.mofa_model(mofa_filepath)
-        df = mofa.get_top_features(views = 'transcriptome', factors = 1, n_features = 10,df = True)
+    else:
+        mofa_filepath = run_mofa(analysis)
 
-        json_records = df.reset_index().to_json(orient='records')
-        top_feature_df = []
-        top_feature_df = json.loads(json_records)
+    context['mofa_filepath'] = mofa_filepath
 
-        fig = mfx.plot_weights(mofa, factor=1, views='transcriptome', n_features=10,
-                               y_repel_coef=0.04, x_rank_offset=-150)
+    mofa = mfx.mofa_model(mofa_filepath)
 
-        imgdata = StringIO()
-        fig.figure.savefig(imgdata, format='svg')
-        imgdata.seek(0)
-        #graph = fig_to_div(fig.figure)
+    df = mofa.get_top_features(views='compounds', factors=1, n_features=10, df=True)
 
-        context['mofa_df'] = top_feature_df
-        context['mofa_fig'] = imgdata.getvalue()
-        #context['mofa_fig'] = graph
+    json_records = df.reset_index().to_json(orient='records')
+    top_feature_df = []
+    top_feature_df = json.loads(json_records)
 
+    fig = mfx.plot_weights(mofa, factor=1, views='compounds', n_features=10,
+                           y_repel_coef=0.04, x_rank_offset=-150)
+
+    imgdata = StringIO()
+    fig.figure.savefig(imgdata, format='svg')
+    imgdata.seek(0)
+    # graph = fig_to_div(fig.figure)
+
+    context['mofa_df'] = top_feature_df
+    context['mofa_fig'] = imgdata.getvalue()
+    # context['mofa_fig'] = graph
 
     return context
 

@@ -62,19 +62,31 @@ class Analysis(models.Model):
 
     def has_mofa_data(self):
         file = self.analysisupload.mofa_data
-        return file and file.storage.exists(file.name)
+        if file and file.storage.exists(file.name):
+            return file and file.storage.exists(file.name)
+        else:
+            return False
 
     def has_gene_data(self):
         file = self.analysisupload.gene_data
-        return file and file.storage.exists(file.name)
+        if file and file.storage.exists(file.name):
+            return file and file.storage.exists(file.name)
+        else:
+            return False
 
     def has_protein_data(self):
         file = self.analysisupload.protein_data
-        return file and file.storage.exists(file.name)
+        if file and file.storage.exists(file.name):
+            return file and file.storage.exists(file.name)
+        else:
+            return False
 
     def has_compound_data(self):
         file = self.analysisupload.compound_data
-        return file and file.storage.exists(file.name)
+        if file and file.storage.exists(file.name):
+            return file and file.storage.exists(file.name)
+        else:
+            return False
 
     def get_mofa_hdf5_path(self):
         if self.has_mofa_data():
@@ -99,6 +111,25 @@ class Analysis(models.Model):
             return self.analysisupload.compound_data.path
         else:
             return None
+
+    def get_gene_design_path(self):
+        if self.has_gene_data():
+            return self.analysisupload.gene_design.path
+        else:
+            return None
+
+    def get_protein_design_path(self):
+        if self.has_protein_data():
+            return self.analysisupload.protein_design.path
+        else:
+            return None
+
+    def get_compound_design_path(self):
+        if self.has_compound_data():
+            return self.analysisupload.compound_design.path
+        else:
+            return None
+
 
     def __str__(self):
         return self.name
