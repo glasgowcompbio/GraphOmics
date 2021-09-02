@@ -472,7 +472,7 @@ def run_mofa(analysis):
         mo.add_data(data)
 
         fileName = analysis.name + '_mofa_data.hdf5'
-        filePath = os.path.abspath(os.path.join(fileName))
+        filePath = os.path.abspath(os.path.join("mofa_models",fileName))
         #analysis.set_mofa_hdf5_path(filePath)
 
         m = MofaPipeline(mo, filePath)
