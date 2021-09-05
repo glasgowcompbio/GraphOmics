@@ -50,12 +50,12 @@
                     <a class="nav-link d-none" id="pills-factor-tab" data-toggle="pill" href="#pills-factor" role="tab"
                        aria-controls="pills-factor" aria-selected="false">Group Analysis</a>
                 </li>
-
+                {% if mofa_filepath %}
                     <li class="nav-item">
                         <a class="nav-link" id="pills-mofa-tab" data-toggle="pill" href="#pills-mofa" role="tab"
                            aria-controls="pills-mofa" aria-selected="false">MOFA Analysis</a>
                     </li>
-
+                {% endif %}
             </ul>
             <div class="tab-content" id="pills-tabContent">
                 {% include "linker/explore_data_browser.html" %}

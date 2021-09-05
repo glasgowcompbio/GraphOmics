@@ -165,6 +165,7 @@ INFERENCE_GSEA = 6
 INFERENCE_DESEQ = 7
 INFERENCE_LIMMA = 8
 INFERENCE_REACTOME = 9
+INFERENCE_MOFA = 10
 
 InferenceTypeChoices = (
     (None, NA),
@@ -175,7 +176,8 @@ InferenceTypeChoices = (
     (INFERENCE_PALS, 'Pathway Analysis (PLAGE)'),
     (INFERENCE_ORA, 'Pathway Analysis (ORA)'),
     (INFERENCE_GSEA, 'Pathway Analysis (GSEA)'),
-    (INFERENCE_REACTOME, 'Reactome Analysis Service')
+    (INFERENCE_REACTOME, 'Reactome Analysis Service'),
+    (INFERENCE_MOFA, 'Multi-Omics Factor Analysis')
 )
 SELECT_WIDGET_ATTRS = {'style': 'width: 400px'}
 

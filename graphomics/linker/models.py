@@ -5,6 +5,7 @@ from django.contrib.auth import get_user_model
 from django.db import models
 from django.utils import timezone
 from jsonfield import JSONField
+from django.core.files import File
 
 User = get_user_model()
 
@@ -94,6 +95,10 @@ class Analysis(models.Model):
         else:
             return None
 
+    def set_mofa_hdf5_path(self, filePath):
+        with open(filePath) as f:
+            self.analysisupload.mofa_data.save('test', File(f))
+
     def get_gene_data_path(self):
         if self.has_gene_data():
             return self.analysisupload.gene_data.path
@@ -129,7 +134,6 @@ class Analysis(models.Model):
             return self.analysisupload.compound_design.path
         else:
             return None
-
 
     def __str__(self):
         return self.name

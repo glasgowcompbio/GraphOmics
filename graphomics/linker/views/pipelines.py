@@ -3,12 +3,16 @@
 import numpy as np
 import pandas as pd
 from loguru import logger
+from pyMultiOmics.base import MultiOmicsData, SingleOmicsData
+from pyMultiOmics.constants import *
+from pyMultiOmics.mofax import MofaPipeline
 from scipy import stats
 from sklearn import preprocessing
 from sklearn.decomposition import PCA
 from statsmodels.sandbox.stats.multicomp import multipletests
 
-from linker.constants import GROUP_COL, IDS, PKS
+from linker.constants import *
+from linker.models import Analysis
 
 
 class GraphOmicsInference(object):
@@ -263,3 +267,67 @@ class GraphOmicsInference(object):
             with localconverter(ro.default_converter + pandas2ri.converter):
                 pd_df = ro.conversion.rpy2py(r_df)
         return pd_df
+
+class MofaInference(Analysis):
+    def __init__(self, analysis, data_type, nFactors: int = 10):
+        self.analysis = analysis
+        self.data_type = data_type
+        self.nFactors = nFactors
+
+    def run_mofa(self):
+        data = {}
+        if self.analysis.has_gene_data():
+            gene_filepath = self.analysis.get_gene_data_path()
+            gene_design_filepath = self.analysis.get_gene_design_path()
+            gene_df = pd.read_csv(gene_filepath, index_col='Identifier')
+            gene_design_df = pd.read_csv(gene_design_filepath, index_col='sample')
+            gene_data = SingleOmicsData(GENES, gene_df, gene_design_df)
+            data['gene'] = gene_data
+
+        if self.analysis.has_protein_data():
+            protein_filepath = self.analysis.get_protein_data_path()
+            protein_design_filepath = self.analysis.get_protein_design_path()
+            protein_df = pd.read_csv(protein_filepath, index_col='Identifier')
+            protein_design_df = pd.read_csv(protein_design_filepath, index_col='sample')
+            protein_data = SingleOmicsData(PROTEINS, protein_df, protein_design_df)
+            data['protein'] = protein_data
+
+        if self.analysis.has_compound_data():
+            compound_filepath = self.analysis.get_compound_data_path()
+            compound_design_filepath = self.analysis.get_compound_design_path()
+            compound_df = pd.read_csv(compound_filepath, index_col='Identifier')
+            compound_design_df = pd.read_csv(compound_design_filepath, index_col='sample')
+            compound_data = SingleOmicsData(COMPOUNDS, compound_df, compound_design_df)
+            data['compound'] = compound_data
+
+        if self.data_type == MULTI_OMICS:
+            filePath = self.training_model(data.values())
+
+        elif self.data_type == GENOMICS:
+            filePath = self.training_model(data['gene'])
+
+        elif self.data_type == PROTEOMICS:
+            filePath = self.training_model(data['protein'])
+
+        elif self.data_type == METABOLOMICS:
+            filePath = self.training_model(data['compound'])
+
+        #self.analysis.set_mofa_hdf5_path(filePath)
+
+        return filePath
+
+    def training_model(self, data_list):
+        publication = self.analysis.publication
+        url = self.analysis.publication_link
+
+        mo = MultiOmicsData(publication=publication, url=url)
+        mo.add_data(data_list)
+
+        fileName = self.analysis.name + '_mofa_data.hdf5'
+        filePath = os.path.abspath(os.path.join("mofa_models", fileName))
+
+        m = MofaPipeline(mo, filePath)
+        m.training(nFactors = self.nFactors)
+        m.save_model()
+
+        return m.filepath

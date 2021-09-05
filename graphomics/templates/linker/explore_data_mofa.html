@@ -1,41 +1,58 @@
-<div class="tab-pane fade" id="pills-mofa" role="tabpanel" aria-labelledby="pills-mofa-tab">
-    <div id="mofaResults">
-        <h3>MOFA results</h3>
-        <p>
-            MOFA results can be found at: {{ mofa_filepath }}
-        </p>
-        <h3>Top Features</h3>
-        <p>
-            <div style="width:auto;height:100">
-                {{ mofa_fig|safe}}
+{% extends 'base.html' %}
+{% load static %}
+{% load render_bundle from webpack_loader %}
+
+{% block title %}GraphOmics{% endblock %}
+
+{% block body_block %}
+    <div class="container-fluid mt-2">
+
+        {% include 'linker/navbar.html' %}
+
+        <div class="m-1 mb-3">
+            <div class="card">
+                <div class="card-body">
+                    <h5>
+                        <a href="{% url 'inference' analysis_id=analysis_id %}">
+                            Inference results
+                        </a>
+                        <p>
+                        MOFA results can be found at: {{ mofa_filepath }}
+                        </p>
+                    </h5>
+                    {% if mofa_fig %}
+                        <div>
+                            {{ mofa_fig|safe}}
+                        </div>
+                    {% endif %}
+                    <p>
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Index</th>
+                                    <th>Feature</th>
+                                    <th>Factor</th>
+                                    <th>Value</th>
+                                    <th>View</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                            <!-- jinja2 Technique -->
+                            {% if mofa_df %}
+                            {% for i in mofa_df %}
+                                <tr>
+                                    <td>{{i.index}}</td>
+                                    <td>{{i.feature}}</td>
+                                    <td>{{i.factor}}</td>
+                                    <td>{{i.value}}</td>
+                                    <td>{{i.view}}</td>
+                                </tr>
+                            {% endfor %}
+                            {% endif %}
+                            </tbody>
+                        </table>
+                    </p>
+                </div>
             </div>
-        </p>
-        <p>
-            <table class="table table-striped">
-                <thead>
-                    <tr>
-                        <th>Index</th>
-                        <th>Feature</th>
-                        <th>Factor</th>
-                        <th>Value</th>
-                        <th>View</th>
-                    </tr>
-                </thead>
-                <tbody>
-                <!-- jinja2 Technique -->
-                {% if mofa_df %}
-                {% for i in mofa_df %}
-                    <tr>
-                        <td>{{i.index}}</td>
-                        <td>{{i.feature}}</td>
-                        <td>{{i.factor}}</td>
-                        <td>{{i.value}}</td>
-                        <td>{{i.view}}</td>
-                    </tr>
-                {% endfor %}
-                {% endif %}
-                </tbody>
-            </table>
-        </p>
-    </div>
-</div>
+
+{% endblock %}
