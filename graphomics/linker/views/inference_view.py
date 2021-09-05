@@ -774,7 +774,6 @@ class MofaResult(TemplateView):
         analysis = get_object_or_404(Analysis, pk=analysis_id)
 
         mofa_filepath = analysis.get_mofa_hdf5_path()
-        #mofa_filepath = '/Users/wangkeqing/GraphOmics/graphomics/mofa_models/c_mofa_data.hdf5'
 
         mofa = mfx.mofa_model(mofa_filepath)
 

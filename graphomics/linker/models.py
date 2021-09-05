@@ -96,8 +96,9 @@ class Analysis(models.Model):
             return None
 
     def set_mofa_hdf5_path(self, filePath):
-        with open(filePath) as f:
-            self.analysisupload.mofa_data.save('test', File(f))
+        with open(filePath, 'rb') as f:
+            fileName = self.name + '_mofa_data.hdf5'
+            self.analysisupload.mofa_data.save(fileName, File(f))
 
     def get_gene_data_path(self):
         if self.has_gene_data():
