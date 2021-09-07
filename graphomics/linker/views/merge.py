@@ -98,7 +98,7 @@ def merge_json_data_mofa(json_data, data_type, view, factor, result_df):
         item = new_json_data[i]
         key = item[PKS[data_type]]
         try:
-            weight = res['weight_label'][key]
+            weight = res[weight_label][key]
             if np.isnan(weight):
                 weight = None
         except KeyError:

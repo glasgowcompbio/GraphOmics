@@ -215,6 +215,7 @@ class AnalysisHistory(models.Model):
         except KeyError:
             return ''
 
+
     def __str__(self):
         return '%s (%s) timestamp=%s' % (self.display_name, self.analysis_data, self.timestamp.strftime("%Y-%m-%d %H:%M:%S"))
 
@@ -246,25 +247,3 @@ class AnalysisGroup(models.Model):
 
     def __str__(self):
         return '%s data_type=%d %s' % (self.analysis.name, self.data_type, self.display_name)
-
-
-class MofaAnalysisHistory(models.Model):
-    analysis = models.ForeignKey(Analysis, on_delete=models.CASCADE)
-    #display_name = models.CharField(max_length=1000, blank=True, null=True)
-    analysis_data = models.ForeignKey(AnalysisData, on_delete=models.CASCADE)
-    inference_type = models.IntegerField(choices=InferenceTypeChoices, blank=True, null=True)
-    inference_data = JSONField()
-    timestamp = models.DateTimeField(default=timezone.localtime, null=False)
-
-    def get_data_type_str(self):
-        return self.analysis_data.get_data_type_str()
-
-    def get_inference_type_str(self):
-        try:
-            return dict(InferenceTypeChoices)[self.inference_type]
-        except KeyError:
-            return ''
-'''
-    def __str__(self):
-        return '%s (%s) timestamp=%s' % (self.display_name, self.analysis_data, self.timestamp.strftime("%Y-%m-%d %H:%M:%S"))
-'''

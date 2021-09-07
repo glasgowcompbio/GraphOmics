@@ -17,7 +17,7 @@ from linker.models import Analysis, AnalysisHistory
 import mofax as mfx
 import sys
 
-from linker.views.functions import get_last_analysis_data, get_inference_data, save_mofa_analysis_history
+from linker.views.functions import get_last_analysis_data, get_inference_data, save_analysis_history
 
 sys.path.append('/path/to/pyMultiOmics')
 from pyMultiOmics.mofax import MofaPipeline
@@ -46,8 +46,8 @@ def mofa_result(request, analysis_id):
 
             result_df = get_result_df(context['mofa_result_df'], view, factor)
             inference_data = get_inference_data(data_type, view, factor, result_df)
-            #display_name = 'MOFA Top Features for View %s Factor %s' % (str(view), str(factor))
-            save_mofa_analysis_history(analysis_data, inference_data, INFERENCE_MOFA)
+            display_name = None
+            save_analysis_history(analysis_data, inference_data, display_name, INFERENCE_MOFA)
 
             action_url = reverse('mofa_result_page', kwargs={
                 'analysis_id': analysis_id,

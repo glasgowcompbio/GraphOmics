@@ -15,7 +15,7 @@ from linker.metadata import get_single_ensembl_metadata_online, get_single_unipr
 from linker.models import Analysis, AnalysisAnnotation, AnalysisHistory
 from linker.reactome import get_reactome_description, get_reaction_entities, pathway_to_reactions
 from linker.views.functions import change_column_order, recur_dictify, get_context, \
-    get_last_data, get_last_analysis_data #, get_mofa_context
+    get_last_data, get_last_analysis_data
 from .mofa_view import build_mofa_init_context
 from .harmonizomeapi import Harmonizome, Entity
 from .merge import merge_json_data, update_pathway_analysis_data, merge_json_data_mofa
@@ -51,6 +51,7 @@ def get_firdi_data(request, analysis_id):
         analysis = get_object_or_404(Analysis, pk=analysis_id)
         table_data = {}
         data_fields = {}
+        a = None
         for k, v in DataRelationType:
             try:
                 # get the latest analysis data by timestamp
@@ -74,6 +75,15 @@ def get_firdi_data(request, analysis_id):
                         logger.debug('Merging %s' % history)
                         result_df = pd.read_json(inference_data['result_df'])
                         json_data = update_pathway_analysis_data(json_data, result_df)
+                    elif inference_type == INFERENCE_MOFA:
+                        logger.debug('Merging %s' % history)
+                        try:
+                            view = inference_data['case']
+                            factor = inference_data['control']
+                            result_df = pd.read_json(inference_data['result_df'])
+                        except:
+                            continue
+                        json_data = merge_json_data_mofa(json_data, data_type, view, factor, result_df)
 
                 label = MAPPING[k]
                 table_data[label] = json_data
@@ -91,6 +101,7 @@ def get_firdi_data(request, analysis_id):
             'tableData': table_data,
             'tableFields': data_fields,
         }
+
         return JsonResponse(data)
 
 
