@@ -3,9 +3,6 @@
 import numpy as np
 import pandas as pd
 from loguru import logger
-from pyMultiOmics.base import MultiOmicsData, SingleOmicsData
-from pyMultiOmics.constants import *
-from pyMultiOmics.mofax import MofaPipeline
 from scipy import stats
 from sklearn import preprocessing
 from sklearn.decomposition import PCA
@@ -14,6 +11,11 @@ from statsmodels.sandbox.stats.multicomp import multipletests
 from linker.constants import *
 from linker.models import Analysis
 
+import sys
+sys.path.append('/path/to/pyMultiOmics')
+from pyMultiOmics.base import MultiOmicsData, SingleOmicsData
+from pyMultiOmics.mofax import MofaPipeline
+from pyMultiOmics.constants import GENES, PROTEINS, COMPOUNDS
 
 class GraphOmicsInference(object):
     def __init__(self, data_df, design_df, data_type, remove_cols=None, min_value=0):
@@ -268,7 +270,7 @@ class GraphOmicsInference(object):
                 pd_df = ro.conversion.rpy2py(r_df)
         return pd_df
 
-class MofaInference(Analysis):
+class MofaInference():
     def __init__(self, analysis, data_type, nFactors: int = 10):
         self.analysis = analysis
         self.data_type = data_type
@@ -300,8 +302,12 @@ class MofaInference(Analysis):
             compound_data = SingleOmicsData(COMPOUNDS, compound_df, compound_design_df)
             data['compound'] = compound_data
 
+        filePath = ''
         if self.data_type == MULTI_OMICS:
-            filePath = self.training_model(data.values())
+            MOD_input = []
+            for k in data.keys():
+                MOD_input.append(data[k])
+            filePath = self.training_model(MOD_input)
 
         elif self.data_type == GENOMICS:
             filePath = self.training_model(data['gene'])
@@ -311,8 +317,6 @@ class MofaInference(Analysis):
 
         elif self.data_type == METABOLOMICS:
             filePath = self.training_model(data['compound'])
-
-        #self.analysis.set_mofa_hdf5_path(filePath)
 
         return filePath
 
@@ -326,7 +330,8 @@ class MofaInference(Analysis):
         fileName = self.analysis.name + '_mofa_data.hdf5'
         filePath = os.path.abspath(os.path.join("mofa_models", fileName))
 
-        m = MofaPipeline(mo, filePath)
+        m = MofaPipeline(MultiOmicsData_obj = mo, modelPath = filePath)
+        m.set_data()
         m.training(nFactors = self.nFactors)
         m.save_model()
 

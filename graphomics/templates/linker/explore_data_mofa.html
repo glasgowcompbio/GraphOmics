@@ -7,7 +7,7 @@
 {% block body_block %}
     <div class="container-fluid mt-2">
 
-        {% include 'linker/navbar.html' %}
+         {% include 'linker/navbar.html' with show_selection_group=False active='mofa' %}
 
         <div class="m-1 mb-3">
             <div class="card">
@@ -16,16 +16,72 @@
                         <a href="{% url 'inference' analysis_id=analysis_id %}">
                             Inference results
                         </a>
+                        /MOFA results
                         <p>
-                        MOFA results can be found at: {{ mofa_filepath }}
+                        Can be found at: {{ mofa_filepath }}
                         </p>
                     </h5>
-                    {% if mofa_fig %}
+                </div>
+            </div>
+        </div>
+
+        <div class="m-1 mb-3">
+            <div class="card">
+                <div class="card-body">
+                    <h5>Show MOFA Results</h5>
+                    <form id="inference_form"
+                          method="post"
+                          action="{{ action_url }}"
+                          enctype="multipart/form-data">
+                        {% csrf_token %}
+                        <table>
+                            {{ form.as_table }}
+                        </table>
+                        <br/>
+                        <input type="submit" id="form_submit" name="submit" value="Save" class="btn btn-primary"/>
+                    </form>
+                    <h5>
+                        {% if list_data %}
+                            {% for item in list_data %}
+                                <a target='_blank' href="{{ item.1 }}">
+                                    Explore Data
+                                </a><br>
+                            {% endfor %}
+                        {% endif %}
+                    </h5>
+                    <p>
+                        {% if message %}
+                        <div class="mt-3 mb-3 alert alert-{{ message.tags }}" role="alert">
+                            {{ message }}
+                        </div>
+                        {% endif %}
+                    </p>
+                    <p>
+                        {% if mofa_fig %}
                         <div>
+                            <h5>MOFA Top Features Plot</h5>
                             {{ mofa_fig|safe}}
                         </div>
-                    {% endif %}
+                        {% endif %}
+                        {% if plot_factors and plot_factors_correlation and plot_r2 %}
+                        <div>
+                            <p>
+                                <h5>MOFA Factor Plot</h5>
+                                {{ plot_factors|safe}}
+                            </p>
+                            <p>
+                                <h5>MOFA Factor Correlation Plot</h5>
+                                {{ plot_factors_correlation|safe}}
+                            </p>
+                            <p>
+                                <h5>MOFA R2 Plot</h5>
+                                {{ plot_r2|safe}}
+                            </p>
+                        </div>
+                        {% endif %}
+                    </p>
                     <p>
+                    {% if mofa_df %}
                         <table class="table table-striped">
                             <thead>
                                 <tr>
@@ -38,7 +94,6 @@
                             </thead>
                             <tbody>
                             <!-- jinja2 Technique -->
-                            {% if mofa_df %}
                             {% for i in mofa_df %}
                                 <tr>
                                     <td>{{i.index}}</td>
@@ -48,11 +103,16 @@
                                     <td>{{i.view}}</td>
                                 </tr>
                             {% endfor %}
-                            {% endif %}
                             </tbody>
                         </table>
+                    {% endif %}
                     </p>
+
                 </div>
             </div>
 
+                </div>
+            </div>
+        </div>
+    </div>
 {% endblock %}

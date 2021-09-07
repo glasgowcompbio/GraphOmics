@@ -42,6 +42,7 @@ loguru = "*"
 pals-pathway = "*"
 jupyterlab = "*"
 django-grappelli = "*"
+pyMultiOmics = {editable = true, ref = "keqingw", git = "git+https://github.com/glasgowcompbio/pyMultiOmics"}
 mofax = "*"
 
 [dev-packages]

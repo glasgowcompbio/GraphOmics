@@ -16,8 +16,9 @@ from linker.models import Analysis, AnalysisAnnotation, AnalysisHistory
 from linker.reactome import get_reactome_description, get_reaction_entities, pathway_to_reactions
 from linker.views.functions import change_column_order, recur_dictify, get_context, \
     get_last_data, get_last_analysis_data #, get_mofa_context
+from .mofa_view import build_mofa_init_context
 from .harmonizomeapi import Harmonizome, Entity
-from .merge import merge_json_data, update_pathway_analysis_data
+from .merge import merge_json_data, update_pathway_analysis_data, merge_json_data_mofa
 from ..common import access_allowed
 
 
@@ -32,6 +33,11 @@ def explore_data(request, analysis_id):
     if not access_allowed(analysis, request):
         raise PermissionDenied()
     context = get_context(analysis, current_user)
+    if analysis.has_mofa_data():
+        mofa_filepath = analysis.get_mofa_hdf5_path()
+        mofa_context = build_mofa_init_context(analysis)
+        for k in mofa_context:
+            context[k] = mofa_context[k]
     return render(request, 'linker/explore_data.html', context)
 
 

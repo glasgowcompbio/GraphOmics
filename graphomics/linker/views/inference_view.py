@@ -216,7 +216,7 @@ def get_list_data(analysis_id, analysis_history_list):
                 click_url_2 = analysis_history.inference_data[REACTOME_EXPR_URL]
 
         elif inference_type == INFERENCE_MOFA:
-            click_url_1 = reverse('mofa_result', kwargs={
+            click_url_1 = reverse('mofa_result_page', kwargs={
                 'analysis_id': analysis_id,
             })
 
@@ -765,42 +765,6 @@ def inference_mofa(request, analysis_id):
             messages.warning(request, 'Add new inference failed.')
 
         return inference(request, analysis_id)
-
-class MofaResult(TemplateView):
-    template_name = 'linker/explore_data_mofa.html'
-
-    def get_context_data(self, **kwargs):
-        analysis_id = self.kwargs['analysis_id']
-        analysis = get_object_or_404(Analysis, pk=analysis_id)
-
-        mofa_filepath = analysis.get_mofa_hdf5_path()
-
-        mofa = mfx.mofa_model(mofa_filepath)
-
-        df = mofa.get_top_features(views='compounds', factors=1, n_features=10, df=True)
-        json_records = df.reset_index().to_json(orient='records')
-        top_feature_df = []
-        top_feature_df = json.loads(json_records)
-
-        fig = mfx.plot_weights(mofa, factor=1, views='compounds', n_features=10,
-                               y_repel_coef=0.04, x_rank_offset=-150)
-
-        imgdata = StringIO()
-        fig.figure.savefig(imgdata, format='svg')
-        imgdata.seek(0)
-        # graph = fig_to_div(fig.figure)
-
-        context = super(MofaResult, self).get_context_data(**kwargs)
-        context.update({
-            'mofa_filepath': mofa_filepath,
-            'mofa_df': top_feature_df,
-            'mofa_fig': imgdata.getvalue(),
-        })
-        context['mofa_df'] = top_feature_df
-        context['mofa_fig'] = imgdata.getvalue()
-        # context['mofa_fig'] = graph
-
-        return context
 
 
 class DeleteAnalysisHistoryView(DeleteView):

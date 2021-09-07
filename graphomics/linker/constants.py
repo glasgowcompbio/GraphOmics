@@ -154,7 +154,6 @@ ShareReadOnlyChoices = (
 )
 
 # Constants used in the Inference page
-
 INFERENCE_LOADED = 0
 INFERENCE_T_TEST = 1
 INFERENCE_CORRELATION = 2
@@ -232,3 +231,12 @@ REACTOME_ORA_URL = 'reactome_ora_url'
 REACTOME_ORA_TOKEN = 'reactome_ora_token'
 REACTOME_EXPR_URL = 'reactome_expr_url'
 REACTOME_EXPR_TOKEN = 'reactome_expr_token'
+
+
+# constants used in the mofa result page
+AddNewViewChoices = (
+    (None, NA),
+    (GENOMICS, 'Gene Data'),
+    (PROTEOMICS, 'Protein Data'),
+    (METABOLOMICS, 'Compound Data'),
+)

@@ -863,3 +863,12 @@ def save_analysis_history(analysis_data, inference_data, new_display_name, infer
                                        inference_data=inference_data)
     analysis_history.save()
     logger.debug('Saved analysis history %s for analysis data %s' % (analysis_history, analysis_data))
+
+
+def save_mofa_analysis_history(analysis_data, inference_data, inference_type):
+    ts = timezone.localtime()
+    analysis_history = AnalysisHistory(analysis=analysis_data.analysis, analysis_data=analysis_data,
+                                       inference_type=inference_type, timestamp=ts,
+                                       inference_data=inference_data)
+    analysis_history.save()
+    logger.debug('Saved mofa analysis history %s for analysis data %s' % (analysis_history, analysis_data))
