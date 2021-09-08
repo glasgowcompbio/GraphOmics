@@ -13,8 +13,6 @@ from django.urls import reverse
 from django.utils import timezone
 from loguru import logger
 
-import sys
-#sys.path.append('/User/wangkeqing/pyMultiOmics')
 
 from linker.common import load_obj
 from linker.constants import *

@@ -11,8 +11,6 @@ from statsmodels.sandbox.stats.multicomp import multipletests
 from linker.constants import *
 from linker.models import Analysis
 
-import sys
-sys.path.append('/path/to/pyMultiOmics')
 from pyMultiOmics.base import MultiOmicsData, SingleOmicsData
 from pyMultiOmics.mofax import MofaPipeline
 from pyMultiOmics.constants import GENES, PROTEINS, COMPOUNDS

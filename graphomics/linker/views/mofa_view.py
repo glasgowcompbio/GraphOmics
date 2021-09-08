@@ -15,11 +15,8 @@ from linker.forms import MofaResultForm
 from linker.models import Analysis, AnalysisHistory
 
 import mofax as mfx
-import sys
-
 from linker.views.functions import get_last_analysis_data, get_inference_data, save_analysis_history
 
-sys.path.append('/path/to/pyMultiOmics')
 from pyMultiOmics.mofax import MofaPipeline
 
 def mofa_result(request, analysis_id):
