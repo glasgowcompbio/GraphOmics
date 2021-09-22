@@ -54,6 +54,13 @@
                                             <a target='_blank' href="{{ item.2 }}">
                                                 View expression data (Reactome.org)
                                             </a>
+                                            <p>
+                                                <small>
+                                                    Reactome only keep results for 7 days. If the links above no longer
+                                                    works, that means the results have expired. Please delete this
+                                                    inference and submit it again to get updated links.
+                                                </small>
+                                            </p>
                                         </td>
                                         <td>{{ item.0.get_data_type_str }}</td>
                                         <td>{{ item.0.get_inference_type_str }}</td>
