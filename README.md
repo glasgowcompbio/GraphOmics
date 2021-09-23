@@ -5,6 +5,8 @@ Methods to rank pathway and highlight interesting connection are also included.
 
 **Live demo is available at [https://graphomics.glasgowcompbio.org/app/](https://graphomics.glasgowcompbio.org/app/)**
 
+**[User guide](user_guide.md) to complete an integrated omics analysis using GraphOmics can be found here.**
+
 **A Python package to perform multi-omics data linking and analysis is available at [https://github.com/glasgowcompbio/pyMultiOmics](https://github.com/glasgowcompbio/pyMultiOmics)**. This is the same code used in this Web application but available for stand-alone use in your own application.
 
 **Manuscript pre-print: [bioarxiv](https://www.biorxiv.org/content/10.1101/2021.06.24.449741v1.abstract) -- prepared for submission to BMC Bioinformatics.**
