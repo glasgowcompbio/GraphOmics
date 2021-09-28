@@ -82,10 +82,11 @@ def update_pathway_analysis_data(json_data, pathway_df):
     logger.debug('Updated %d pathways' % hits)
     return new_json_data
 
-def merge_json_data_mofa(json_data, data_type, view, factor, result_df):
+def merge_json_data_mofa(json_data, data_type, history_id, view, factor, result_df):
     new_json_data = copy.deepcopy(json_data)
     res = result_df.to_dict()
-    weight_label = 'weight_view%s_factor%s' % (str(view), str(factor))
+    d = {0: 'genes', 2: 'proteins', 3: 'compounds'}
+    weight_label = 'weight_%s_factor%s_%s' % (str(d[view]), str(factor), str(history_id))
 
     #  remove the previous DE result if exists
     for i in range(len(new_json_data)):

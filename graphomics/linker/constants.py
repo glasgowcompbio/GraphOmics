@@ -234,9 +234,24 @@ REACTOME_EXPR_TOKEN = 'reactome_expr_token'
 
 
 # constants used in the mofa result page
-AddNewViewChoices = (
+OVERVIEW = 0
+DETAIL = 1
+COVARIANCE = 2
+
+MofaResultsChoices = (
     (None, NA),
-    (GENOMICS, 'Gene Data'),
-    (PROTEOMICS, 'Protein Data'),
-    (METABOLOMICS, 'Compound Data'),
+    (OVERVIEW, 'MOFA Model Overview'),
+    (DETAIL, 'Significant Features'),
+    (COVARIANCE, 'Plot with Covariance'),
+)
+
+FACTOR_COMBINATION = 0
+BOXPLOT = 1
+DIMENSION_REDUCTION = 2
+
+CovariancePlotTypeChoices = (
+    (None, NA),
+    (FACTOR_COMBINATION, 'Plot of Combinations of Factors'),
+    (BOXPLOT, 'Boxplot of Factor Values'),
+    (DIMENSION_REDUCTION, 'Non-Linear Dimensionality Reduction'),
 )

@@ -138,11 +138,20 @@ def inference(request, analysis_id):
                 action_url = reverse('inference_mofa', kwargs={
                     'analysis_id': analysis_id,
                 })
+                if data_type == MULTI_OMICS:
+                    for dtype in [GENOMICS, PROTEOMICS, METABOLOMICS]:
+                        analysis_data = get_last_analysis_data(analysis, dtype)
+                else:
+                    analysis_data = get_last_analysis_data(analysis, data_type)
+
                 selected_form = BaseInferenceForm()
                 selected_form.fields['data_type'].initial = data_type
                 selected_form.fields['inference_type'].initial = inference_type
                 selected_form.fields['Use uploaded .hdf5 file'] = forms.ChoiceField(choices=zip(['Yes', 'No'], ['Yes', 'No']), widget=Select2Widget())
+
                 selected_form.fields['Number of Factor'] = forms.IntegerField(required=True, widget=forms.TextInput(attrs={'size': 100}))
+                selected_form.fields['Scale View'] = forms.ChoiceField(required=False, choices=zip([True, False], ['Yes', 'No']), widget=Select2Widget())
+                selected_form.fields['Scale Group'] = forms.ChoiceField(required=False, choices=zip([True, False], ['Yes', 'No']), widget=Select2Widget())
 
             else:  # default
                 action_url = reverse('inference', kwargs={
@@ -216,8 +225,10 @@ def get_list_data(analysis_id, analysis_history_list):
                 click_url_2 = analysis_history.inference_data[REACTOME_EXPR_URL]
 
         elif inference_type == INFERENCE_MOFA:
+            history_id = analysis_history.id
             click_url_1 = reverse('mofa_result_page', kwargs={
                 'analysis_id': analysis_id,
+                'analysis_history_id': history_id
             })
 
         item = [analysis_history, click_url_1, click_url_2]
@@ -732,39 +743,62 @@ def inference_mofa(request, analysis_id):
     if request.method == 'POST':
         analysis = get_object_or_404(Analysis, pk=analysis_id)
 
+        analysis_history_list = AnalysisHistory.objects.filter(analysis=analysis).order_by(
+            'timestamp')
+        history_id = 0
+        for history in analysis_history_list:
+            history_id = history.id
+
         form = BaseInferenceForm(request.POST)
         data_type = int(request.POST['data_type'])
         data_types = [data_type]
         if data_type == MULTI_OMICS:
             data_types = [GENOMICS, PROTEOMICS, METABOLOMICS]
         analysis_data, omics_data = get_omics_data(analysis, data_types, form)
+
         form.fields['Use uploaded .hdf5 file'] = forms.ChoiceField(choices=zip(['Yes', 'No'], ['Yes', 'No']), widget=Select2Widget())
         form.fields['Number of Factor'] = forms.IntegerField(required=True, widget=forms.TextInput(attrs={'size': 100}))
+        form.fields['Scale View'] = forms.ChoiceField(required=False, choices=zip([True, False], ['Yes', 'No']), widget=Select2Widget())
+        form.fields['Scale Group'] = forms.ChoiceField(required=False, choices=zip([True, False], ['Yes', 'No']), widget=Select2Widget())
 
         if form.is_valid():
-            numFactor = form.cleaned_data['Number of Factor']
             up_data = form.cleaned_data['Use uploaded .hdf5 file']
 
+            mofa_info = {}
             filePath = ''
-            if up_data == 'yes':
+            if up_data == 'Yes':
                 if analysis.has_mofa_data():
                     filePath = analysis.analysisupload.mofa_data.path
+                    display_name = 'MOFA: uploaded hdf5 file'
+                    numFactor = form.cleaned_data['Number of Factor']
+                    mofa_info['nFactor'] = numFactor
                 else:
                     messages.warning(request, 'No .hdf5 file found.')
-            else:
-                mofa = MofaInference(analysis, data_type, numFactor)
-                filePath = mofa.run_mofa()
 
-            analysis.set_mofa_hdf5_path(filePath)
-            display_name = 'MOFA: %s Factors' % numFactor
-            inference_data = get_inference_data(data_type, None, None, None)
+            else:
+                numFactor = form.cleaned_data['Number of Factor']
+                scale_view = form.cleaned_data['Scale View'] in ['True']
+                scale_group = form.cleaned_data['Scale Group'] in ['True']
+
+                mofa = MofaInference(analysis, data_type, numFactor, scale_view, scale_group)
+                filePath, trained_views = mofa.run_mofa()
+                display_name = 'MOFA: %s Factors' % numFactor
+                mofa_info['nFactor'] = numFactor
+                mofa_info['views'] = trained_views
+
+            mofa_info['path'] = filePath
+            history_id += 1
+            mofa_info['history_id'] = history_id
+
+            #analysis.set_mofa_hdf5_path(filePath)
+            inference_data = get_inference_data(data_type, None, None, None, metadata = mofa_info)
             save_analysis_history(analysis_data, inference_data, display_name, INFERENCE_MOFA)
             messages.success(request, 'Add new inference successful.', extra_tags='primary')
 
         else:
             messages.warning(request, 'Add new inference failed.')
 
-        return inference(request, analysis_id)
+    return inference(request, analysis_id)
 
 
 class DeleteAnalysisHistoryView(DeleteView):

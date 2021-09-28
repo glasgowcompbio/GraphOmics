@@ -88,17 +88,19 @@ class Analysis(models.Model):
         else:
             return False
 
+    def has_metadata(self):
+        file = self.analysisupload.metadata
+        if file and file.storage.exists(file.name):
+            return file and file.storage.exists(file.name)
+        else:
+            return False
+
     def get_mofa_hdf5_path(self):
         if self.has_mofa_data():
             return self.analysisupload.mofa_data.path
         else:
             return None
 
-    def set_mofa_hdf5_path(self, filePath):
-        with open(filePath, 'rb') as f:
-            fileName = self.name + '_mofa_data.hdf5'
-            self.analysisupload.mofa_data.save(fileName, File(f))
-            os.remove(filePath)
 
     def get_gene_data_path(self):
         if self.has_gene_data():
@@ -136,6 +138,18 @@ class Analysis(models.Model):
         else:
             return None
 
+    def get_metadata_path(self):
+        if self.has_metadata():
+            return self.analysisupload.metadata.path
+        else:
+            return None
+
+    def set_mofa_hdf5_path(self, filePath):
+        with open(filePath, 'rb') as f:
+            fileName = self.name + '_mofa_data.hdf5'
+            self.analysisupload.mofa_data.save(fileName, File(f))
+            os.remove(filePath)
+
     def __str__(self):
         return self.name
 
@@ -172,6 +186,7 @@ class AnalysisUpload(models.Model):
     compound_data = models.FileField(blank=True, null=True, upload_to=get_upload_folder)
     compound_design = models.FileField(blank=True, null=True, upload_to=get_upload_folder)
     mofa_data = models.FileField(blank=True, null=True, upload_to=get_upload_folder)
+    metadata = models.FileField(blank=True, null=True, upload_to=get_upload_folder)
 
 
 class AnalysisData(models.Model):

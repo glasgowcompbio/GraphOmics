@@ -18,7 +18,8 @@
                         </a>
                         /MOFA results
                         <p>
-                        Can be found at: {{ mofa_filepath }}
+                            Analysis History ID: {{ analysis_history_id }}<br>
+                            Can be found at: {{ mofa_filepath }}
                         </p>
                     </h5>
                 </div>
@@ -38,7 +39,7 @@
                             {{ form.as_table }}
                         </table>
                         <br/>
-                        <input type="submit" id="form_submit" name="submit" value="Save" class="btn btn-primary"/>
+                        <input type="submit" id="form_submit" name="submit" value="Get Result" class="btn btn-primary"/>
                     </form>
                     <h5>
                         {% if list_data %}
@@ -63,10 +64,14 @@
                             {{ mofa_fig|safe}}
                         </div>
                         {% endif %}
-                        {% if plot_factors and plot_factors_correlation and plot_r2 %}
+                        {% if plot_factors and plot_factors_correlation and plot_r2 and data_overview_plot %}
                         <div>
                             <p>
-                                <h5>MOFA Factor Plot</h5>
+                                <h5>Data Overview</h5>
+                                <img src="{{ data_overview_plot }}" alt="Data Overview">
+                            </p>
+                            <p>
+                                <h5>MOFA Factor Overview</h5>
                                 {{ plot_factors|safe}}
                             </p>
                             <p>
@@ -76,6 +81,21 @@
                             <p>
                                 <h5>MOFA R2 Plot</h5>
                                 {{ plot_r2|safe}}
+                            </p>
+                        </div>
+                        {% endif %}
+                        {% if factor_covariance_plot %}
+                        <div>
+                            <p>
+                                <h5>Correlate Factors with Covariates in MetaData</h5>
+                                <img src="{{ factor_covariance_plot }}" alt="Correlate Factors with Covariates">
+                            </p>
+                        </div>
+                        {% endif %}
+                        {% if covariance_plot %}
+                        <div>
+                            <p>
+                                <img src="{{ covariance_plot }}">
                             </p>
                         </div>
                         {% endif %}
@@ -106,6 +126,13 @@
                             </tbody>
                         </table>
                     {% endif %}
+                    {% if heatmap %}
+                        <div>
+                            <p>
+                                <img src="{{ heatmap }}">
+                            </p>
+                        </div>
+                    {% endif %}
                     </p>
 
                 </div>
@@ -115,4 +142,10 @@
             </div>
         </div>
     </div>
+{% endblock %}
+
+{% block js_block %}
+    <!-- the order below is important for select2 to work -->
+    {% render_bundle 'inference' 'js' %}
+    {{ form.media.js }}
 {% endblock %}

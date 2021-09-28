@@ -4,7 +4,7 @@ from django import forms
 from django_select2.forms import Select2Widget, Select2MultipleWidget
 
 from linker.constants import AddNewDataChoices, InferenceTypeChoices, CompoundDatabaseChoices, \
-    MetabolicPathwayOnlyChoices, SELECT_WIDGET_ATTRS, DEFAULT_SPECIES, ShareReadOnlyChoices, AddNewViewChoices
+    MetabolicPathwayOnlyChoices, SELECT_WIDGET_ATTRS, DEFAULT_SPECIES, ShareReadOnlyChoices, MofaResultsChoices
 from linker.models import AnalysisUpload
 from linker.reactome import get_species_dict, get_all_pathways
 
@@ -96,9 +96,11 @@ class UploadAnalysisForm(forms.ModelForm):
                   'gene_data', 'gene_design',
                   'protein_data', 'protein_design',
                   'compound_data', 'compound_design',
-                  'mofa_data')
+                  'mofa_data',
+                  'metadata')
         labels = {
-            'mofa_data': 'MOFA data in hdf5 format'
+            'mofa_data': 'MOFA data in hdf5 format',
+            'metadata': 'Metadata in csv format'
         }
 
 
@@ -120,7 +122,8 @@ class MakePublicForm(forms.Form):
 
 
 class MofaResultForm(forms.Form):
-    view = forms.ChoiceField(required=True, choices=AddNewViewChoices,
-                             widget=Select2Widget(attrs=SELECT_WIDGET_ATTRS))
-    factor = forms.ChoiceField(required=True, choices=zip(range(1, 21), range(1, 21)),
+    result = forms.ChoiceField(required=True, choices=MofaResultsChoices,
                                widget=Select2Widget(attrs=SELECT_WIDGET_ATTRS))
+
+
+

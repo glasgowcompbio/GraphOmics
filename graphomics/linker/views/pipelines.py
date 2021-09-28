@@ -1,5 +1,7 @@
 # import pylab as plt
 
+import random
+import string
 import numpy as np
 import pandas as pd
 from loguru import logger
@@ -269,10 +271,12 @@ class GraphOmicsInference(object):
         return pd_df
 
 class MofaInference():
-    def __init__(self, analysis, data_type, nFactors: int = 10):
+    def __init__(self, analysis, data_type, nFactors: int = 10, scale_view: bool = False, scale_group: bool = False):
         self.analysis = analysis
         self.data_type = data_type
         self.nFactors = nFactors
+        self.scale_view = scale_view
+        self.scale_group = scale_group
 
     def run_mofa(self):
         data = {}
@@ -280,57 +284,79 @@ class MofaInference():
             gene_filepath = self.analysis.get_gene_data_path()
             gene_design_filepath = self.analysis.get_gene_design_path()
             gene_df = pd.read_csv(gene_filepath, index_col='Identifier')
+            if 'FC' in gene_df.columns:
+                gene_df.drop('FC', axis = 1, inplace = True)
+            if 'p_value' in gene_df.columns:
+                gene_df.drop('p_value', axis=1, inplace=True)
             gene_design_df = pd.read_csv(gene_design_filepath, index_col='sample')
             gene_data = SingleOmicsData(GENES, gene_df, gene_design_df)
-            data['gene'] = gene_data
+            data[0] = gene_data
 
         if self.analysis.has_protein_data():
             protein_filepath = self.analysis.get_protein_data_path()
             protein_design_filepath = self.analysis.get_protein_design_path()
             protein_df = pd.read_csv(protein_filepath, index_col='Identifier')
+            if 'FC' in protein_df.columns:
+                protein_df.drop('FC', axis = 1, inplace = True)
+            if 'p_value' in protein_df.columns:
+                protein_df.drop('p_value', axis=1, inplace=True)
             protein_design_df = pd.read_csv(protein_design_filepath, index_col='sample')
             protein_data = SingleOmicsData(PROTEINS, protein_df, protein_design_df)
-            data['protein'] = protein_data
+            data[2] = protein_data
 
         if self.analysis.has_compound_data():
             compound_filepath = self.analysis.get_compound_data_path()
             compound_design_filepath = self.analysis.get_compound_design_path()
             compound_df = pd.read_csv(compound_filepath, index_col='Identifier')
+            if 'FC' in compound_df.columns:
+                compound_df.drop('FC', axis = 1, inplace = True)
+            if 'p_value' in compound_df.columns:
+                compound_df.drop('p_value', axis=1, inplace=True)
             compound_design_df = pd.read_csv(compound_design_filepath, index_col='sample')
             compound_data = SingleOmicsData(COMPOUNDS, compound_df, compound_design_df)
-            data['compound'] = compound_data
+            data[3] = compound_data
 
         filePath = ''
+        data_type = []
         if self.data_type == MULTI_OMICS:
             MOD_input = []
             for k in data.keys():
                 MOD_input.append(data[k])
+                data_type.append(k)
             filePath = self.training_model(MOD_input)
 
         elif self.data_type == GENOMICS:
-            filePath = self.training_model(data['gene'])
+            data_type.append(0)
+            filePath = self.training_model(data[0])
 
         elif self.data_type == PROTEOMICS:
-            filePath = self.training_model(data['protein'])
+            data_type.append(2)
+            filePath = self.training_model(data[2])
 
         elif self.data_type == METABOLOMICS:
-            filePath = self.training_model(data['compound'])
+            data_type.append(3)
+            filePath = self.training_model(data[3])
 
-        return filePath
+        return filePath, data_type
 
     def training_model(self, data_list):
+        analysis_id = self.analysis.id
         publication = self.analysis.publication
         url = self.analysis.publication_link
 
         mo = MultiOmicsData(publication=publication, url=url)
         mo.add_data(data_list)
 
-        fileName = self.analysis.name + '_mofa_data.hdf5'
-        filePath = os.path.abspath(os.path.join("mofa_models", fileName))
+        folder_name = 'analysis_upload_' + str(analysis_id)
+        suffix = ''.join(random.sample(string.ascii_letters + string.digits, 8))
+        fileName = str(analysis_id) + '_mofa_data_' + suffix + '.hdf5'
+        filePath = os.path.abspath(os.path.join('media', folder_name, fileName))
 
         m = MofaPipeline(MultiOmicsData_obj = mo, modelPath = filePath)
         m.set_data()
-        m.training(nFactors = self.nFactors)
+        m.training(nFactors = self.nFactors,
+                   scale_views = self.scale_view,
+                   scale_groups = self.scale_group)
         m.save_model()
 
         return m.filepath

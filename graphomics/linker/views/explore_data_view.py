@@ -33,11 +33,21 @@ def explore_data(request, analysis_id):
     if not access_allowed(analysis, request):
         raise PermissionDenied()
     context = get_context(analysis, current_user)
-    if analysis.has_mofa_data():
-        mofa_filepath = analysis.get_mofa_hdf5_path()
-        mofa_context = build_mofa_init_context(analysis)
+
+    analysis_history_list = AnalysisHistory.objects.filter(analysis=analysis).order_by(
+        'timestamp')
+
+    last_mofa_history = None
+    for history in analysis_history_list:
+        inference_type = history.inference_type
+        if inference_type == INFERENCE_MOFA and 'path' in history.inference_data.keys():
+            last_mofa_history = history
+
+    if last_mofa_history != None:
+        mofa_context = build_mofa_init_context(analysis, analysis_id, last_mofa_history.id)
         for k in mofa_context:
             context[k] = mofa_context[k]
+
     return render(request, 'linker/explore_data.html', context)
 
 
@@ -78,12 +88,13 @@ def get_firdi_data(request, analysis_id):
                     elif inference_type == INFERENCE_MOFA:
                         logger.debug('Merging %s' % history)
                         try:
-                            view = inference_data['case']
-                            factor = inference_data['control']
+                            view = inference_data['view']
+                            factor = inference_data['factor']
+                            history_id = inference_data['history_id']
                             result_df = pd.read_json(inference_data['result_df'])
                         except:
                             continue
-                        json_data = merge_json_data_mofa(json_data, data_type, view, factor, result_df)
+                        json_data = merge_json_data_mofa(json_data, data_type, history_id, view, factor, result_df)
 
                 label = MAPPING[k]
                 table_data[label] = json_data
