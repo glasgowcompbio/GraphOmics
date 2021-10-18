@@ -1,0 +1,39 @@
+name: GraphOmics
+channels:
+- defaults
+- conda-forge
+dependencies:
+  - django<3.0
+  - django-configurations
+  - dj-database-url
+  - django-extensions
+  - django-select2
+  - gunicorn
+  - whitenoise
+  - ipython
+  - numpy
+  - scipy
+  - seaborn
+  - scikit-learn
+  - matplotlib
+  - statsmodels
+  - bioservices
+  - jsonfield
+  - jsonpickle
+  - rpy2
+  - tzlocal
+  - django-webpack-loader==0.7.0
+  - plotly
+  - tqdm
+  - loguru
+  - jupyterlab
+  - django-grappelli
+  - pip
+  - pip:
+     - "--editable=git+https://github.com/MaayanLab/clustergrammer-py.git@patch#egg=clustergrammer"
+     - pyMultiOmics
+     - goatools
+     - pals-pathway
+     - xml2dict
+     - mofax
+     - neo4j-driver==1.7.6
