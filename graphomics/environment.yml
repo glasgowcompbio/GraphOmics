@@ -1,6 +1,5 @@
 name: GraphOmics
 channels:
-- defaults
 - conda-forge
 dependencies:
   - django<3.0
