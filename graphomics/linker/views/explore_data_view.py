@@ -16,8 +16,9 @@ from linker.models import Analysis, AnalysisAnnotation, AnalysisHistory
 from linker.reactome import get_reactome_description, get_reaction_entities, pathway_to_reactions
 from linker.views.functions import change_column_order, recur_dictify, get_context, \
     get_last_data, get_last_analysis_data
+from .mofa_view import build_mofa_init_context
 from .harmonizomeapi import Harmonizome, Entity
-from .merge import merge_json_data, update_pathway_analysis_data
+from .merge import merge_json_data, update_pathway_analysis_data, merge_json_data_mofa
 from ..common import access_allowed
 
 
@@ -32,6 +33,21 @@ def explore_data(request, analysis_id):
     if not access_allowed(analysis, request):
         raise PermissionDenied()
     context = get_context(analysis, current_user)
+
+    analysis_history_list = AnalysisHistory.objects.filter(analysis=analysis).order_by(
+        'timestamp')
+
+    last_mofa_history = None
+    for history in analysis_history_list:
+        inference_type = history.inference_type
+        if inference_type == INFERENCE_MOFA and 'path' in history.inference_data.keys():
+            last_mofa_history = history
+
+    if last_mofa_history != None:
+        mofa_context = build_mofa_init_context(analysis, analysis_id, last_mofa_history.id)
+        for k in mofa_context:
+            context[k] = mofa_context[k]
+
     return render(request, 'linker/explore_data.html', context)
 
 
@@ -45,6 +61,7 @@ def get_firdi_data(request, analysis_id):
         analysis = get_object_or_404(Analysis, pk=analysis_id)
         table_data = {}
         data_fields = {}
+        a = None
         for k, v in DataRelationType:
             try:
                 # get the latest analysis data by timestamp
@@ -68,6 +85,16 @@ def get_firdi_data(request, analysis_id):
                         logger.debug('Merging %s' % history)
                         result_df = pd.read_json(inference_data['result_df'])
                         json_data = update_pathway_analysis_data(json_data, result_df)
+                    elif inference_type == INFERENCE_MOFA:
+                        logger.debug('Merging %s' % history)
+                        try:
+                            view = inference_data['view']
+                            factor = inference_data['factor']
+                            history_id = inference_data['history_id']
+                            result_df = pd.read_json(inference_data['result_df'])
+                        except:
+                            continue
+                        json_data = merge_json_data_mofa(json_data, data_type, history_id, view, factor, result_df)
 
                 label = MAPPING[k]
                 table_data[label] = json_data
@@ -85,6 +112,7 @@ def get_firdi_data(request, analysis_id):
             'tableData': table_data,
             'tableFields': data_fields,
         }
+
         return JsonResponse(data)
 
 

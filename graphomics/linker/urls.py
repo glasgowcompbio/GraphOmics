@@ -43,7 +43,14 @@ urlpatterns = [
     path('inference/ora/<int:analysis_id>', views.inference_ora, name='inference_ora'),
     path('inference/gsea/<int:analysis_id>', views.inference_gsea, name='inference_gsea'),
     path('inference/reactome/<int:analysis_id>', views.inference_reactome, name='inference_reactome'),
+    path('inference/mofa/<int:analysis_id>', views.inference_mofa, name='inference_mofa'),
     path('delete_analysis_history/<int:pk>', views.DeleteAnalysisHistoryView.as_view(), name='delete_analysis_history'),
+
+    # mofa result page
+    path('inference/mofa_result/<int:analysis_id>/<int:analysis_history_id>', views.mofa_result, name='mofa_result_page'),
+    path('inference/mofa_detail_result/<int:analysis_id>/<int:analysis_history_id>', views.mofa_detail_result, name='mofa_detail_result_page'),
+    path('inference/mofa_coviariance_result/<int:analysis_id>/<int:analysis_history_id>', views.mofa_coviariance_result, name='mofa_coviariance_result_page'),
+    path('inference/mofa_coviariance_result_mid/<int:analysis_id>/<int:analysis_history_id>', views.mofa_coviariance_result_mid, name='mofa_coviariance_result_page_mid'),
 
     # summary page
     path('summary/<int:analysis_id>', views.summary, name='summary'),

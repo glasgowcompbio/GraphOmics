@@ -82,6 +82,33 @@ def update_pathway_analysis_data(json_data, pathway_df):
     logger.debug('Updated %d pathways' % hits)
     return new_json_data
 
+def merge_json_data_mofa(json_data, data_type, history_id, view, factor, result_df):
+    new_json_data = copy.deepcopy(json_data)
+    res = result_df.to_dict()
+    d = {0: 'genes', 2: 'proteins', 3: 'compounds'}
+    weight_label = 'weight_%s_factor%s_%s' % (str(d[view]), str(factor), str(history_id))
+
+    #  remove the previous DE result if exists
+    for i in range(len(new_json_data)):
+        item = new_json_data[i]
+        if weight_label in item:
+            del item[weight_label]
+
+    # set new DE result to json_data
+    for i in range(len(new_json_data)):
+        item = new_json_data[i]
+        key = item[PKS[data_type]]
+        try:
+            weight = res[weight_label][key]
+            if np.isnan(weight):
+                weight = None
+        except KeyError:
+            weight = None
+
+        item[weight_label] = weight
+
+    return new_json_data
+
 
 def comparison_to_key(comparison):
     # remove space and last underscore from the comparison name if comparison ends with '_'

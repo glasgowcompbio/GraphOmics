@@ -5,11 +5,11 @@ from django.contrib.auth import get_user_model
 from django.db import models
 from django.utils import timezone
 from jsonfield import JSONField
+from django.core.files import File
 
 User = get_user_model()
 
 from linker.constants import DataType, DataRelationType, InferenceTypeChoices
-
 
 class Analysis(models.Model):
     name = models.CharField(max_length=100, null=True)
@@ -60,6 +60,96 @@ class Analysis(models.Model):
                 return True
         return False
 
+    def has_mofa_data(self):
+        file = self.analysisupload.mofa_data
+        if file and file.storage.exists(file.name):
+            return file and file.storage.exists(file.name)
+        else:
+            return False
+
+    def has_gene_data(self):
+        file = self.analysisupload.gene_data
+        if file and file.storage.exists(file.name):
+            return file and file.storage.exists(file.name)
+        else:
+            return False
+
+    def has_protein_data(self):
+        file = self.analysisupload.protein_data
+        if file and file.storage.exists(file.name):
+            return file and file.storage.exists(file.name)
+        else:
+            return False
+
+    def has_compound_data(self):
+        file = self.analysisupload.compound_data
+        if file and file.storage.exists(file.name):
+            return file and file.storage.exists(file.name)
+        else:
+            return False
+
+    def has_metadata(self):
+        file = self.analysisupload.metadata
+        if file and file.storage.exists(file.name):
+            return file and file.storage.exists(file.name)
+        else:
+            return False
+
+    def get_mofa_hdf5_path(self):
+        if self.has_mofa_data():
+            return self.analysisupload.mofa_data.path
+        else:
+            return None
+
+
+    def get_gene_data_path(self):
+        if self.has_gene_data():
+            return self.analysisupload.gene_data.path
+        else:
+            return None
+
+    def get_protein_data_path(self):
+        if self.has_protein_data():
+            return self.analysisupload.protein_data.path
+        else:
+            return None
+
+    def get_compound_data_path(self):
+        if self.has_compound_data():
+            return self.analysisupload.compound_data.path
+        else:
+            return None
+
+    def get_gene_design_path(self):
+        if self.has_gene_data():
+            return self.analysisupload.gene_design.path
+        else:
+            return None
+
+    def get_protein_design_path(self):
+        if self.has_protein_data():
+            return self.analysisupload.protein_design.path
+        else:
+            return None
+
+    def get_compound_design_path(self):
+        if self.has_compound_data():
+            return self.analysisupload.compound_design.path
+        else:
+            return None
+
+    def get_metadata_path(self):
+        if self.has_metadata():
+            return self.analysisupload.metadata.path
+        else:
+            return None
+
+    def set_mofa_hdf5_path(self, filePath):
+        with open(filePath, 'rb') as f:
+            fileName = self.name + '_mofa_data.hdf5'
+            self.analysisupload.mofa_data.save(fileName, File(f))
+            os.remove(filePath)
+
     def __str__(self):
         return self.name
 
@@ -95,6 +185,8 @@ class AnalysisUpload(models.Model):
     protein_design = models.FileField(blank=True, null=True, upload_to=get_upload_folder)
     compound_data = models.FileField(blank=True, null=True, upload_to=get_upload_folder)
     compound_design = models.FileField(blank=True, null=True, upload_to=get_upload_folder)
+    mofa_data = models.FileField(blank=True, null=True, upload_to=get_upload_folder)
+    metadata = models.FileField(blank=True, null=True, upload_to=get_upload_folder)
 
 
 class AnalysisData(models.Model):
@@ -137,6 +229,7 @@ class AnalysisHistory(models.Model):
             return dict(InferenceTypeChoices)[self.inference_type]
         except KeyError:
             return ''
+
 
     def __str__(self):
         return '%s (%s) timestamp=%s' % (self.display_name, self.analysis_data, self.timestamp.strftime("%Y-%m-%d %H:%M:%S"))

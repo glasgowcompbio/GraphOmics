@@ -154,7 +154,6 @@ ShareReadOnlyChoices = (
 )
 
 # Constants used in the Inference page
-
 INFERENCE_LOADED = 0
 INFERENCE_T_TEST = 1
 INFERENCE_CORRELATION = 2
@@ -165,6 +164,7 @@ INFERENCE_GSEA = 6
 INFERENCE_DESEQ = 7
 INFERENCE_LIMMA = 8
 INFERENCE_REACTOME = 9
+INFERENCE_MOFA = 10
 
 InferenceTypeChoices = (
     (None, NA),
@@ -175,7 +175,8 @@ InferenceTypeChoices = (
     (INFERENCE_PALS, 'Pathway Analysis (PLAGE)'),
     (INFERENCE_ORA, 'Pathway Analysis (ORA)'),
     (INFERENCE_GSEA, 'Pathway Analysis (GSEA)'),
-    (INFERENCE_REACTOME, 'Reactome Analysis Service')
+    (INFERENCE_REACTOME, 'Reactome Analysis Service'),
+    (INFERENCE_MOFA, 'Multi-Omics Factor Analysis')
 )
 SELECT_WIDGET_ATTRS = {'style': 'width: 400px'}
 
@@ -230,3 +231,27 @@ REACTOME_ORA_URL = 'reactome_ora_url'
 REACTOME_ORA_TOKEN = 'reactome_ora_token'
 REACTOME_EXPR_URL = 'reactome_expr_url'
 REACTOME_EXPR_TOKEN = 'reactome_expr_token'
+
+
+# constants used in the mofa result page
+OVERVIEW = 0
+DETAIL = 1
+COVARIANCE = 2
+
+MofaResultsChoices = (
+    (None, NA),
+    (OVERVIEW, 'MOFA Model Overview'),
+    (DETAIL, 'Significant Features'),
+    (COVARIANCE, 'Plot with Covariance'),
+)
+
+FACTOR_COMBINATION = 0
+BOXPLOT = 1
+DIMENSION_REDUCTION = 2
+
+CovariancePlotTypeChoices = (
+    (None, NA),
+    (FACTOR_COMBINATION, 'Plot of Combinations of Factors'),
+    (BOXPLOT, 'Boxplot of Factor Values'),
+    (DIMENSION_REDUCTION, 'Non-Linear Dimensionality Reduction'),
+)

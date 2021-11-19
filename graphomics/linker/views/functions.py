@@ -13,6 +13,7 @@ from django.urls import reverse
 from django.utils import timezone
 from loguru import logger
 
+
 from linker.common import load_obj
 from linker.constants import *
 from linker.metadata import get_gene_names, get_compound_metadata, clean_label
@@ -27,7 +28,6 @@ Relation = collections.namedtuple('Relation', 'keys values mapping_list')
 
 def reactome_mapping(observed_gene_df, observed_protein_df, observed_compound_df,
                      compound_database_str, species_list, metabolic_pathway_only):
-
     ### all the ids that we have from the user ###
     observed_gene_ids = get_ids_from_dataframe(observed_gene_df)
     observed_protein_ids = get_ids_from_dataframe(observed_protein_df)
