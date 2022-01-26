@@ -2,7 +2,7 @@ name: GraphOmics
 channels:
 - conda-forge
 dependencies:
-  - django<3.0
+  - django<4.0
   - django-configurations
   - dj-database-url
   - django-extensions
@@ -26,7 +26,7 @@ dependencies:
   - tqdm
   - loguru
   - jupyterlab
-  - django-grappelli
+  - django-grappelli<3.0
   - pip
   - pip:
      - "--editable=git+https://github.com/MaayanLab/clustergrammer-py.git@patch#egg=clustergrammer"

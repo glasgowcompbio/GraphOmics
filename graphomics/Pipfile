@@ -4,7 +4,7 @@ verify_ssl = true
 name = "pypi"
 
 [packages]
-django = "==2.2.22"
+django = "<4.0"
 django-configurations = "*"
 dj-database-url = "*"
 django-extensions = "*"
@@ -14,36 +14,32 @@ whitenoise = "*"
 ipython = "*"
 numpy = "*"
 scipy = "*"
-
-# see https://github.com/glasgowcompbio/GraphOmics/issues/113
-# pandas = "==0.25"     # required for clustergrammer to work since it uses .ix, which is deprecated in later versions
-pandas = "*"            # temporary fix
-
-# use the version in github where the .ix problem above has been fixed
-# clustergrammer = "*"
-clustergrammer = {editable = true, ref = "patch", git = "git+https://github.com/MaayanLab/clustergrammer-py"}
-
+pandas = "*"
 seaborn = "*"
 scikit-learn = "*"
 matplotlib = "*"
 statsmodels = "*"
-neo4j-driver = "==1.7.6"
 bioservices = "*"
 jsonfield = "*"
 jsonpickle = "*"
-rpy2 = {version = "*",sys_platform = "!= 'win32'"}
+rpy2 = {version = "*", sys_platform = "!= 'win32'"}
 tzlocal = "*"
 django-webpack-loader = "==0.7.0"
-goatools = "*"
 plotly = "*"
 tqdm = "*"
-xml2dict = "*"
 loguru = "*"
-pals-pathway = "*"
 jupyterlab = "*"
-django-grappelli = "*"
-pyMultiOmics = {editable = true, ref = "keqingw", git = "git+https://github.com/glasgowcompbio/pyMultiOmics"}
+django-grappelli = "<3.0"
+
+# use the version in github where the .ix problem above has been fixed
+clustergrammer = {editable = true, ref = "patch", git = "git+https://github.com/MaayanLab/clustergrammer-py"}
+
+pyMultiOmics = "*"
+goatools = "*"
+pals-pathway = "*"
+xml2dict = "*"
 mofax = "*"
+neo4j-driver = "==1.7.6"
 
 [dev-packages]
 
