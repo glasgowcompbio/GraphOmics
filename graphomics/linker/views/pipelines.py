@@ -65,7 +65,7 @@ class GraphOmicsInference(object):
             data_arr = np.log(data_arr)
 
         # center data to have 0 mean and unit variance for heatmap and pca
-        scaled_data = preprocessing.scale(data_arr, axis)
+        scaled_data = preprocessing.scale(data_arr, axis=axis)
 
         # set the values back to the dataframe
         sample_names = data_df.columns
