@@ -8,6 +8,7 @@ from django.urls import reverse, reverse_lazy
 from django.views.generic.edit import UpdateView
 from django.contrib import messages
 
+from linker.models import Analysis
 from registration.forms import UserForm
 
 User = get_user_model()
@@ -62,7 +63,10 @@ def user_login(request):
                 return render(request, 'registration/login.html', {})
 
     else: # GET
-        return render(request, 'registration/login.html', {})
+        object_list = Analysis.objects.filter(public=True).order_by('-timestamp')
+        return render(request, 'registration/login.html', {
+            'object_list': object_list
+        })
 
 
 class ProfileUpdate(UpdateView):
