@@ -1,4 +1,4 @@
-theme: jekyll-theme-cayman
+theme: jekyll-theme-minimal
 description: A dashboard to integrate and explore different -omics data
 logo: https://github.com/glasgowcompbio/GraphOmics/raw/master/graphomics/static/images/transparent_banner.png
 show_downloads: "true"
