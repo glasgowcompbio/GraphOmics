@@ -1,6 +1,6 @@
 # Welcome!
 
-![Logo](graphomics/images/transparent_banner.png?raw=true "Logo")
+<img src="graphomics/static/images/transparent_banner.png" height="100">
 
 GraphOmics is a dashboard to integrate and explore different types of biological -omics data. 
 Using this tool, you can map transcriptomics, proteomics and metabolomics data onto metabolic pathways. 
