@@ -528,7 +528,7 @@ def csv_to_dataframe(csv_str):
     except pd.errors.EmptyDataError:
         data_df = None
     except ValueError as e:
-        logger.error(traceback.format_exception(e))
+        logger.error(traceback.format_exc())
         data_df = None
 
     # create grouping dataframe
