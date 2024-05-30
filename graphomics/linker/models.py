@@ -170,7 +170,7 @@ class Share(models.Model):
 
 def get_upload_folder(instance, filename):
     upload_folder = "analysis_upload_%s" % instance.pk
-    return os.path.abspath(os.path.join(settings.MEDIA_ROOT, upload_folder, filename))
+    return os.path.join(upload_folder, filename)
 
 
 class AnalysisUpload(models.Model):
