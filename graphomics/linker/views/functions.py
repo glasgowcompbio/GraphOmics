@@ -1,6 +1,7 @@
 import collections
 import json
 import re
+import traceback
 from collections import defaultdict
 from io import StringIO
 
@@ -509,6 +510,8 @@ def csv_to_dataframe(csv_str):
     data = StringIO(filtered_str)
     try:
         data_df = pd.read_csv(data)
+        if not all([np.issubdtype(d, np.floating) for d in data_df.dtypes[1:] ]):
+            raise ValueError('Non-numeric data detected')
         data_df.columns = data_df.columns.str.replace('.',
                                                       '_')  # replace period with underscore to prevent alasql breaking
         data_df.columns = data_df.columns.str.replace('-',
@@ -523,6 +526,9 @@ def csv_to_dataframe(csv_str):
         data_df = data_df.rename(columns=rename)
         data_df.iloc[:, 0] = data_df.iloc[:, 0].astype(str)  # assume id is in the first column and is a string
     except pd.errors.EmptyDataError:
+        data_df = None
+    except ValueError as e:
+        logger.error(traceback.format_exception(e))
         data_df = None
 
     # create grouping dataframe
