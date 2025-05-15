@@ -835,9 +835,9 @@ def get_group_members(analysis_data):
     groups = {}
     if analysis_data.json_design:
         df = pd.DataFrame(analysis_data.json_design)
-        for k, v in df.groupby(GROUP_COL).agg('sample'):
+        for k, v in df.groupby(GROUP_COL):
             group_name = k.strip().lower()
-            group_members = v.values
+            group_members = v[SAMPLE_COL].values
             groups[group_name] = group_members
     return groups
 
