@@ -109,7 +109,7 @@ def run_ora(ds):
 
 def run_gsea(ds):
     logger.info('Running GSEA')
-    gsea = GSEA(ds, pbar=True)
+    gsea = GSEA(ds)
     pathway_df = gsea.get_pathway_df(standardize=False)
     return pathway_df
 
