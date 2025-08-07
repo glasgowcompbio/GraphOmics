@@ -510,6 +510,7 @@ def csv_to_dataframe(csv_str):
     data = StringIO(filtered_str)
     try:
         data_df = pd.read_csv(data)
+        data_df.iloc[:,1:] = data_df.iloc[:,1:].astype('float')
         if not all([np.issubdtype(d, np.floating) for d in data_df.dtypes[1:] ]):
             raise ValueError('Non-numeric data detected')
         data_df.columns = data_df.columns.str.replace('.',
